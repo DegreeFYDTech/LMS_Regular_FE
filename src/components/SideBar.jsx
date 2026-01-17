@@ -162,6 +162,12 @@ const Sidebar = ({
           onClick: () => navigate('/leadassignmentl3')
         },
         {
+          key: "ruleset-recon",
+          icon: <FilterOutlined />,
+          label: "Recon RuleSet",
+          onClick: () => navigate('/reconRuleset')
+        },
+        {
           key: "ruleset-ni",
           icon: <FilterOutlined />,
           label: "NI Leads RuleSet",

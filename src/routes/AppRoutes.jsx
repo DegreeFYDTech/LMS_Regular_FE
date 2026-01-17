@@ -8,6 +8,7 @@ import AnalyserBucket from '../pages/AnalyserBucket';
 import CollegeBrochure from '../pages/CollegeBrochure';
 import ManageNILeads from '../pages/ManageNILeads';
 import Tracker4 from '../components/ReportAnalysis/Tracker4';
+import ReconRuleset from '../pages/ReconRuleset';
 
 const Loader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -63,6 +64,7 @@ const AppRoutes = () => {
               <Route path="/addcounsellor" element={<RoleBasedRoute allowedRoles={["Supervisor", "to"]}><AddCounsellor /></RoleBasedRoute>} />
               <Route path="/leadassignmentl2" element={<RoleBasedRoute allowedRoles={["Supervisor"]}><LeadAssignmentL2 /></RoleBasedRoute>} />
               <Route path="/leadassignmentl3" element={<RoleBasedRoute allowedRoles={["Supervisor"]}><LeadAssignmentL3 /></RoleBasedRoute>} />
+              <Route path="/reconRuleset" element={<RoleBasedRoute allowedRoles={["Supervisor"]}><ReconRuleset /></RoleBasedRoute>} />
               <Route path="/manangetemplates" element={<RoleBasedRoute allowedRoles={["Supervisor"]}><ManageTemplates /></RoleBasedRoute>} />
               <Route path="/bulkupload" element={<RoleBasedRoute allowedRoles={["Supervisor"]}><BulkUpload /></RoleBasedRoute>} />
 

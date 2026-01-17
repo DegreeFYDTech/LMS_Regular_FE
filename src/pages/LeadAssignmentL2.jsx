@@ -14,7 +14,6 @@ import RuleTable from '../components/RuleTable';
 import RuleCards from '../components/RuleCards';
 import Modal from '../common/Modal';
 import Loader from '../common/Loader';
-import { fetchFilterOptions } from '../network/filterOptions';
 import { Table, Grid, Plus, Settings, Filter } from 'lucide-react';
 import axios from 'axios';
 import { BASE_URL } from '../config/api';

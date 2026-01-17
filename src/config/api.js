@@ -1,7 +1,5 @@
-export const BASE_URL = "http://localhost:3001/v1"
+export const BASE_URL = "http://localhost:3031/v1"
 
-///testing-one
-// export const BASE_URL = "https://lms-test.degreefyd.com/v1"
 
 // ---prod one---
-// export const BASE_URL = "https://lms-api-test.degreefyd.com/v1"
+// export const BASE_URL = "https://lms-regular.degreefyd.com/v1"
