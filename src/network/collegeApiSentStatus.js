@@ -4,7 +4,7 @@ import { BASE_URL } from "../config/api";
 export const getCollegeApiResponseForReport = async (page, pageSize, allParams) => {
   try {
     const response = await axios.get(`${BASE_URL}/collegeapisentStatus/getCollegeApiResponseForReport?page=${page}&limit=${pageSize}${allParams ? '&' + allParams : ''}`, {
-      withCredentials: true, // send cookies
+      withCredentials: true, 
     });
     return response.data;
   } catch (error) {
