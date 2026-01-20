@@ -1,7 +1,6 @@
 import { io } from 'socket.io-client';
 import { BASE_URL } from '../config/api';
 import notificationDB from '../config/notificationDB';
-
 class WebSocketService {
   constructor() {
     this.socket = null;
@@ -225,13 +224,13 @@ class WebSocketService {
       this.socket = null;
     }
 
-    const getSocketUrl = () => {
-      const hostname = window.location.hostname;
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return 'http://localhost:3031';
-      }
-      return 'wss://lms-regular.degreefyd.com';
-    };
+      const getSocketUrl = () => {
+        const hostname = window.location.hostname;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          return 'http://localhost:3006';
+        }
+        return 'https://lms-regular.degreefyd.com';
+      };
 
     const socketUrl = getSocketUrl();
     console.log(`🔗 Connecting to: ${socketUrl}`);
@@ -349,6 +348,13 @@ class WebSocketService {
       console.log('⚠️ Connection idle for too long');
       this.disconnect();
     });
+
+    // START: Added for Regular LMS Chat Notifications
+    this.socket.on('global_chat_notification', (data) => {
+        console.log('💬 Global Chat Notification Received:', data);
+        this.handleGlobalChatNotification(data);
+    });
+    // END: Added for Regular LMS Chat Notifications
   }
 
   disconnect() {
@@ -447,6 +453,29 @@ class WebSocketService {
       console.error('❌ Error handling lead notification:', error);
     }
   }
+
+  // START: Added for Regular LMS Chat Notifications
+  handleGlobalChatNotification(payload) {
+      const { event, data } = payload;
+      
+      // Play sound
+      this.playChatNotificationSound();
+      
+      // Show Toast or Dispatch Event
+      window.dispatchEvent(new CustomEvent('globalChatNotification', {
+          detail: {
+             ...data,
+             timestamp: new Date().toISOString()
+          }
+      }));
+      
+      this.showBrowserNotification(
+          data.title || 'Chat Notification',
+          data.message || 'New chat activity',
+          'chat'
+      );
+  }
+  // END: Added for Regular LMS Chat Notifications
 
   async handleCallbackNotification(data) {
     try {

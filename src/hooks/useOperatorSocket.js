@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { showToast } from '../utils/toast';
-const SOCKET_URL =  'https://lms-test.degreefyd.com/website-chat';
+const getSocketUrl = () => {
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3006/website-chat'; 
+  }
+  return 'https://lms-regular.degreefyd.com/website-chat';
+};
 
 export const useOperatorSocket = (operatorId, role = 'Counsellor',operatorName) => {
   const socketRef = useRef(null);
@@ -20,8 +26,9 @@ export const useOperatorSocket = (operatorId, role = 'Counsellor',operatorName) 
   useEffect(() => {
     if (!operatorId) return;
 
-    socketRef.current = io(SOCKET_URL, {
-      transports: ['websocket'],
+    const socketUrl = getSocketUrl();
+    socketRef.current = io(socketUrl, {
+      transports: ['websocket', 'polling'], 
       query: { operatorId, role }
     });
 

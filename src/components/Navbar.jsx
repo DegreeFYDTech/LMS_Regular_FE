@@ -248,7 +248,7 @@ const Navbar = () => {
       };
 
       window.addEventListener("chatMessageReceived", handleChatMessage);
-      window.addEventListener("chatNotification", handleChatAlert);
+      window.addEventListener("globalChatNotification", handleChatAlert); // Updated event name
       window.addEventListener("newLeadAssigned", handleNewLead);
       window.addEventListener("callbackReminder", handleCallbackReminder);
       window.addEventListener(
@@ -258,7 +258,7 @@ const Navbar = () => {
 
       return () => {
         window.removeEventListener("chatMessageReceived", handleChatMessage);
-        window.removeEventListener("chatNotification", handleChatAlert);
+        window.removeEventListener("globalChatNotification", handleChatAlert); // Updated event name
         window.removeEventListener("newLeadAssigned", handleNewLead);
         window.removeEventListener("callbackReminder", handleCallbackReminder);
         window.removeEventListener(
@@ -608,28 +608,33 @@ const Navbar = () => {
                 role !== "Analyser" &&
                 role !== "to" && <BreakModel />}
 
+              {/* Website Chat for Everyone including Supervisors */}
+              {(role !== "to") && (
+                <Tooltip title="Website Chat">
+                  <Badge
+                    count={chatUnreadCount}
+                    size="small"
+                    overflowCount={9}
+                    style={{
+                      display: chatUnreadCount > 0 ? "inline-flex" : "none",
+                      backgroundColor: "#52c41a",
+                    }}
+                  >
+                    <Button
+                      type="text"
+                      icon={<MessageOutlined style={{ fontSize: 18 }} />}
+                      className="text-gray-600 hover:text-green-600"
+                      onClick={() => navigate("/website-chat")}
+                    />
+                  </Badge>
+                </Tooltip>
+              )}
+
               {role !== "Supervisor" &&
                 role !== "Analyser" &&
                 role !== "to" && (
                   <div className="flex items-center gap-3">
-                    <Tooltip title="Website Chat">
-                      <Badge
-                        count={chatUnreadCount}
-                        size="small"
-                        overflowCount={9}
-                        style={{
-                          display: chatUnreadCount > 0 ? "inline-flex" : "none",
-                          backgroundColor: "#52c41a",
-                        }}
-                      >
-                        <Button
-                          type="text"
-                          icon={<MessageOutlined style={{ fontSize: 18 }} />}
-                          className="text-gray-600 hover:text-green-600"
-                          onClick={() => navigate("/website-chat")}
-                        />
-                      </Badge>
-                    </Tooltip>
+                    {/* Other icons removed from here if they were previously grouped */}
 
                     <Tooltip title="WhatsApp Messages">
                       <Badge
@@ -742,6 +747,23 @@ const Navbar = () => {
             <div className="md:hidden flex items-center space-x-2">
               {user && (
                 <>
+                  <Badge
+                    count={chatUnreadCount}
+                    size="small"
+                    overflowCount={9}
+                    style={{
+                      display: chatUnreadCount > 0 ? "inline-flex" : "none",
+                      backgroundColor: "#52c41a",
+                    }}
+                  >
+                    <Button
+                      type="text"
+                      icon={<MessageOutlined />}
+                      size="small"
+                      onClick={() => navigate("/website-chat")}
+                      loading={loading}
+                    />
+                  </Badge>
                   <Badge
                     count={whatsappUnreadCount}
                     size="small"
