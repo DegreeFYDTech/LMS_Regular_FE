@@ -225,11 +225,8 @@ class WebSocketService {
     }
 
       const getSocketUrl = () => {
-        const hostname = window.location.hostname;
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-          return 'http://localhost:3006';
-        }
-        return 'https://lms-regular.degreefyd.com';
+      const baseUrl = BASE_URL.replace(/\/v1\/?$/, '').replace(/\/$/, '');
+      return `${baseUrl}`;
       };
 
     const socketUrl = getSocketUrl();

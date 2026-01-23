@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { showToast } from '../utils/toast';
+import { BASE_URL } from '../config/api';
 const getSocketUrl = () => {
-  const hostname = window.location.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:3006/website-chat'; 
-  }
-  return 'https://lms-regular.degreefyd.com/website-chat';
+ 
+  return BASE_URL.replace('/v1', '/website-chat');
 };
 
 export const useOperatorSocket = (operatorId, role = 'Counsellor',operatorName) => {
@@ -42,6 +40,15 @@ export const useOperatorSocket = (operatorId, role = 'Counsellor',operatorName) 
 
     socket.on('chat_list_update', (chats) => {
         setActiveChats(chats);
+        const statusUpdates = {};
+        chats.forEach(chat => {
+          if (chat.isOnline) {
+            statusUpdates[chat.id] = 'online';
+          }
+        });
+        if (Object.keys(statusUpdates).length > 0) {
+          setStudentStatus(prev => ({ ...prev, ...statusUpdates }));
+        }
     });
 
     socket.on('disconnect', () => {
@@ -81,7 +88,7 @@ const upsertChat = (newChat) => {
 
     socket.on('chat_created', (chat) => {
       upsertChat(chat);
-     showToast(`${chat.studentName} started a new chat session. Please have a look.`, 'info');
+    //  showToast(`${chat.studentName} started a new chat session. Please have a look.`, 'info');
 
     });
 
