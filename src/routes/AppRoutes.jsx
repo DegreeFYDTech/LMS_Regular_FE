@@ -3,13 +3,6 @@ import { Routes, Route } from "react-router-dom";
 
 import { PrivateRoute, PublicRoute, RoleBasedRoute } from "../routes/ProtectedRoutes";
 import AuthChecker from "../components/AuthChecker";
-import TrackerReportAnalysis3 from '../pages/TrackerReportAnalysis3';
-import AnalyserBucket from '../pages/AnalyserBucket';
-import CollegeBrochure from '../pages/CollegeBrochure';
-import ManageNILeads from '../pages/ManageNILeads';
-import Tracker4 from '../components/ReportAnalysis/Tracker4';
-import ReconRuleset from '../pages/ReconRuleset';
-import RuleSetDB from '../pages/RuleSetDB';
 
 const Loader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -35,6 +28,13 @@ const CounsellorBreakDashboard = lazy(() => import("../pages/counsellor_break_ac
 const NotFoundPage = lazy(() => import("../components/404 Page Not Found/Main"));
 const ManageCourses = lazy(() => import('../pages/ManageCourses'));
 const WebsiteChatDashboard = lazy(() => import('../components/chat/WebsiteChatDashboard'));
+const TrackerReportAnalysis3 = lazy(() => import('../pages/TrackerReportAnalysis3'));
+const AnalyserBucket = lazy(() => import('../pages/AnalyserBucket'));
+const CollegeBrochure = lazy(() => import('../pages/CollegeBrochure'));
+const ManageNILeads = lazy(() => import('../pages/ManageNILeads'));
+const Tracker4 = lazy(() => import('../components/ReportAnalysis/Tracker4'));
+const ReconRuleset = lazy(() => import('../pages/ReconRuleset'));
+const RuleSetDB = lazy(() => import('../pages/RuleSetDB'));
 
 const AppRoutes = () => {
   return (

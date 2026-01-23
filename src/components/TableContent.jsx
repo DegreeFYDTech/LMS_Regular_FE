@@ -24,7 +24,7 @@ import { Table, Tag, Button, Tooltip, Dropdown, Menu } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { debounce } from 'lodash';
-import { LeadsContext } from '../pages/Home';
+import { LeadsContext } from '../context/LeadsContext';
 
 const TableContent = ({
   leadsdata,
@@ -361,7 +361,7 @@ const TableContent = ({
       width: 200,
       render: (value) => (
         <span
-         className='flex gap-3 text-blue-500 hover:underline cursor-pointer'
+          className='flex gap-3 text-blue-500 hover:underline cursor-pointer'
           onClick={() => window.open(`/student/${value}`, '_blank')}
         >
           <ExportOutlined /> <span>{value}</span>

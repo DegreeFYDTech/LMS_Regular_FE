@@ -9,11 +9,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          chart: ['chart.js', 'chartjs-plugin-datalabels', 'react-chartjs-2'],
-          pdf: ['jspdf', 'jspdf-autotable', 'html2canvas'],
-          state: ['react-redux', '@reduxjs/toolkit', 'redux-persist'],
-          ui: ['antd', '@chakra-ui/react', '@emotion/react', '@emotion/styled'],
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['antd', '@chakra-ui/react', '@emotion/react', '@emotion/styled', 'framer-motion'],
+          'chart-vendor': ['chart.js', 'chartjs-plugin-datalabels', 'react-chartjs-2', 'recharts'],
+          'utils-vendor': ['axios', 'dayjs', 'moment', 'qs', 'lodash', 'lodash-es', 'dexie', '@reduxjs/toolkit', 'react-redux', 'redux-persist'],
+          'pdf-excel-vendor': ['jspdf', 'jspdf-autotable', 'xlsx', 'html-to-image'],
+          'icons-vendor': ['@ant-design/icons', '@heroicons/react', 'lucide-react', 'react-feather', 'react-icons'],
         },
       },
     },

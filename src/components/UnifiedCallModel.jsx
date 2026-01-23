@@ -3,7 +3,7 @@ import Modal from '../common/Modal';
 import { updateStudentStatus } from '../network/student';
 import { fetchShortlistedColleges1 } from '../network/colleges';
 import { useSelector } from 'react-redux';
-import { LeadsContext } from '../pages/Home';
+import { LeadsContext } from '../context/LeadsContext';
 import StudentFormPopup from '../components/StudentFormPopup';
 
 import {
