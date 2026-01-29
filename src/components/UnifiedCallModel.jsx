@@ -143,7 +143,6 @@ const UnifiedCallModal = ({
             "First call Not Interested",
             "Not Eligible",
             "Dublicate_Same student exists",
-            "Only_Regular course",
             "Only_Online course",
             "Course Not Available",
             "Next Year",
