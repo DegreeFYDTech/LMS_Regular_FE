@@ -212,10 +212,10 @@ const Sidebar = ({
         onClick: () => navigate('/analysisreport')
       },
       {
-        key: "nireports",
+        key: "courseStatus Reports",
         icon: <SolutionOutlined />,
-        label: "Reports Portal (NI)",
-        onClick: () => navigate('/analysisreportni')
+        label: "Course Status Reports",
+        onClick: () => navigate('/collegeStatusReports')
       },
       {
         key: "manage-courses",
