@@ -80,7 +80,7 @@ const AddLeadModal = ({ isOpen, onClose, onSuccess, agentID, defaultMode }) => {
   // SINGLE useEffect for fetching degree options
   useEffect(() => {
     const fetchDegreeOptions = async () => {
-      if (isL1OrL2 && isOpen) {
+      if (!isAgentMissing && isOpen) {
         setLoadingDegrees(true);
         try {
           const response = await fetch(`${BASE_URL}/universitycourse/dropdown`, {
@@ -319,7 +319,7 @@ const AddLeadModal = ({ isOpen, onClose, onSuccess, agentID, defaultMode }) => {
         </Form.Item>
 
         {/* Preferred Degree Field for L1/L2 roles */}
-        {isL1OrL2 && (
+        {!isAgentMissing && (
           <Form.Item
             label="Preferred Degree(s)"
             name="preferred_degree"
