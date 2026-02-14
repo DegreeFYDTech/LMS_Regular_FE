@@ -35,8 +35,9 @@ import {
 import { HiDocumentReport } from "react-icons/hi";
 import StudentFormPopup from "../components/StudentFormPopup";
 import { useSelector } from "react-redux";
-import { WhatsAppOutlined } from "@ant-design/icons";
+import { WhatsAppOutlined, DollarOutlined } from "@ant-design/icons";
 import WatsaapChat from "../components/WatsaapChat";
+import PaymentStatus from "../components/PaymentStatus";
 
 const StudentPage = () => {
   const { studentId } = useParams();
@@ -88,10 +89,10 @@ const StudentPage = () => {
     userRole === "Analyser"
       ? [{ key: "Tab1", label: "Profile", icon: User }]
       : [
-          { key: "Tab1", label: "Profile", icon: User },
-          { key: "Tab2", label: "Preferences", icon: Settings },
-          { key: "Tab3", label: "ShortList", icon: BookOpen },
-        ];
+        { key: "Tab1", label: "Profile", icon: User },
+        { key: "Tab2", label: "Preferences", icon: Settings },
+        { key: "Tab3", label: "ShortList", icon: BookOpen },
+      ];
 
   useEffect(() => {
     const fetchStudentDetails = async () => {
@@ -271,11 +272,10 @@ const StudentPage = () => {
                   <button
                     key={tab.key}
                     onClick={() => handleTabChange(tab.key)}
-                    className={`flex-1 flex items-center justify-center space-x-3 py-5 px-4 font-semibold transition-all duration-200 relative ${
-                      isActive
-                        ? "text-blue-600 bg-gradient-to-b from-blue-50 to-white"
-                        : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-                    }`}
+                    className={`flex-1 flex items-center justify-center space-x-3 py-5 px-4 font-semibold transition-all duration-200 relative ${isActive
+                      ? "text-blue-600 bg-gradient-to-b from-blue-50 to-white"
+                      : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+                      }`}
                   >
                     <Icon
                       className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-400"}`}

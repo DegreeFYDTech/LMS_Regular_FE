@@ -48,6 +48,7 @@ const ManageNILeads = lazy(() => import("../pages/ManageNILeads"));
 const Tracker4 = lazy(() => import("../components/ReportAnalysis/Tracker4"));
 const ReconRuleset = lazy(() => import("../pages/ReconRuleset"));
 const RuleSetDB = lazy(() => import("../pages/RuleSetDB"));
+const PaymentDashboard = lazy(() => import("../pages/PaymentDashboard"));
 
 const AppRoutes = () => {
   return (
@@ -231,6 +232,14 @@ const AppRoutes = () => {
                 element={
                   <RoleBasedRoute allowedRoles={["Supervisor"]}>
                     <CollegeStatusReports />
+                  </RoleBasedRoute>
+                }
+              />
+              <Route
+                path="/payment-reports"
+                element={
+                  <RoleBasedRoute allowedRoles={["Supervisor", "Analyser", "to"]}>
+                    <PaymentDashboard />
                   </RoleBasedRoute>
                 }
               />

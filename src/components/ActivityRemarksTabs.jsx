@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Tag, Play, Pause } from "lucide-react";
+import PaymentStatus from "./PaymentStatus";
 
 const ActivityRemarkstabs = ({ studentId, student }) => {
   const [activeTab, setActiveTab] = useState("all");
@@ -62,17 +63,17 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
   // Helper function to parse student comments
   const parseStudentComments = (comments) => {
     if (!comments) return [];
-    
+
     try {
       // Check if it's already an array
       if (Array.isArray(comments)) return comments;
-      
+
       // Check if it's a JSON string
       if (typeof comments === 'string') {
         const parsed = JSON.parse(comments);
         return Array.isArray(parsed) ? parsed : [];
       }
-      
+
       return [];
     } catch (error) {
       console.error('Error parsing student comments:', error);
@@ -157,7 +158,7 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
       <div className="space-y-4">
         {student?.lead_activities.map((activity, index) => {
           const studentComments = parseStudentComments(activity.student_comment);
-          
+
           return (
             <div key={index} className="border rounded-lg p-4 border-gray-200">
               <div className="grid grid-cols-3 gap-4 items-start mb-3">
@@ -232,9 +233,9 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
     if (!student?.collegeCredentials || student?.collegeCredentials.length === 0) {
       return <div className="text-gray-500 text-center py-4">No credentials found</div>;
     }
-    
+
     const credentials = Array.isArray(student?.collegeCredentials) ? student.collegeCredentials : [];
-    
+
     return (
       <div className="space-y-4">
         {credentials.map((credential, index) => (
@@ -300,6 +301,62 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
             </div>
           </div>
         ))}
+      </div>
+    );
+  };
+
+  const renderPayments = () => {
+    if (!student?.payments || student.payments.length === 0) {
+      return <div className="text-gray-500 text-center py-4">No payment records found</div>;
+    }
+
+    const payments = Array.isArray(student.payments) ? student.payments : [];
+
+    return (
+      <div className="space-y-4">
+        {payments
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .map((payment, index) => (
+            <div
+              key={index}
+              className="border rounded-lg p-4 border-gray-200 grid grid-cols-3 gap-4 items-start mb-3"
+            >
+              <div className="flex flex-col items-center w-24">
+                <div className="text-sm text-black">
+                  {new Date(payment.created_at).toLocaleDateString()}
+                </div>
+                <div className="text-xs text-black">
+                  {new Date(payment.created_at).toLocaleTimeString()}
+                </div>
+              </div>
+
+              <div className="flex items-center text-sm text-black w-24">
+                <span className="text-nowrap">System</span>
+              </div>
+
+              <div className="flex flex-col">
+                <div className="text-lg break-words font-normal">
+                  {payment.payment_for === 'application' ? 'Form' : 'Admission'} initiated for{' '}
+                  <span className="font-semibold">{payment.college_name}</span> for{' '}
+                  <span className="font-semibold">{payment.course_name}</span>
+                  {payment.status === 'COMPLETED' && (
+                    <span className="text-green-600"> - Payment Successful (₹{payment.final_amount})</span>
+                  )}
+                  {payment.status === 'PENDING' && (
+                    <span className="text-orange-600"> - Payment Pending (₹{payment.final_amount})</span>
+                  )}
+                  {payment.status === 'FAILED' && (
+                    <span className="text-red-600"> - Payment Failed (₹{payment.final_amount})</span>
+                  )}
+                </div>
+                {payment.couponCode && (
+                  <div className="text-sm text-gray-600 mt-1">
+                    Coupon applied: <span className="font-medium">{payment.couponCode}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
       </div>
     );
   };
@@ -400,7 +457,7 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
           } else if (item.type === 'activity') {
             const activity = item.data;
             const studentComments = parseStudentComments(activity.student_comment);
-            
+
             return (
               <div
                 key={`activity-${item.originalIndex}`}
@@ -444,7 +501,7 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
                     />
                   </div>
                 </div>
-                
+
                 {/* Student Comments Section */}
                 {studentComments.length > 0 && (
                   <div className="space-y-2 mt-3">
@@ -548,6 +605,8 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
         return renderActivities();
       case "credentials":
         return renderCredentials();
+      case "payment":
+        return renderPayments();
       case "all":
       default:
         return renderCombined();
@@ -597,6 +656,15 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
           onClick={() => handleTabChange("credentials")}
         >
           Credentials
+        </button>
+        <button
+          className={`px-4 py-2 font-medium ${activeTab === "payment"
+            ? "text-blue-600 border-b-2 border-blue-600"
+            : "text-gray-500"
+            }`}
+          onClick={() => handleTabChange("payment")}
+        >
+          Payment Status
         </button>
       </div>
 

@@ -22,7 +22,8 @@ import {
   SolutionOutlined,
   DatabaseOutlined,
   DownOutlined,
-  UpOutlined
+  UpOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 import AgentsDropdown from './AgentDropdown';
 
@@ -76,6 +77,12 @@ const Sidebar = ({
       icon: <BookOutlined className="text-lg" />,
       label: "Library",
       onClick: () => navigate('/college-brochure')
+    },
+    {
+      key: "payment-reports",
+      icon: <DollarOutlined className="text-lg" />,
+      label: "Payment Reports",
+      onClick: () => navigate('/payment-reports')
     },
   ] : [];
 
