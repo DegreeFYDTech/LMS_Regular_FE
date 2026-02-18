@@ -238,7 +238,7 @@ const AppRoutes = () => {
               <Route
                 path="/payment-reports"
                 element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "Analyser", "to"]}>
+                  <RoleBasedRoute allowedRoles={["Supervisor", "Analyser", "to","l2", "l3",]}>
                     <PaymentDashboard />
                   </RoleBasedRoute>
                 }

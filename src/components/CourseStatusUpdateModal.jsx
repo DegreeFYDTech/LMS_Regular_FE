@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import Modal from "../common/Modal";
 import {
-  fetchCollegeSentStatusByCourseId,
   updateCollegeSentStatusCreds,
 } from "../network/credential";
 import { useParams } from "react-router-dom";
