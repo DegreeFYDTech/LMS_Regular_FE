@@ -3,11 +3,11 @@ import { BASE_URL } from "../config/api";
 import { handleError } from "../utils/handleError";
 
 // Get all counsellors
-export const getAllCounsellors = async (role=null) => {
+export const getAllCounsellors = async (role = null) => {
   try {
     const res = await axios.get(`${BASE_URL}/counsellor/getAllCounsellors`, {
       withCredentials: true,
-      params: { role }
+      params: { role },
     });
     return res.data;
   } catch (error) {
@@ -15,6 +15,7 @@ export const getAllCounsellors = async (role=null) => {
     throw error;
   }
 };
+
 export const changeSupervisor = async (counsellorId, supervisorId) => {
   try {
     const response = await axios.put(
@@ -24,16 +25,19 @@ export const changeSupervisor = async (counsellorId, supervisorId) => {
         supervisor_id: supervisorId,
       },
       {
-        withCredentials: true, 
+        withCredentials: true,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return response.data;
   } catch (error) {
-    console.error('Error changing supervisor:', error.response?.data || error.message);
+    console.error(
+      "Error changing supervisor:",
+      error.response?.data || error.message,
+    );
     throw error;
   }
 };
@@ -43,22 +47,28 @@ export const getAllSupervisors = async () => {
     const response = await axios.get(
       `${BASE_URL}/counsellor/getAllCounsellors?role=to`,
       {
-        withCredentials: true, 
-      }
+        withCredentials: true,
+      },
     );
 
     return response.data;
   } catch (error) {
-    console.error('Error fetching supervisors:', error.response?.data || error.message);
+    console.error(
+      "Error fetching supervisors:",
+      error.response?.data || error.message,
+    );
     throw error;
   }
 };
 
 export const deleteCounsellor = async (id) => {
   try {
-    const res = await axios.delete(`${BASE_URL}/counsellor/deleteCounsellor/${id}`, {
-      withCredentials: true
-    });
+    const res = await axios.delete(
+      `${BASE_URL}/counsellor/deleteCounsellor/${id}`,
+      {
+        withCredentials: true,
+      },
+    );
     return res.data;
   } catch (error) {
     handleError(error);
@@ -72,7 +82,7 @@ export const updateCounsellorStatus = async (id, status) => {
     const res = await axios.put(
       `${BASE_URL}/counsellor/updateCounsellorStatus/${id}`,
       { status },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return res.data;
   } catch (error) {
@@ -80,11 +90,12 @@ export const updateCounsellorStatus = async (id, status) => {
     throw error;
   }
 };
+
 export const makeCounsellorLogout = async (id) => {
   try {
     const res = await axios.get(
       `${BASE_URL}/counsellor/logoutCounsellor/${id}`,
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return res.data;
   } catch (error) {
@@ -99,7 +110,7 @@ export const changeCounsellorPassword = async (id, password) => {
     const res = await axios.put(
       `${BASE_URL}/counsellor/changeCounsellorPassword/${id}`,
       { password },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return res.data;
   } catch (error) {
@@ -114,7 +125,7 @@ export const updateCounsellorPreferredMode = async (id, preferredMode) => {
     const res = await axios.put(
       `${BASE_URL}/counsellor/updateCounsellorPreferredMode/${id}`,
       { preferredMode },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return res.data;
   } catch (error) {
@@ -123,37 +134,33 @@ export const updateCounsellorPreferredMode = async (id, preferredMode) => {
   }
 };
 
-
 export const registerAgent = async (payload) => {
   try {
     const res = await axios.post(
       `${BASE_URL}/counsellor/register`,
       {
-        "name": payload.name,
-        "email": payload.email,
-        "password": payload.password,
-        "phoneNumber": payload?.phone_number,
-        "role": payload?.role,
-        "preferredMode": payload?.preferred_mode || payload?.preferredMode,
-        "teamOwnerId": payload?.team_owner_id || payload?.teamOwnerId
+        name: payload.name,
+        email: payload.email,
+        password: payload.password,
+        phoneNumber: payload?.phone_number,
+        role: payload?.role,
+        preferredMode: payload?.preferred_mode || payload?.preferredMode,
+        teamOwnerId: payload?.team_owner_id || payload?.teamOwnerId,
       },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return res.data;
   } catch (error) {
     handleError(error);
     throw error;
-
   }
-}
-
+};
 
 export const fetchAllCounsellors = async () => {
   try {
-    const res = await axios.get(
-      `${BASE_URL}/counsellor/getAllCounsellors`,
-      { withCredentials: true }
-    );
+    const res = await axios.get(`${BASE_URL}/counsellor/getAllCounsellors`, {
+      withCredentials: true,
+    });
     return res.data;
   } catch (error) {
     handleError(error);
@@ -163,28 +170,74 @@ export const fetchAllCounsellors = async () => {
 
 export const getCounsellorById = async (id) => {
   try {
-    const res = await axios.get(`${BASE_URL}/counsellor/getcounsellorByID/${id}`, { withCredentials: true });
+    const res = await axios.get(
+      `${BASE_URL}/counsellor/getcounsellorByID/${id}`,
+      { withCredentials: true },
+    );
     return res.data;
   } catch (error) {
     throw error;
   }
 };
+
 export const assignCounsellorsToStudents = async (assignmentData) => {
   try {
-    const res = await axios.put(`${BASE_URL}/counsellor/assignCounsellors`, assignmentData, { withCredentials: true });
-    return res.data;
+    console.log('API call with data:', assignmentData);
+    const response = await axios.put(
+      `${BASE_URL}/counsellor/assignCounsellors`,
+      assignmentData,
+      { withCredentials: true }
+    );
+    console.log('API response:', response.data);
+    return response.data;
   } catch (error) {
+    console.error('Error in assignCounsellorsToStudents:', error);
+    console.error('Error response:', error.response?.data);
     throw error;
   }
 };
+
 export const getAllCounsellorsonBreak = async (params = {}) => {
   try {
-    const res = await axios.get(`${BASE_URL}/counsellor/daily-counsellor-break-activities`, {
-      withCredentials: true,
-      params, 
-    });
+    const res = await axios.get(
+      `${BASE_URL}/counsellor/daily-counsellor-break-activities`,
+      {
+        withCredentials: true,
+        params,
+      },
+    );
     return res.data;
   } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getDistinctL3CounsellorsByStudentIds = async (data) => {
+  try {
+    const res = await axios.post(
+      `${BASE_URL}/StudentCourseStatusLogs/distinct-by-students`,
+      data,
+      { withCredentials: true },
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching distinct L3 counsellors:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const replaceL3CounsellorForStudents = async (data) => {
+  try {
+    const res = await axios.post(
+      `${BASE_URL}/StudentCourseStatusLogs/replace`,
+      data,
+      { withCredentials: true },
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error replacing L3 counsellor:", error);
     handleError(error);
     throw error;
   }

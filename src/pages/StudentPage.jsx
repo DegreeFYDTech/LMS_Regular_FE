@@ -269,23 +269,14 @@ const StudentPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {isAdmissionDone && (
-        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 rounded-full blur-3xl animate-pulse"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 text-8xl font-black rotate-[-30deg] opacity-20 select-none">
-              ADMISSION
-            </div>
-          </div>
-        </div>
-      )}
+   
 
       <div className="mx-auto p-4">
         {isAdmissionDone && (
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg mb-4 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-600 text-white px-6 py-3 rounded-lg  mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="bg-white bg-opacity-30 p-2 rounded-full">
-                <Award className="w-5 h-5" />
+                <Award className="w-5 h-5 text-blue-500" />
               </div>
               <div>
                 <span className="font-semibold">Admission Confirmed!</span>

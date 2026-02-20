@@ -7,7 +7,7 @@ import ErrorTable from './InsertionErrors'
 const BulkUpload = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadType, setUploadType] = useState('lead_creation');
-  const [reassignmentLevel, setReassignmentLevel] = useState('L2'); // New state for L2/L3 toggle
+  const [reassignmentLevel, setReassignmentLevel] = useState('L2'); 
   const [parsedData, setParsedData] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
@@ -76,11 +76,30 @@ const BulkUpload = () => {
           utm_campaign: 'Engineering Campaign 2025'
         }
       ];
-    } else {
+    } else if (uploadType === 'lead_reassignment' && reassignmentLevel === 'L2') {
       return [
         { studentId: 'STU001', counsellorId: 'AGT001' },
         { studentId: 'STU002', counsellorId: 'AGT002' },
         { studentId: 'STU003', counsellorId: 'AGT003' }
+      ];
+    } else {
+      // L3 Reassignment template with courseId
+      return [
+        { 
+          studentId: 'STU001', 
+          counsellorId: 'AGT001',
+          courseId: 'CRS001' 
+        },
+        { 
+          studentId: 'STU002', 
+          counsellorId: 'AGT002',
+          courseId: 'CRS002' 
+        },
+        { 
+          studentId: 'STU003', 
+          counsellorId: 'AGT003',
+          courseId: 'CRS003' 
+        }
       ];
     }
   };
@@ -92,9 +111,14 @@ const BulkUpload = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
 
-    const fileName = uploadType === 'lead_creation'
-      ? 'lead_creation_template.xlsx'
-      : `lead_reassignment_${reassignmentLevel.toLowerCase()}_template.xlsx`;
+    let fileName;
+    if (uploadType === 'lead_creation') {
+      fileName = 'lead_creation_template.xlsx';
+    } else if (reassignmentLevel === 'L2') {
+      fileName = 'lead_reassignment_l2_template.xlsx';
+    } else {
+      fileName = 'lead_reassignment_l3_with_courseid_template.xlsx';
+    }
 
     XLSX.writeFile(workbook, fileName);
   };
@@ -197,8 +221,8 @@ const BulkUpload = () => {
             });
           }
         }
-      } else {
-        // Lead reassignment validation (matching API)
+      } else if (uploadType === 'lead_reassignment' && reassignmentLevel === 'L2') {
+        // L2 reassignment validation
         const requiredFields = ['studentId', 'counsellorId'];
         const missingFields = requiredFields.filter(field => !row[field] || row[field].toString().trim() === '');
 
@@ -208,6 +232,20 @@ const BulkUpload = () => {
           validData.push({
             studentId: row.studentId.toString().trim(),
             counsellorId: row.counsellorId.toString().trim()
+          });
+        }
+      } else if (uploadType === 'lead_reassignment' && reassignmentLevel === 'L3') {
+        // L3 reassignment validation - requires courseId
+        const requiredFields = ['studentId', 'counsellorId', 'courseId'];
+        const missingFields = requiredFields.filter(field => !row[field] || row[field].toString().trim() === '');
+
+        if (missingFields.length > 0) {
+          validationErrors.push(`Row ${rowNum}: Missing fields for L3 reassignment - ${missingFields.join(', ')}`);
+        } else {
+          validData.push({
+            studentId: row.studentId.toString().trim(),
+            counsellorId: row.counsellorId.toString().trim(),
+            courseId: row.courseId.toString().trim()
           });
         }
       }
@@ -269,7 +307,7 @@ const BulkUpload = () => {
       if (uploadType === 'lead_creation') {
         response = await bulkinsertion(parsedData);
       } else {
-        // Include reassignment level in the API call
+        // Include reassignment level and data in the API call
         const reassignmentData = {
           data: parsedData,
           level: reassignmentLevel // Send L2 or L3 to backend
@@ -280,14 +318,19 @@ const BulkUpload = () => {
       const result = response?.data;
 
       if (response) {
-
         // Show detailed success message
-        const successMessage = uploadType === 'lead_creation'
-          ? `Successfully processed ${result.summary?.total_processed || parsedData.length} leads:\n• Created: ${result.summary?.successful_count || 0}\n• Failed: ${result.summary?.failed_count || 0}\n• Success Rate: ${result.summary?.success_rate || '0%'}`
-          : `Successfully processed ${parsedData.length} ${reassignmentLevel} reassignments:\n• Reassigned: ${result.results?.reassigned || 0}\n• Failed: ${result.results?.errors || 0}`;
+        let successMessage;
+        if (uploadType === 'lead_creation') {
+          successMessage = `Successfully processed ${result.summary?.total_processed || parsedData.length} leads:\n• Created: ${result.summary?.successful_count || 0}\n• Failed: ${result.summary?.failed_count || 0}\n• Success Rate: ${result.summary?.success_rate || '0%'}`;
+        } else if (reassignmentLevel === 'L2') {
+          successMessage = `Successfully processed ${parsedData.length} L2 reassignments:\n• Reassigned: ${result.results?.reassigned || 0}\n• Failed: ${result.results?.errors || 0}`;
+        } else {
+          successMessage = `Successfully processed ${parsedData.length} L3 journey reassignments:\n• Reassigned: ${result.results?.reassigned || 0}\n• Failed: ${result.results?.errors || 0}\n• Note: Only journey entries with matching courseId were updated`;
+        }
 
         alert(successMessage);
-        if (result?.results.failed_leads.length > 0) {
+        
+        if (result?.results?.failed_leads?.length > 0) {
           SetInsertionErrors(result?.results.failed_leads);
         } else {
           // Reset form
@@ -295,6 +338,7 @@ const BulkUpload = () => {
           setParsedData([]);
           setUploadStatus(null);
           setErrors([]);
+          SetInsertionErrors([]);
         }
       } else {
         throw new Error(result.message || 'API request failed');
@@ -302,7 +346,7 @@ const BulkUpload = () => {
 
     } catch (error) {
       console.error('API Error:', error);
-      alert(`Error: ${error}`);
+      alert(`Error: ${error.message || error}`);
     } finally {
       setIsProcessing(false);
     }
@@ -399,6 +443,7 @@ const BulkUpload = () => {
                 </div>
                 <p className="text-xs text-gray-600 mt-2">
                   Current selection: <strong>{reassignmentLevel} Reassignment</strong>
+                  {reassignmentLevel === 'L3' && ' (Updates only journey entries with matching courseId)'}
                 </p>
               </div>
             )}
@@ -412,11 +457,17 @@ const BulkUpload = () => {
                   <p className="mt-2"><strong>Optional Fields:</strong> city, state, preferred_degree, specialization, stream, remarks, level, budget, source, sourceUrl, secondary_email, whatsapp, calling_status, sub_calling_status, mode, cta_name, form_name, currentcity, currentstate, utm_source, utm_medium, utm_keyword, utm_campaign</p>
                   <p className="mt-1 text-xs">• Email must be valid format • Phone number should be 10-15 digits</p>
                 </div>
+              ) : reassignmentLevel === 'L2' ? (
+                <div className="text-sm text-gray-600">
+                  <p><strong>L2 Lead Reassignment Required:</strong> studentId, counsellorId</p>
+                  <p className="mt-1 text-xs">• Both fields are required for each row</p>
+                </div>
               ) : (
                 <div className="text-sm text-gray-600">
-                  <p><strong>{reassignmentLevel} Lead Reassignment:</strong> studentId, counsellorId</p>
-                  <p className="mt-1 text-xs">• Both fields are required for each row</p>
-                  <p className="mt-1 text-xs">• Level: {reassignmentLevel} will be sent to backend</p>
+                  <p><strong>L3 Journey Reassignment Required:</strong> studentId, counsellorId, courseId</p>
+                  <p className="mt-2 text-xs text-orange-600">• All three fields are required for L3 reassignment</p>
+                  <p className="mt-1 text-xs">• Updates will only apply to journey entries with matching courseId</p>
+                  <p className="mt-1 text-xs">• The counsellorId will be updated in the assigned_l3_counsellor_id field of journey table</p>
                 </div>
               )}
             </div>
@@ -481,6 +532,7 @@ const BulkUpload = () => {
                   <span className="text-green-800 font-medium">
                     Successfully processed {parsedData.length} records
                     {uploadType === 'lead_reassignment' && ` for ${reassignmentLevel} reassignment`}
+                    {reassignmentLevel === 'L3' && ' with courseId'}
                   </span>
                 </div>
               </div>
@@ -514,6 +566,7 @@ const BulkUpload = () => {
                   {uploadType === 'lead_reassignment' && (
                     <span className="text-sm font-normal text-gray-500 ml-2">
                       - {reassignmentLevel} Level
+                      {reassignmentLevel === 'L3' && ' (with courseId)'}
                     </span>
                   )}
                 </h3>
@@ -530,10 +583,17 @@ const BulkUpload = () => {
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Degree</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Counsellor ID</th>
                           </>
+                        ) : reassignmentLevel === 'L2' ? (
+                          <>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Student ID</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Counsellor ID</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Level</th>
+                          </>
                         ) : (
                           <>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Student ID</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Counsellor ID</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Course ID</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Level</th>
                           </>
                         )}
@@ -551,15 +611,24 @@ const BulkUpload = () => {
                               <td className="px-4 py-2 text-gray-900">{row.preferred_degree}</td>
                               <td className="px-4 py-2 text-gray-900">{row.counsellorId}</td>
                             </>
-                          ) : (
+                          ) : reassignmentLevel === 'L2' ? (
                             <>
                               <td className="px-4 py-2 text-gray-900">{row.studentId}</td>
                               <td className="px-4 py-2 text-gray-900">{row.counsellorId}</td>
                               <td className="px-4 py-2 text-gray-900">
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  reassignmentLevel === 'L2' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                                }`}>
-                                  {reassignmentLevel}
+                                <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                  L2
+                                </span>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-4 py-2 text-gray-900">{row.studentId}</td>
+                              <td className="px-4 py-2 text-gray-900">{row.counsellorId}</td>
+                              <td className="px-4 py-2 text-gray-900">{row.courseId}</td>
+                              <td className="px-4 py-2 text-gray-900">
+                                <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                  L3
                                 </span>
                               </td>
                             </>
@@ -598,7 +667,9 @@ const BulkUpload = () => {
                 <p className="text-sm text-gray-600 mb-2">
                   {uploadType === 'lead_creation' 
                     ? 'Lead Creation Template' 
-                    : `${reassignmentLevel} Lead Reassignment Template`
+                    : reassignmentLevel === 'L2'
+                      ? 'L2 Lead Reassignment Template'
+                      : 'L3 Journey Reassignment Template (with Course ID)'
                   }
                 </p>
                 <div className="text-xs text-gray-500">
@@ -628,14 +699,23 @@ const BulkUpload = () => {
                       <tr>
                         {uploadType === 'lead_creation' ? (
                           <>
+                            <th className="px-2 py-1 text-left font-medium text-gray-700 border-r">name*</th>
+                            <th className="px-2 py-1 text-left font-medium text-gray-700 border-r">email*</th>
+                            <th className="px-2 py-1 text-left font-medium text-gray-700 border-r">phoneNumber*</th>
                             <th className="px-2 py-1 text-left font-medium text-gray-700 border-r">city</th>
                             <th className="px-2 py-1 text-left font-medium text-gray-700 border-r">preferred_degree</th>
+                            <th className="px-2 py-1 text-left font-medium text-gray-700">counsellorId*</th>
+                          </>
+                        ) : reassignmentLevel === 'L2' ? (
+                          <>
+                            <th className="px-2 py-1 text-left font-medium text-gray-700 border-r">studentId*</th>
                             <th className="px-2 py-1 text-left font-medium text-gray-700">counsellorId*</th>
                           </>
                         ) : (
                           <>
                             <th className="px-2 py-1 text-left font-medium text-gray-700 border-r">studentId*</th>
-                            <th className="px-2 py-1 text-left font-medium text-gray-700">counsellorId*</th>
+                            <th className="px-2 py-1 text-left font-medium text-gray-700 border-r">counsellorId*</th>
+                            <th className="px-2 py-1 text-left font-medium text-gray-700">courseId*</th>
                           </>
                         )}
                       </tr>
@@ -652,10 +732,16 @@ const BulkUpload = () => {
                               <td className="px-2 py-1 text-gray-900 border-r">{row.preferred_degree}</td>
                               <td className="px-2 py-1 text-gray-900">{row.counsellorId}</td>
                             </>
-                          ) : (
+                          ) : reassignmentLevel === 'L2' ? (
                             <>
                               <td className="px-2 py-1 text-gray-900 border-r">{row.studentId}</td>
                               <td className="px-2 py-1 text-gray-900">{row.counsellorId}</td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-2 py-1 text-gray-900 border-r">{row.studentId}</td>
+                              <td className="px-2 py-1 text-gray-900 border-r">{row.counsellorId}</td>
+                              <td className="px-2 py-1 text-gray-900">{row.courseId}</td>
                             </>
                           )}
                         </tr>
@@ -676,8 +762,11 @@ const BulkUpload = () => {
                       <li>• Fields marked with * are required</li>
                       <li>• Fill in your data below headers</li>
                       <li>• Upload the completed file</li>
-                      {uploadType === 'lead_reassignment' && (
-                        <li>• Current level: <strong>{reassignmentLevel}</strong></li>
+                      {uploadType === 'lead_reassignment' && reassignmentLevel === 'L3' && (
+                        <>
+                          <li className="text-orange-600 font-medium mt-1">• L3 Note: Updates only journey entries with matching courseId</li>
+                          <li className="text-orange-600">• CourseId is required for L3 reassignment</li>
+                        </>
                       )}
                     </ul>
                   </div>
