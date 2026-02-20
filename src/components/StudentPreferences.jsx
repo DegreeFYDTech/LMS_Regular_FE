@@ -1,40 +1,51 @@
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
-import { BookOpen, DollarSign, GraduationCap, MapPin, Save, Settings, Target } from "lucide-react";
+import {
+  BookOpen,
+  DollarSign,
+  GraduationCap,
+  MapPin,
+  Save,
+  Settings,
+  Target,
+} from "lucide-react";
 import { showToast } from "../utils/toast";
 import { updateStudent } from "../network/student";
-import statesData from '../data/cityandstatejson.json';
+import statesData from "../data/cityandstatejson.json";
 import axios from "axios";
 import { BASE_URL } from "../config/api";
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
   const [preferences, setPreferences] = useState({});
   const [loading, setLoading] = useState(false);
-
+  const selectedRole = useSelector((state) => state.auth.role);
   // Process states and cities data
   const processStatesAndCities = () => {
-    const states = statesData.map(state => ({
+    const states = statesData.map((state) => ({
       value: state.name,
-      label: state.name
+      label: state.name,
     }));
 
     const cities = statesData.reduce((acc, state) => {
-      const stateCities = state.cities.map(city => ({
+      const stateCities = state.cities.map((city) => ({
         value: city,
-        label: city
+        label: city,
       }));
       return [...acc, ...stateCities];
     }, []);
 
     // Remove duplicates from cities (in case a city appears in multiple states)
-    const uniqueCities = cities.filter((city, index, self) =>
-      index === self.findIndex(c => c.value === city.value)
+    const uniqueCities = cities.filter(
+      (city, index, self) =>
+        index === self.findIndex((c) => c.value === city.value),
     );
 
     return { states, cities: uniqueCities };
   };
 
-  const { states: stateOptions, cities: cityOptions } = processStatesAndCities();
+  const { states: stateOptions, cities: cityOptions } =
+    processStatesAndCities();
 
   const [dropdownData, setDropdownData] = useState({
     streams: [],
@@ -50,7 +61,7 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `${BASE_URL}/universitycourse/dropdown`
+          `${BASE_URL}/universitycourse/dropdown`,
         );
         const formattedData = {
           streams: response.data.data.streams.map((item) => ({
@@ -92,7 +103,6 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
     };
 
     fetchDropdownData();
-
   }, []);
 
   useEffect(() => {
@@ -108,11 +118,17 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
         preferredStream: formatArrayToOptions(student.preferred_stream),
         preferredDegree: formatArrayToOptions(student.preferred_degree),
         preferredLevel: formatArrayToOptions(student.preferred_level),
-        preferredSpecialization: formatArrayToOptions(student.preferred_specialization ? student.preferred_specialization : []),
+        preferredSpecialization: formatArrayToOptions(
+          student.preferred_specialization
+            ? student.preferred_specialization
+            : [],
+        ),
         preferredBudget: student.preferredBudget || "",
         preferredState: formatArrayToOptions(student.preferred_state),
         preferredCity: formatArrayToOptions(student.preferred_city),
-        mode: student.mode ? { value: student.mode, label: student.mode } : null
+        mode: student.mode
+          ? { value: student.mode, label: student.mode }
+          : null,
       });
     }
   }, [student]);
@@ -120,14 +136,14 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
   const handleMultiSelectChange = (selectedOptions, { name }) => {
     setPreferences((prev) => ({
       ...prev,
-      [name]: selectedOptions || []
+      [name]: selectedOptions || [],
     }));
   };
 
   const handleSingleSelectChange = (selectedOption, { name }) => {
     setPreferences((prev) => ({
       ...prev,
-      [name]: selectedOption
+      [name]: selectedOption,
     }));
   };
 
@@ -135,10 +151,10 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
     const { name, value } = e.target;
     setPreferences((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const handleUpdate = async () => {
     try {
       setLoading(true);
@@ -154,15 +170,15 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
         preferredBudget: preferences.preferredBudget || 0,
         preferredState: getValues(preferences.preferredState),
         preferredCity: getValues(preferences.preferredCity),
-        mode: preferences.mode?.value || "Regular"
+        mode: preferences.mode?.value || "Regular",
       };
       const responseData = await updateStudent(student.student_id, updatedData);
       setStudent(responseData?.student);
-      showToast("Profile Updated", "success")
+      showToast("Profile Updated", "success");
       // setActiveTab('Tab2')
-      navigate(`/student/${student.student_id}?tab=Tab2`)
+      navigate(`/student/${student.student_id}?tab=Tab2`);
     } catch (error) {
-      showToast("Error Updating Profile", "error")
+      showToast("Error Updating Profile", "error");
     } finally {
       setLoading(false);
     }
@@ -175,25 +191,25 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
       borderColor: "#e2e8f0",
       boxShadow: "none",
       "&:hover": {
-        borderColor: "#cbd5e0"
-      }
+        borderColor: "#cbd5e0",
+      },
     }),
     multiValue: (provided) => ({
       ...provided,
-      backgroundColor: "#edf2f7"
+      backgroundColor: "#edf2f7",
     }),
     multiValueLabel: (provided) => ({
       ...provided,
-      color: "#4a5568"
+      color: "#4a5568",
     }),
     multiValueRemove: (provided) => ({
       ...provided,
       color: "#718096",
       "&:hover": {
         backgroundColor: "#e2e8f0",
-        color: "#2d3748"
-      }
-    })
+        color: "#2d3748",
+      },
+    }),
   };
 
   return (
@@ -210,7 +226,9 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
                 <h2 className="text-xl font-bold text-black">
                   Student Preferences
                 </h2>
-                <p className="text-xs font-medium text-blue-500">{student?.mode || "No Mode"}</p>
+                <p className="text-xs font-medium text-blue-500">
+                  {student?.mode || "No Mode"}
+                </p>
               </div>
             </div>
           </div>
@@ -221,12 +239,22 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
             </div> */}
             <div className="bg-white bg-opacity-20 rounded-lg px-3 py-1 flex items-center gap-3">
               <p className="text-xs text-black">Counsellor :-</p>
-              <p className="text-xs font-medium text-blue-500">{student?.assigned_counsellor_id ? student.assignedCounsellor?.counsellor_name : " No Counselor Assigned"}</p>
+              <p className="text-xs font-medium text-blue-500">
+                {student?.assigned_counsellor_id
+                  ? student.assignedCounsellor?.counsellor_name
+                  : " No Counselor Assigned"}
+              </p>
             </div>
-            <div className="bg-white bg-opacity-20 rounded-lg px-3 py-1 flex items-center gap-3">
-              <p className="text-xs text-black">Counsellor (L3) :-</p>
-              <p className="text-xs font-medium text-blue-500">{student?.assigned_counsellor_l3_id ? student.assignedCounsellorL3?.counsellor_name : "No Counselor Assigned"}</p>
-            </div>
+            {selectedRole == "l3" && (
+              <div className="bg-white bg-opacity-20 rounded-lg px-3 py-1 flex items-center gap-3">
+                <p className="text-xs text-black">Counsellor (L3) :-</p>
+                <p className="text-xs font-medium text-blue-500">
+                  {student?.assigned_counsellor_l3_id
+                    ? student.assignedCounsellorL3?.counsellor_name
+                    : "No Counselor Assigned"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -400,7 +428,9 @@ const StudentPreferences = ({ student, setStudent, setActiveTab }) => {
             className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-500 border text-blue-500  cursor-pointer rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             <Save className="w-5 h-5" />
-            <span className="font-semibold">{loading ? "Updating..." : "Update Preferences"}</span>
+            <span className="font-semibold">
+              {loading ? "Updating..." : "Update Preferences"}
+            </span>
           </button>
         </div>
       </div>

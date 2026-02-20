@@ -20,7 +20,7 @@ import {
   FiAlertTriangle,
   FiPaperclip,
   FiCheckCircle as FiCheckCircleIcon,
-  FiDollarSign, // Added for fees icon
+  FiDollarSign,
 } from "react-icons/fi";
 import { HiOutlineAcademicCap, HiOutlineClipboardList } from "react-icons/hi";
 
@@ -39,7 +39,8 @@ const UnifiedCallModal = ({
   const [selectedUniversity, setSelectedUniversity] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState(null);
-  const [feesAmount, setFeesAmount] = useState(""); // Added state for fees
+  const [feesAmount, setFeesAmount] = useState("");
+  
   const latestRemark = selectedStudent?.student_remarks?.reduce(
     (latest, remark) => {
       return !latest || remark.remark_id > latest.remark_id ? remark : latest;
@@ -62,9 +63,11 @@ const UnifiedCallModal = ({
   const [showCounselingFormPrompt, setShowCounselingFormPrompt] =
     useState(false);
   const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
+  
   const isOptionDisabled = (status) => {
     return status === "Form Filled_Degreefyd";
   };
+  
   const agent = useSelector((state) => state.auth.user);
   const storedRole = localStorage.getItem("role");
   const activeRole =
@@ -89,7 +92,6 @@ const UnifiedCallModal = ({
     { type: "option", label: "NI - Student denied" },
   ];
 
-  // Check if selected status is under Admission
   const isAdmissionStatus = () => {
     const admissionStatuses = [
       "Registration done",
@@ -164,6 +166,59 @@ const UnifiedCallModal = ({
       "Location issue",
     ],
     Enrolled: ["Enrolled"],
+  };
+
+  const funnelOrder = {
+    "Pre Application": 1,
+    "Application": 2,
+    "Admission": 3,
+    "Enrolled": 4,
+    "NotInterested": 5,
+  };
+
+  const isFunnelAllowed = (funnel) => {
+    if (!latestRemark?.lead_status) return true;
+    
+    const currentFunnel = latestRemark.lead_status;
+    const currentFunnelLevel = funnelOrder[currentFunnel] || 0;
+    const targetFunnelLevel = funnelOrder[funnel] || 0;
+    
+    if (currentFunnel === "NotInterested") {
+      return funnel === "NotInterested" || funnel === "Pre Application";
+    }
+    
+    if (currentFunnel === "Admission") {
+      return funnel === "Admission" || funnel === "Enrolled";
+    }
+    
+    if (currentFunnel === "Application") {
+      return funnel === "Application" || funnel === "Admission" || funnel === "Enrolled";
+    }
+    
+    return targetFunnelLevel >= currentFunnelLevel;
+  };
+
+  const isSubStatusAllowed = (subStatus, funnelName) => {
+    if (!latestRemark?.lead_status) return true;
+    
+    const currentFunnel = latestRemark.lead_status;
+    
+    if (currentFunnel === "Admission") {
+      const admissionSubStatuses = funnelConfig.Admission;
+      return admissionSubStatuses.includes(subStatus);
+    }
+    
+    if (currentFunnel === "Application") {
+      const applicationSubStatuses = funnelConfig.Application;
+      return applicationSubStatuses.includes(subStatus);
+    }
+    
+    if (currentFunnel === "NotInterested") {
+      const notInterestedSubStatuses = funnelConfig.NotInterested;
+      return notInterestedSubStatuses.includes(subStatus);
+    }
+    
+    return true;
   };
 
   const disconnectReasons = [
@@ -409,7 +464,7 @@ const UnifiedCallModal = ({
     setSelectedUniversity(university);
     setSelectedCourse(null);
     setSelectedStatus(null);
-    setFeesAmount(""); // Reset fees when university changes
+    setFeesAmount("");
   };
 
   const handleLeadStatusChange = (selectedFunnel1) => {
@@ -417,10 +472,11 @@ const UnifiedCallModal = ({
       funnel1: selectedFunnel1,
       funnel2: "",
     });
-    // Reset fees when lead status changes away from Admission
+    
     if (selectedFunnel1 !== "Admission") {
       setFeesAmount("");
     }
+    
     if (selectedFunnel1 === "NotInterested") {
       setCallbackDate("");
       setCallbackTime("");
@@ -436,7 +492,6 @@ const UnifiedCallModal = ({
   };
 
   const handleCounselingFormResponse = (filledForm) => {
-    // Use localStorage to persist logs
     localStorage.setItem(
       "lastCounselingResponse",
       JSON.stringify({
@@ -458,7 +513,6 @@ const UnifiedCallModal = ({
       console.log("Setting isFormPopupOpen to true");
       setIsFormPopupOpen(true);
 
-      // Check if state is actually being set
       setTimeout(() => {
         console.log("After timeout - isFormPopupOpen should be true");
       }, 100);
@@ -601,12 +655,26 @@ const UnifiedCallModal = ({
                   onChange={(e) => handleLeadStatusChange(e.target.value)}
                 >
                   <option value="">Select Lead Status</option>
-                  {Object.keys(funnelConfig).map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
+                  {Object.keys(funnelConfig).map((status) => {
+                    const isAllowed = isFunnelAllowed(status);
+                    return (
+                      <option 
+                        key={status} 
+                        value={status}
+                        disabled={!isAllowed}
+                        className={!isAllowed ? "bg-gray-100 text-gray-400" : ""}
+                        style={!isAllowed ? { backgroundColor: "#f3f4f6", color: "#9ca3af" } : {}}
+                      >
+                        {status} {!isAllowed ? "(Not allowed)" : ""}
+                      </option>
+                    );
+                  })}
                 </select>
+                {latestRemark?.lead_status && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Previous status: {latestRemark.lead_status}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -634,25 +702,30 @@ const UnifiedCallModal = ({
                 >
                   <option value="">Select Sub Status</option>
                   {leadStatus.funnel1 &&
-                    funnelConfig[leadStatus.funnel1]?.map((status) => (
-                      <option
-                        key={status}
-                        value={status}
-                        disabled={isOptionDisabled(status)}
-                        className={
-                          isOptionDisabled(status)
-                            ? "bg-gray-100 text-gray-400"
-                            : ""
-                        }
-                        style={
-                          isOptionDisabled(status)
-                            ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
-                            : {}
-                        }
-                      >
-                        {status}
-                      </option>
-                    ))}
+                    funnelConfig[leadStatus.funnel1]?.map((status) => {
+                      const isAllowed = isSubStatusAllowed(status, leadStatus.funnel1);
+                      const isDisabled = isOptionDisabled(status) || !isAllowed;
+                      
+                      return (
+                        <option
+                          key={status}
+                          value={status}
+                          disabled={isDisabled}
+                          className={
+                            isDisabled
+                              ? "bg-gray-100 text-gray-400"
+                              : ""
+                          }
+                          style={
+                            isDisabled
+                              ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+                              : {}
+                          }
+                        >
+                          {status} {!isAllowed ? "(Not allowed)" : ""}
+                        </option>
+                      );
+                    })}
                 </select>
               </div>
             </div>
@@ -891,7 +964,6 @@ const UnifiedCallModal = ({
             console.log("Modal onClose called");
             setShowCounselingFormPrompt(false);
             setIsFormPopupOpen(true);
-            // Don't reload here - let the button handlers decide
           }}
           title="Counseling Form"
           confirmText="Yes, I filled it"

@@ -777,6 +777,11 @@ const CollegesTable = ({
                               <StatusBadge
                                 status={college.latest_course_status}
                               />
+                              <div className="ml-3">
+                               <span className="text-sm">Assigned To :</span>
+                                {college.assigned_l3_counsellor?.name ||
+                                  "Not Assigned"}
+                              </div>
                               {college.college_api_sent_status &&
                                 college.college_api_sent_status !==
                                   "Proceed" && (

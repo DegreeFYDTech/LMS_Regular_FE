@@ -25,6 +25,7 @@ import {
   Move,
   Minimize2,
   Maximize2,
+  Award,
 } from "lucide-react";
 import UnifiedCallModal from "../components/UnifiedCallModel";
 import {
@@ -89,11 +90,12 @@ const StudentPage = () => {
     userRole === "Analyser"
       ? [{ key: "Tab1", label: "Profile", icon: User }]
       : [
-        { key: "Tab1", label: "Profile", icon: User },
-        { key: "Tab2", label: "Preferences", icon: Settings },
-        { key: "Tab3", label: "ShortList", icon: BookOpen },
-      ];
-
+          { key: "Tab1", label: "Profile", icon: User },
+          { key: "Tab2", label: "Preferences", icon: Settings },
+          { key: "Tab3", label: "ShortList", icon: BookOpen },
+        ];
+  const [isAdmissionDone, setIsAdmissionDone] = useState(false);
+  
   useEffect(() => {
     const fetchStudentDetails = async () => {
       if (!studentId) {
@@ -106,6 +108,12 @@ const StudentPage = () => {
         setIsLoading(true);
         setError(null);
         const response = await getStudentById(studentId);
+
+        const hasAdmissionStatus = response.student_remarks?.some(
+          (remark) => remark.lead_status === "Admission",
+        );
+        console.log("Admission status:", hasAdmissionStatus);
+        setIsAdmissionDone(hasAdmissionStatus);
 
         if (userRole !== "Analyser") {
           const wishListResponse = await checkWishlistStatusById(studentId);
@@ -261,7 +269,37 @@ const StudentPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {isAdmissionDone && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 rounded-full blur-3xl animate-pulse"></div>
+            <div className="relative bg-white/90 backdrop-blur-sm text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 text-8xl font-black rotate-[-30deg] opacity-20 select-none">
+              ADMISSION
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="mx-auto p-4">
+        {isAdmissionDone && (
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg mb-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-white bg-opacity-30 p-2 rounded-full">
+                <Award className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-semibold">Admission Confirmed!</span>
+                <span className="text-sm ml-2 opacity-90">This student has been admitted</span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-semibold">
+                ADMITTED
+              </span>
+            </div>
+          </div>
+        )}
+
         {tabConfig.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
             <nav className="flex">
@@ -272,10 +310,11 @@ const StudentPage = () => {
                   <button
                     key={tab.key}
                     onClick={() => handleTabChange(tab.key)}
-                    className={`flex-1 flex items-center justify-center space-x-3 py-5 px-4 font-semibold transition-all duration-200 relative ${isActive
-                      ? "text-blue-600 bg-gradient-to-b from-blue-50 to-white"
-                      : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-                      }`}
+                    className={`flex-1 flex items-center justify-center space-x-3 py-5 px-4 font-semibold transition-all duration-200 relative ${
+                      isActive
+                        ? "text-blue-600 bg-gradient-to-b from-blue-50 to-white"
+                        : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+                    }`}
                   >
                     <Icon
                       className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-400"}`}
@@ -291,7 +330,6 @@ const StudentPage = () => {
           </div>
         )}
 
-        {/* Tab Content */}
         <div className="space-y-6">
           {activeTab === "Tab1" && (
             <div className="space-y-6">

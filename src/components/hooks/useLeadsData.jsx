@@ -88,14 +88,14 @@ export const useLeadsData = (selectedAgent = null) => {  // Change parameter nam
       }
 
       const cachedData = secureCache.get(cacheKey);
-      if (cachedData) {
-        setLeads(cachedData.data);
-        setTotalLeads(cachedData.pagination.totalRecords);
-        setTotalPages(cachedData.pagination.totalPages);
-        setOverallStats(cachedData.overallStats);
-        setLoading(false);
-        return;
-      }
+      // if (cachedData) {
+      //   setLeads(cachedData.data);
+      //   setTotalLeads(cachedData.pagination.totalRecords);
+      //   setTotalPages(cachedData.pagination.totalPages);
+      //   setOverallStats(cachedData.overallStats);
+      //   setLoading(false);
+      //   return;
+      // }
 
       lastFetchParamsRef.current = cacheKey;
       abortControllerRef.current = new AbortController();
