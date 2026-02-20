@@ -49,6 +49,7 @@ const StatusUpdateModal = ({
     { type: "header", label: "Admission Completed" },
     { type: "option", label: "Registration done" },
     { type: "option", label: "Semester fee paid" },
+    { type: "option", label: "Partially Paid" },
     { type: "header", label: "Drop" },
     { type: "option", label: "NI - College Reject" },
     { type: "option", label: "NI - Student denied" },

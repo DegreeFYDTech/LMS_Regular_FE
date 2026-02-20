@@ -95,7 +95,7 @@ const StudentPage = () => {
           { key: "Tab3", label: "ShortList", icon: BookOpen },
         ];
   const [isAdmissionDone, setIsAdmissionDone] = useState(false);
-  
+
   useEffect(() => {
     const fetchStudentDetails = async () => {
       if (!studentId) {
@@ -279,7 +279,7 @@ const StudentPage = () => {
           </div>
         </div>
       )}
-      
+
       <div className="mx-auto p-4">
         {isAdmissionDone && (
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg mb-4 flex items-center justify-between">
@@ -289,7 +289,9 @@ const StudentPage = () => {
               </div>
               <div>
                 <span className="font-semibold">Admission Confirmed!</span>
-                <span className="text-sm ml-2 opacity-90">This student has been admitted</span>
+                <span className="text-sm ml-2 opacity-90">
+                  This student has been admitted
+                </span>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -666,9 +668,6 @@ const FloatingActionButtons = ({
       <div className="flex flex-col items-end space-y-3">
         {buttons.map((button) => (
           <div key={button.id} className="flex items-center space-x-2 group">
-            <div className="bg-gray-800 text-white text-sm px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap shadow-lg transform -translate-x-2">
-              {button.tooltip}
-            </div>
             <button
               onClick={button.action}
               disabled={button.loading}

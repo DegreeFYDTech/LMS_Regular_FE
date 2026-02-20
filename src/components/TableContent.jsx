@@ -381,7 +381,7 @@ const TableContent = ({
         title: "Created At",
         dataIndex: "createdAt",
         key: "createdAt",
-        field: "createdAt", // Internal field name
+        field: "createdAt", 
         sorter: true,
         sortOrder:
           sortConfig.key === "createdAt"
@@ -650,7 +650,7 @@ const TableContent = ({
       showL3Column, // Added to dependencies
     ],
   );
-
+console.log(activeRole, "active role in table content");
   const dataSource = useMemo(() => {
     if (!sortedLeads) return [];
     return sortedLeads.map((lead) => {

@@ -40,7 +40,7 @@ const UnifiedCallModal = ({
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [feesAmount, setFeesAmount] = useState("");
-  
+
   const latestRemark = selectedStudent?.student_remarks?.reduce(
     (latest, remark) => {
       return !latest || remark.remark_id > latest.remark_id ? remark : latest;
@@ -63,11 +63,11 @@ const UnifiedCallModal = ({
   const [showCounselingFormPrompt, setShowCounselingFormPrompt] =
     useState(false);
   const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
-  
+
   const isOptionDisabled = (status) => {
     return status === "Form Filled_Degreefyd";
   };
-  
+
   const agent = useSelector((state) => state.auth.user);
   const storedRole = localStorage.getItem("role");
   const activeRole =
@@ -87,22 +87,11 @@ const UnifiedCallModal = ({
     { type: "header", label: "Admission Completed" },
     { type: "option", label: "Registration done" },
     { type: "option", label: "Semester fee paid" },
+    { type: "option", label: "Partially Paid" },
     { type: "header", label: "Drop" },
     { type: "option", label: "NI - College Reject" },
     { type: "option", label: "NI - Student denied" },
   ];
-
-  const isAdmissionStatus = () => {
-    const admissionStatuses = [
-      "Registration done",
-      "Semester fee paid",
-      "Registration Done",
-      "Semester Paid",
-      "1st Year Fee Paid",
-      "Full Fee Paid",
-    ];
-    return admissionStatuses.includes(selectedStatus);
-  };
 
   const timeSlots = [
     { value: "09:00", label: "9:00 AM - 9:30 AM" },
@@ -168,56 +157,71 @@ const UnifiedCallModal = ({
     Enrolled: ["Enrolled"],
   };
 
-  const funnelOrder = {
-    "Pre Application": 1,
-    "Application": 2,
-    "Admission": 3,
-    "Enrolled": 4,
-    "NotInterested": 5,
-  };
-
   const isFunnelAllowed = (funnel) => {
     if (!latestRemark?.lead_status) return true;
-    
+
     const currentFunnel = latestRemark.lead_status;
-    const currentFunnelLevel = funnelOrder[currentFunnel] || 0;
-    const targetFunnelLevel = funnelOrder[funnel] || 0;
-    
+
+    if (currentFunnel === "Pre Application") {
+      return true;
+    }
+
+    if (currentFunnel === "Application") {
+      return funnel !== "Pre Application";
+    }
+
+    if (currentFunnel === "Admission") {
+      return (
+        funnel !== "Pre Application" &&
+        funnel !== "Application" &&
+        funnel !== "NotInterested"
+      );
+    }
+
+    if (currentFunnel === "Enrolled") {
+      return funnel === "Enrolled";
+    }
+
     if (currentFunnel === "NotInterested") {
       return funnel === "NotInterested" || funnel === "Pre Application";
     }
-    
-    if (currentFunnel === "Admission") {
-      return funnel === "Admission" || funnel === "Enrolled";
-    }
-    
-    if (currentFunnel === "Application") {
-      return funnel === "Application" || funnel === "Admission" || funnel === "Enrolled";
-    }
-    
-    return targetFunnelLevel >= currentFunnelLevel;
+
+    return true;
   };
 
   const isSubStatusAllowed = (subStatus, funnelName) => {
     if (!latestRemark?.lead_status) return true;
-    
+
     const currentFunnel = latestRemark.lead_status;
-    
-    if (currentFunnel === "Admission") {
-      const admissionSubStatuses = funnelConfig.Admission;
-      return admissionSubStatuses.includes(subStatus);
+
+    if (!currentFunnel || currentFunnel === "Pre Application") {
+      return true;
     }
-    
+
     if (currentFunnel === "Application") {
-      const applicationSubStatuses = funnelConfig.Application;
-      return applicationSubStatuses.includes(subStatus);
+      const preAppSubStatuses = funnelConfig["Pre Application"] || [];
+      return !preAppSubStatuses.includes(subStatus);
     }
-    
+
+    if (currentFunnel === "Admission") {
+      const preAppSubStatuses = funnelConfig["Pre Application"] || [];
+      const appSubStatuses = funnelConfig.Application || [];
+      return (
+        !preAppSubStatuses.includes(subStatus) &&
+        !appSubStatuses.includes(subStatus)
+      );
+    }
+
+    if (currentFunnel === "Enrolled") {
+      const enrolledSubStatuses = funnelConfig.Enrolled || [];
+      return enrolledSubStatuses.includes(subStatus);
+    }
+
     if (currentFunnel === "NotInterested") {
-      const notInterestedSubStatuses = funnelConfig.NotInterested;
+      const notInterestedSubStatuses = funnelConfig.NotInterested || [];
       return notInterestedSubStatuses.includes(subStatus);
     }
-    
+
     return true;
   };
 
@@ -472,11 +476,11 @@ const UnifiedCallModal = ({
       funnel1: selectedFunnel1,
       funnel2: "",
     });
-    
+
     if (selectedFunnel1 !== "Admission") {
       setFeesAmount("");
     }
-    
+
     if (selectedFunnel1 === "NotInterested") {
       setCallbackDate("");
       setCallbackTime("");
@@ -658,12 +662,18 @@ const UnifiedCallModal = ({
                   {Object.keys(funnelConfig).map((status) => {
                     const isAllowed = isFunnelAllowed(status);
                     return (
-                      <option 
-                        key={status} 
+                      <option
+                        key={status}
                         value={status}
                         disabled={!isAllowed}
-                        className={!isAllowed ? "bg-gray-100 text-gray-400" : ""}
-                        style={!isAllowed ? { backgroundColor: "#f3f4f6", color: "#9ca3af" } : {}}
+                        className={
+                          !isAllowed ? "bg-gray-100 text-gray-400" : ""
+                        }
+                        style={
+                          !isAllowed
+                            ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+                            : {}
+                        }
                       >
                         {status} {!isAllowed ? "(Not allowed)" : ""}
                       </option>
@@ -703,18 +713,19 @@ const UnifiedCallModal = ({
                   <option value="">Select Sub Status</option>
                   {leadStatus.funnel1 &&
                     funnelConfig[leadStatus.funnel1]?.map((status) => {
-                      const isAllowed = isSubStatusAllowed(status, leadStatus.funnel1);
+                      const isAllowed = isSubStatusAllowed(
+                        status,
+                        leadStatus.funnel1,
+                      );
                       const isDisabled = isOptionDisabled(status) || !isAllowed;
-                      
+
                       return (
                         <option
                           key={status}
                           value={status}
                           disabled={isDisabled}
                           className={
-                            isDisabled
-                              ? "bg-gray-100 text-gray-400"
-                              : ""
+                            isDisabled ? "bg-gray-100 text-gray-400" : ""
                           }
                           style={
                             isDisabled
