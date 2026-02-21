@@ -6,9 +6,7 @@ import {
   Save,
   MapPin,
   Home,
-  UserCircle,
-  Info,
-  MessageCircle
+  Info
 } from "lucide-react";
 import Select from "react-select";
 import { showToast } from "../utils/toast";
@@ -21,12 +19,12 @@ const ProfileSidebar = ({ initialStudent }) => {
   const [isEditing, setIsEditing] = useState(true);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
-  const [emailEditRestriction, setEmailEditRestriction] = useState({ restricted: false, message: '', previouslyEditedBy: null });
+  const [emailRestriction, setEmailRestriction] = useState({ restricted: false, message: '', source: '' });
   const userRole = useSelector((state) => state.auth.role);
   const [copyFeedback, setCopyFeedback] = useState({ show: false, message: '' });
 
   useEffect(() => {
-    const checkEmailEditRestriction = () => {
+    const checkEmailRestriction = () => {
       let source = null;
       if (student?.lead_activities?.length > 0) {
         const minActivity = student.lead_activities.reduce((min, curr) => {
@@ -37,19 +35,26 @@ const ProfileSidebar = ({ initialStudent }) => {
 
       const oneTimeEditSources = ['IVR', 'WhatsApp', 'IVR ', 'Whatsapp'];
       
-      // Only restrict email field for IVR/WhatsApp sources when already edited
-      if (oneTimeEditSources.includes(source) && student?.is_edited) {
-        setEmailEditRestriction({
-          restricted: true,
-          message: "Email can only be edited once for IVR/WhatsApp sources",
-          previouslyEditedBy: student.edited_by
-        });
+      if (oneTimeEditSources.includes(source)) {
+        if (student?.is_edited) {
+          setEmailRestriction({
+            restricted: true,
+            message: "Email can only be edited once for IVR/WhatsApp sources",
+            source: source
+          });
+        } else {
+          setEmailRestriction({ restricted: false, message: '', source: source });
+        }
       } else {
-        setEmailEditRestriction({ restricted: false, message: '', previouslyEditedBy: null });
+        setEmailRestriction({ 
+          restricted: true, 
+          message: "Email cannot be edited for this source", 
+          source: source || 'Unknown' 
+        });
       }
     };
 
-    checkEmailEditRestriction();
+    checkEmailRestriction();
   }, [student]);
 
   const processStatesAndCities = () => {
@@ -137,13 +142,6 @@ const ProfileSidebar = ({ initialStudent }) => {
     try {
       setLoading(true);
 
-      // Check if email is being edited and if it's restricted
-      if (emailEditRestriction.restricted && formData.student_email !== student?.student_email) {
-        showToast("Email cannot be edited for this student", "error");
-        setLoading(false);
-        return;
-      }
-
       const hasChanges = 
         formData.name !== student?.student_name ||
         formData.whatsapp !== student?.whatsapp ||
@@ -166,17 +164,10 @@ const ProfileSidebar = ({ initialStudent }) => {
         student_secondary_email: formData.student_secondary_email,
         student_current_city: formData.student_current_city?.value || "",
         student_current_state: formData.student_current_state?.value || "",
+        student_email: formData.student_email,
       };
 
-      // Only include email in payload if it's not restricted
-      if (!emailEditRestriction.restricted && formData.student_email !== student?.student_email) {
-        payload.student_email = formData.student_email;
-      }
-
-      console.log("📤 Updating student with payload:", payload);
-      
       const response = await updateStudent(initialStudent.student_id, payload);
-      console.log("✅ Update response:", response);
 
       if (response?.data?.message?.includes("one-time edit used")) {
         showToast("Email updated successfully (one-time edit used)", "success");
@@ -194,23 +185,24 @@ const ProfileSidebar = ({ initialStudent }) => {
           ...prev,
           ...payload,
           student_current_city: payload.student_current_city,
-          student_current_state: payload.student_current_state,
-          student_email: payload.student_email || prev.student_email
+          student_current_state: payload.student_current_state
         }));
       }
 
     } catch (error) {
-      console.error("❌ Error updating student:", error);
+      const errorData = error.response?.data || error.data || error;
       
-      if (error.response?.status === 403) {
-        showToast(error.response?.data?.message || "Email can only be edited once", "error");
-        setEmailEditRestriction({
+      if (error.response?.status === 409 && errorData?.error === "DUPLICATE_EMAIL") {
+        showToast(errorData.message || "This email is already in use by another student", "error");
+      } else if (error.response?.status === 403) {
+        showToast(errorData?.message || "Email can only be edited once", "error");
+        setEmailRestriction({
           restricted: true,
-          message: error.response?.data?.message,
-          previouslyEditedBy: error.response?.data?.previouslyEditedBy
+          message: errorData?.message,
+          previouslyEditedBy: errorData?.previouslyEditedBy
         });
       } else {
-        showToast("Error updating student", "error");
+        showToast(errorData?.message || "Error updating student", "error");
       }
     } finally {
       setLoading(false);
@@ -281,7 +273,7 @@ const ProfileSidebar = ({ initialStudent }) => {
         </div>
       )}
 
-
+     
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden w-full border border-gray-100">
         <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-3">
@@ -387,7 +379,7 @@ const ProfileSidebar = ({ initialStudent }) => {
                 <span className="text-xs">Email</span>
               </label>
               <div className="relative">
-                {isEditing && !emailEditRestriction.restricted ? (
+                {isEditing && !emailRestriction.restricted ? (
                   <input
                     type="email"
                     name="student_email"
@@ -400,13 +392,11 @@ const ProfileSidebar = ({ initialStudent }) => {
                   />
                 ) : (
                   <div 
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 text-xs"
-                    title={emailEditRestriction.restricted ? "Email cannot be edited further" : ""}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 text-xs cursor-not-allowed"
+                    title={emailRestriction.message || "Email cannot be edited"}
                   >
                     {student?.student_email || "Not Provided"}
-                    {emailEditRestriction.restricted && (
-                      <span className="ml-2 text-amber-500 text-xs">(Locked - One-time edit used)</span>
-                    )}
+                    <span className="ml-2 text-gray-400 text-xs">(Locked)</span>
                   </div>
                 )}
               </div>
