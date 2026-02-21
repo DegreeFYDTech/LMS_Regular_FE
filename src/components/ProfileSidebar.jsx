@@ -21,10 +21,37 @@ const ProfileSidebar = ({ initialStudent }) => {
   const [isEditing, setIsEditing] = useState(true);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [emailEditRestriction, setEmailEditRestriction] = useState({ restricted: false, message: '', previouslyEditedBy: null });
   const userRole = useSelector((state) => state.auth.role);
   const [copyFeedback, setCopyFeedback] = useState({ show: false, message: '' });
 
-  // Process states and cities data
+  useEffect(() => {
+    const checkEmailEditRestriction = () => {
+      let source = null;
+      if (student?.lead_activities?.length > 0) {
+        const minActivity = student.lead_activities.reduce((min, curr) => {
+          return !min || curr.id < min.id ? curr : min;
+        }, null);
+        source = minActivity?.source?.trim();
+      }
+
+      const oneTimeEditSources = ['IVR', 'WhatsApp', 'IVR ', 'Whatsapp'];
+      
+      // Only restrict email field for IVR/WhatsApp sources when already edited
+      if (oneTimeEditSources.includes(source) && student?.is_edited) {
+        setEmailEditRestriction({
+          restricted: true,
+          message: "Email can only be edited once for IVR/WhatsApp sources",
+          previouslyEditedBy: student.edited_by
+        });
+      } else {
+        setEmailEditRestriction({ restricted: false, message: '', previouslyEditedBy: null });
+      }
+    };
+
+    checkEmailEditRestriction();
+  }, [student]);
+
   const processStatesAndCities = () => {
     const states = statesData.map(state => ({
       value: state.name,
@@ -39,7 +66,6 @@ const ProfileSidebar = ({ initialStudent }) => {
       return [...acc, ...stateCities];
     }, []);
 
-    // Remove duplicates from cities (in case a city appears in multiple states)
     const uniqueCities = cities.filter((city, index, self) =>
       index === self.findIndex(c => c.value === city.value)
     );
@@ -49,7 +75,6 @@ const ProfileSidebar = ({ initialStudent }) => {
 
   const { states: stateOptions, cities: cityOptions } = processStatesAndCities();
 
-  // Show temporary feedback message
   const showCopyFeedback = (message) => {
     setCopyFeedback({ show: true, message });
     setTimeout(() => {
@@ -57,31 +82,23 @@ const ProfileSidebar = ({ initialStudent }) => {
     }, 2000);
   };
 
-  // Prevent copying for phone and email fields
   const handleCopyPrevention = (e, fieldName) => {
     e.preventDefault();
     showCopyFeedback(`${fieldName} copying is not allowed`);
   };
 
-  // Function to open WhatsApp with pre-filled message
   const openWhatsApp = (phoneNumber, name) => {
     if (!phoneNumber) {
       showCopyFeedback('Phone number not available');
       return;
     }
 
-    // Format phone number (remove any non-digit characters)
     const formattedPhone = phoneNumber.replace(/\D/g, '');
-
-    // Create WhatsApp message - using student's name if available
     const message = `Hi ${name || 'there'}`;
-
-    // Open WhatsApp in new tab
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
-  // Initialize form data when student data changes or edit mode is activated
   useEffect(() => {
     if (isEditing) {
       setFormData({
@@ -91,6 +108,7 @@ const ProfileSidebar = ({ initialStudent }) => {
         student_secondary_email: student?.student_secondary_email || "",
         student_current_city: student?.student_current_city ? { value: student.student_current_city, label: student.student_current_city } : null,
         student_current_state: student?.student_current_state ? { value: student.student_current_state, label: student.student_current_state } : null,
+        student_email: student?.student_email || "",
       });
     }
   }, [student, isEditing]);
@@ -98,7 +116,6 @@ const ProfileSidebar = ({ initialStudent }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Validation for phone numbers (only digits and max 10 characters)
     if (name === "whatsapp" || name === "parents_number") {
       if (!/^\d{0,10}$/.test(value)) return;
     }
@@ -119,6 +136,29 @@ const ProfileSidebar = ({ initialStudent }) => {
   const handleStudentUpdate = async () => {
     try {
       setLoading(true);
+
+      // Check if email is being edited and if it's restricted
+      if (emailEditRestriction.restricted && formData.student_email !== student?.student_email) {
+        showToast("Email cannot be edited for this student", "error");
+        setLoading(false);
+        return;
+      }
+
+      const hasChanges = 
+        formData.name !== student?.student_name ||
+        formData.whatsapp !== student?.whatsapp ||
+        formData.parents_number !== student?.parents_number ||
+        formData.student_secondary_email !== student?.student_secondary_email ||
+        formData.student_current_city?.value !== student?.student_current_city ||
+        formData.student_current_state?.value !== student?.student_current_state ||
+        formData.student_email !== student?.student_email;
+
+      if (!hasChanges) {
+        showToast("No changes to update", "info");
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         name: formData.name,
         whatsapp: formData.whatsapp,
@@ -126,19 +166,57 @@ const ProfileSidebar = ({ initialStudent }) => {
         student_secondary_email: formData.student_secondary_email,
         student_current_city: formData.student_current_city?.value || "",
         student_current_state: formData.student_current_state?.value || "",
+      };
+
+      // Only include email in payload if it's not restricted
+      if (!emailEditRestriction.restricted && formData.student_email !== student?.student_email) {
+        payload.student_email = formData.student_email;
       }
-      const response = await updateStudent(initialStudent.student_id, payload)
-      showToast("Student is Being Updated", "success")
+
+      console.log("📤 Updating student with payload:", payload);
+      
+      const response = await updateStudent(initialStudent.student_id, payload);
+      console.log("✅ Update response:", response);
+
+      if (response?.data?.message?.includes("one-time edit used")) {
+        showToast("Email updated successfully (one-time edit used)", "success");
+        setStudent(prev => ({
+          ...prev,
+          ...payload,
+          student_current_city: payload.student_current_city,
+          student_current_state: payload.student_current_state,
+          is_edited: true,
+          edited_by: response.data.student?.edited_by
+        }));
+      } else {
+        showToast("Student updated successfully", "success");
+        setStudent(prev => ({
+          ...prev,
+          ...payload,
+          student_current_city: payload.student_current_city,
+          student_current_state: payload.student_current_state,
+          student_email: payload.student_email || prev.student_email
+        }));
+      }
 
     } catch (error) {
-      showToast("Error on Update Student", "error")
+      console.error("❌ Error updating student:", error);
+      
+      if (error.response?.status === 403) {
+        showToast(error.response?.data?.message || "Email can only be edited once", "error");
+        setEmailEditRestriction({
+          restricted: true,
+          message: error.response?.data?.message,
+          previouslyEditedBy: error.response?.data?.previouslyEditedBy
+        });
+      } else {
+        showToast("Error updating student", "error");
+      }
+    } finally {
       setLoading(false);
-
     }
-    setLoading(false);
   };
 
-  // Custom styles for react-select
   const selectStyles = {
     control: (provided, state) => ({
       ...provided,
@@ -180,7 +258,6 @@ const ProfileSidebar = ({ initialStudent }) => {
     })
   };
 
-  // WhatsApp SVG component
   const WhatsAppSvg = ({ size = 16 }) => (
     <svg
       width={size}
@@ -195,7 +272,6 @@ const ProfileSidebar = ({ initialStudent }) => {
 
   return (
     <>
-      {/* Copy Prevention Feedback Toast */}
       {copyFeedback.show && (
         <div className="fixed top-20 right-4 z-50 animate-fade-in-down">
           <div className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2">
@@ -205,8 +281,9 @@ const ProfileSidebar = ({ initialStudent }) => {
         </div>
       )}
 
+
+
       <div className="bg-white rounded-xl shadow-lg overflow-hidden w-full border border-gray-100">
-        {/* Header with profile image and name */}
         <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-3">
           <div className="flex justify-between items-center">
             <div className="flex flex-col items-start gap-2">
@@ -223,7 +300,6 @@ const ProfileSidebar = ({ initialStudent }) => {
               </div>
             </div>
             <div className="flex flex-col items-end gap-2 text-right">
-
               <div className="bg-white bg-opacity-20 rounded-lg px-3 py-1 flex items-center gap-3">
                 <p className="text-xs text-black">Source :-</p>
                 <p className="text-xs font-medium text-blue-500">
@@ -232,7 +308,6 @@ const ProfileSidebar = ({ initialStudent }) => {
                       const minActivity = student.lead_activities.reduce((min, curr) => {
                         return !min || curr.id < min.id ? curr : min;
                       }, null);
-
                       return minActivity?.source?.trim() || "No Source";
                     } else {
                       return "No Source";
@@ -240,8 +315,6 @@ const ProfileSidebar = ({ initialStudent }) => {
                   })()}
                 </p>
               </div>
-
-              {/* Campaign (UTM) */}
               <div className="bg-white bg-opacity-20 rounded-lg px-3 py-1 flex items-center gap-3">
                 <p className="text-xs text-black">Campaign :-</p>
                 <p className="text-xs font-medium text-blue-500">
@@ -250,7 +323,6 @@ const ProfileSidebar = ({ initialStudent }) => {
                       const minActivity = student.lead_activities.reduce((min, curr) => {
                         return !min || curr.id < min.id ? curr : min;
                       }, null);
-
                       return minActivity?.utm_campaign?.trim() || "No UTM";
                     } else {
                       return "No UTM";
@@ -258,15 +330,12 @@ const ProfileSidebar = ({ initialStudent }) => {
                   })()}
                 </p>
               </div>
-
             </div>
           </div>
         </div>
 
-        {/* Form Fields */}
         <div className="px-6 py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Student Name Field */}
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2 space-x-2">
                 <div className="w-6 h-6 bg-blue-50 rounded-md flex items-center justify-center">
@@ -282,13 +351,13 @@ const ProfileSidebar = ({ initialStudent }) => {
                     value={formData.name || ""}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white
-                    text-gray-800  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                    text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                     transition-all duration-200 hover:border-gray-400 text-xs"
                     placeholder="Enter student name"
                   />
                 ) : (
                   <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 text-sm">
-                    {student.name || "Not Provided"}
+                    {student?.student_name || "Not Provided"}
                   </div>
                 )}
               </div>
@@ -302,13 +371,9 @@ const ProfileSidebar = ({ initialStudent }) => {
                 <span className="text-xs">Phone Number</span>
               </label>
               <div className="relative">
-                <div
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 text-xs cursor-pointer"
-                  
-                >
+                <div className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 text-xs">
                   <div className="flex justify-between items-center">
                     <span>{student?.student_phone || "Not Provided"}</span>
-                    
                   </div>
                 </div>
               </div>
@@ -322,16 +387,31 @@ const ProfileSidebar = ({ initialStudent }) => {
                 <span className="text-xs">Email</span>
               </label>
               <div className="relative">
-                <div
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 text-xs "
-
-                >
-                  {student?.student_email || "Not Provided"}
-                </div>
+                {isEditing && !emailEditRestriction.restricted ? (
+                  <input
+                    type="email"
+                    name="student_email"
+                    value={formData.student_email || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white
+                    text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                    transition-all duration-200 hover:border-gray-400 text-xs"
+                    placeholder="Enter email"
+                  />
+                ) : (
+                  <div 
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 text-xs"
+                    title={emailEditRestriction.restricted ? "Email cannot be edited further" : ""}
+                  >
+                    {student?.student_email || "Not Provided"}
+                    {emailEditRestriction.restricted && (
+                      <span className="ml-2 text-amber-500 text-xs">(Locked - One-time edit used)</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Current State */}
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2 space-x-2">
                 <div className="w-6 h-6 bg-orange-50 rounded-md flex items-center justify-center">
@@ -358,7 +438,6 @@ const ProfileSidebar = ({ initialStudent }) => {
               </div>
             </div>
 
-            {/* Current City */}
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2 space-x-2">
                 <div className="w-6 h-6 bg-red-50 rounded-md flex items-center justify-center">
@@ -385,7 +464,6 @@ const ProfileSidebar = ({ initialStudent }) => {
               </div>
             </div>
 
-            {/* WhatsApp Number */}
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2 space-x-2">
                 <div className="w-6 h-6 bg-green-50 rounded-md flex items-center justify-center">
@@ -432,7 +510,6 @@ const ProfileSidebar = ({ initialStudent }) => {
               </div>
             </div>
 
-            {/* Parent Phone Number */}
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2 space-x-2">
                 <div className="w-6 h-6 bg-yellow-50 rounded-md flex items-center justify-center">
@@ -479,7 +556,6 @@ const ProfileSidebar = ({ initialStudent }) => {
               </div>
             </div>
 
-            {/* Secondary Email */}
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2 space-x-2">
                 <div className="w-6 h-6 bg-indigo-50 rounded-md flex items-center justify-center">
@@ -500,7 +576,7 @@ const ProfileSidebar = ({ initialStudent }) => {
                   />
                 ) : (
                   <div
-                    className="w-full px-3 py-2 border border-gray-100 rounded-lg bg-gray-50 text-gray-800 text-sm "
+                    className="w-full px-3 py-2 border border-gray-100 rounded-lg bg-gray-50 text-gray-800 text-sm"
                     onCopy={(e) => handleCopyPrevention(e, 'Secondary email')}
                     style={{
                       userSelect: 'none',
@@ -521,7 +597,7 @@ const ProfileSidebar = ({ initialStudent }) => {
               <button
                 onClick={handleStudentUpdate}
                 disabled={loading}
-                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-500 border text-blue-500  cursor-pointer rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-500 border text-blue-500 cursor-pointer rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
               >
                 <Save className="w-5 h-5" />
                 <span className="font-semibold">{loading ? "Saving..." : "Save Changes"}</span>
