@@ -205,6 +205,18 @@ const Sidebar = ({
           icon: <UploadOutlined />,
           label: "Bulk Upload",
           onClick: () => navigate('/bulkupload')
+        },
+        {
+          key: "college-pricing",
+          icon: <DollarOutlined />,
+          label: "College Pricing",
+          onClick: () => navigate('/college-pricing')
+        },
+        {
+          key: "coupon-management",
+          icon: <SettingOutlined />,
+          label: "Coupon Management",
+          onClick: () => navigate('/coupon-management')
         }
       ]
     };

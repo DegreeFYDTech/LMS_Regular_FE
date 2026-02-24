@@ -49,6 +49,8 @@ const Tracker4 = lazy(() => import("../components/ReportAnalysis/Tracker4"));
 const ReconRuleset = lazy(() => import("../pages/ReconRuleset"));
 const RuleSetDB = lazy(() => import("../pages/RuleSetDB"));
 const PaymentDashboard = lazy(() => import("../pages/PaymentDashboard"));
+const CollegePricing = lazy(() => import("../pages/CollegePricing"));
+const CouponManagement = lazy(() => import("../pages/CouponManagement"));
 
 const AppRoutes = () => {
   return (
@@ -238,8 +240,24 @@ const AppRoutes = () => {
               <Route
                 path="/payment-reports"
                 element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "Analyser", "to","l2", "l3",]}>
+                  <RoleBasedRoute allowedRoles={["Supervisor", "Analyser", "to", "l2", "l3",]}>
                     <PaymentDashboard />
+                  </RoleBasedRoute>
+                }
+              />
+              <Route
+                path="/college-pricing"
+                element={
+                  <RoleBasedRoute allowedRoles={["Supervisor"]}>
+                    <CollegePricing />
+                  </RoleBasedRoute>
+                }
+              />
+              <Route
+                path="/coupon-management"
+                element={
+                  <RoleBasedRoute allowedRoles={["Supervisor"]}>
+                    <CouponManagement />
                   </RoleBasedRoute>
                 }
               />

@@ -15,7 +15,29 @@ export const getAllCounsellors = async (role = null) => {
     throw error;
   }
 };
+// Add these functions to your counsellor.js network file
 
+// Get detailed journey information for students including college and course names
+export const getStudentJourneyDetails = async (data) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/StudentCourseStatusLogs/student-journey-details`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching student journey details:', error);
+    throw error;
+  }
+};
+
+// Replace L3 counsellor for a specific journey entry (student + course)
+export const replaceL3CounsellorForSpecificJourney = async (data) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/StudentCourseStatusLogs/replace-l3-specific-journey`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error replacing L3 counsellor for specific journey:', error);
+    throw error;
+  }
+};
 export const changeSupervisor = async (counsellorId, supervisorId) => {
   try {
     const response = await axios.put(
