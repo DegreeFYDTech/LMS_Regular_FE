@@ -117,8 +117,11 @@ const CollegePricing = () => {
                         <BankOutlined className="text-blue-500" />
                         {record.collegeName}
                     </Text>
-                    <div className="mt-1">
+                    <div className="mt-1 flex flex-wrap gap-1">
                         <Tag color="cyan" className="m-0 text-[10px] font-mono lowercase">{record.pageSlug || 'no-slug'}</Tag>
+                        {record.campusLocation && (
+                            <Tag color="purple" className="m-0 text-[10px] font-semibold">{record.campusLocation}</Tag>
+                        )}
                     </div>
                 </div>
             ),
@@ -249,7 +252,8 @@ const CollegePricing = () => {
                         columns={columns}
                         dataSource={rules.filter(r =>
                             r.collegeName.toLowerCase().includes(searchText.toLowerCase()) ||
-                            r.pageSlug.toLowerCase().includes(searchText.toLowerCase())
+                            r.pageSlug.toLowerCase().includes(searchText.toLowerCase()) ||
+                            (r.campusLocation && r.campusLocation.toLowerCase().includes(searchText.toLowerCase()))
                         )}
                         loading={loading}
                         rowKey="id"
@@ -278,7 +282,7 @@ const CollegePricing = () => {
                 onCancel={() => setIsModalOpen(false)}
                 footer={null}
                 width={650}
-                destroyOnClose
+                destroyOnHidden
                 className="rounded-3xl"
             >
                 <Form
@@ -302,17 +306,26 @@ const CollegePricing = () => {
                     </Form.Item>
 
                     <Row gutter={20}>
-                        <Col span={14}>
+                        <Col span={10}>
                             <Form.Item
                                 name="pageSlug"
-                                label={<span className="font-bold text-slate-700">Integration Slug (Unique)</span>}
-                                rules={[{ required: true, message: 'Unique slug required' }]}
-                                tooltip="This must be unique and match the 'pageSlug' sent from the application form frontend."
+                                label={<span className="font-bold text-slate-700">Integration Slug</span>}
+                                rules={[{ required: true, message: 'Slug required' }]}
+                                tooltip="The identifier for the page this pricing applies to."
                             >
-                                <Input placeholder="e.g. lpu-admission-form" disabled={!!editingRule} className="h-11 rounded-xl font-mono" />
+                                <Input placeholder="e.g. lpu-admission-form" className="h-11 rounded-xl font-mono" />
                             </Form.Item>
                         </Col>
-                        <Col span={10}>
+                        <Col span={8}>
+                            <Form.Item
+                                name="campusLocation"
+                                label={<span className="font-bold text-slate-700">Campus Location</span>}
+                                tooltip="Optional. Specify if this price is only for a specific campus (e.g. Bangalore)."
+                            >
+                                <Input placeholder="e.g. Bangalore" className="h-11 rounded-xl" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={6}>
                             <Form.Item
                                 name="pageType"
                                 label={<span className="font-bold text-slate-700">Rule Category</span>}
@@ -362,23 +375,19 @@ const CollegePricing = () => {
                                 name="allowCoupons"
                                 label={<span className="font-semibold text-slate-600">Enable Coupons?</span>}
                                 valuePropName="checked"
+                                help={<span className="text-xs text-slate-500 italic">Allow discount codes</span>}
                                 className="mb-0"
                             >
-                                <div className="flex items-center gap-3">
-                                    <Switch className="bg-slate-300" />
-                                    <span className="text-xs text-slate-500 italic">Allow discount codes</span>
-                                </div>
+                                <Switch className="bg-slate-300" />
                             </Form.Item>
                             <Form.Item
                                 name="isActive"
                                 label={<span className="font-semibold text-slate-600">Active Rule?</span>}
                                 valuePropName="checked"
+                                help={<span className="text-xs text-slate-500 italic">Live in production</span>}
                                 className="mb-0"
                             >
-                                <div className="flex items-center gap-3">
-                                    <Switch className="bg-slate-300 shadow-sm" />
-                                    <span className="text-xs text-slate-500 italic">Live in production</span>
-                                </div>
+                                <Switch className="bg-slate-300 shadow-sm" />
                             </Form.Item>
                         </div>
                     </div>

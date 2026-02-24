@@ -41,10 +41,28 @@ const CouponManagement = () => {
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [form] = Form.useForm();
     const [searchText, setSearchText] = useState('');
+    const [pageSlugOptions, setPageSlugOptions] = useState([]);
+    const [campusOptions, setCampusOptions] = useState([]);
 
     useEffect(() => {
         fetchCoupons();
+        fetchPricingOptions();
     }, []);
+
+    const fetchPricingOptions = async () => {
+        try {
+            const { getPricingRules } = await import('../network/pricingRules');
+            const res = await getPricingRules();
+            if (res && res.success) {
+                const slugs = [...new Set(res.data.map(r => r.pageSlug).filter(Boolean))];
+                const campuses = [...new Set(res.data.map(r => r.campusLocation).filter(Boolean))];
+                setPageSlugOptions(slugs.map(s => ({ value: s, label: s })));
+                setCampusOptions(campuses.map(c => ({ value: c, label: c })));
+            }
+        } catch (err) {
+            console.error("Failed to fetch pricing options", err);
+        }
+    };
 
     const fetchCoupons = async () => {
         setLoading(true);
@@ -109,6 +127,7 @@ const CouponManagement = () => {
             setEditingCoupon(coupon);
             form.setFieldsValue({
                 ...coupon,
+                isActive: !!coupon.isActive,
                 validRange: [dayjs(coupon.validFrom), dayjs(coupon.validTill)]
             });
         } else {
@@ -172,12 +191,15 @@ const CouponManagement = () => {
             title: 'Pages',
             dataIndex: 'applicablePages',
             key: 'applicablePages',
-            render: (pages) => (
+            render: (pages, record) => (
                 <div className="flex flex-wrap gap-1 max-w-[200px]">
                     {pages && pages.length > 0 ? (
                         pages.map(page => <Tag key={page} className="m-0">{page}</Tag>)
                     ) : (
                         <Tag color="default" className="m-0">All Pages</Tag>
+                    )}
+                    {record.applicableCampuses && record.applicableCampuses.length > 0 && (
+                        record.applicableCampuses.map(campus => <Tag key={campus} color="purple" className="m-0">{campus}</Tag>)
                     )}
                 </div>
             )
@@ -260,7 +282,11 @@ const CouponManagement = () => {
                 <div className="bg-white rounded-lg overflow-hidden border border-gray-100">
                     <Table
                         columns={columns}
-                        dataSource={coupons.filter(c => c.code.toLowerCase().includes(searchText.toLowerCase()))}
+                        dataSource={coupons.filter(c =>
+                            c.code.toLowerCase().includes(searchText.toLowerCase()) ||
+                            (c.description && c.description.toLowerCase().includes(searchText.toLowerCase())) ||
+                            (c.applicableCampuses && c.applicableCampuses.some(campus => campus.toLowerCase().includes(searchText.toLowerCase())))
+                        )}
                         loading={loading}
                         rowKey="id"
                         pagination={{
@@ -278,7 +304,7 @@ const CouponManagement = () => {
                 onCancel={() => setIsModalOpen(false)}
                 footer={null}
                 width={700}
-                destroyOnClose
+                destroyOnHidden
                 className="rounded-2xl"
             >
                 <Form
@@ -310,11 +336,9 @@ const CouponManagement = () => {
                                 name="isActive"
                                 label={<span className="font-semibold text-gray-700">Status</span>}
                                 valuePropName="checked"
+                                help={<span className="text-sm text-gray-500 font-medium">Active for users</span>}
                             >
-                                <div className="flex items-center gap-2 h-10">
-                                    <Switch className="bg-gray-300" />
-                                    <span className="text-sm text-gray-500 font-medium">Active for users</span>
-                                </div>
+                                <Switch className="bg-gray-300" />
                             </Form.Item>
                         </Col>
                     </Row>
@@ -400,13 +424,36 @@ const CouponManagement = () => {
                         </Col>
                     </Row>
 
-                    <Form.Item
-                        name="applicablePages"
-                        label={<span className="font-semibold text-gray-700">Whitelist Page Slugs</span>}
-                        help={<span className="text-xs text-gray-400">Leave blank for universal application across all pages</span>}
-                    >
-                        <Select mode="tags" placeholder="Add specific page slugs (e.g. cu-landing-form)" className="custom-select-tags" />
-                    </Form.Item>
+                    <Row gutter={24}>
+                        <Col span={12}>
+                            <Form.Item
+                                name="applicablePages"
+                                label={<span className="font-semibold text-gray-700">Whitelist Page Slugs</span>}
+                                help={<span className="text-xs text-gray-400">Select existing or type new slugs. Leave blank for all.</span>}
+                            >
+                                <Select
+                                    mode="tags"
+                                    placeholder="Select or add page slugs"
+                                    className="custom-select-tags"
+                                    options={pageSlugOptions}
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name="applicableCampuses"
+                                label={<span className="font-semibold text-gray-700">Whitelist Campuses</span>}
+                                help={<span className="text-xs text-gray-400">Select existing or type new campuses. Leave blank for all.</span>}
+                            >
+                                <Select
+                                    mode="tags"
+                                    placeholder="Select or add campus names"
+                                    className="custom-select-tags"
+                                    options={campusOptions}
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
                     <div className="flex justify-end gap-3 pt-6 border-t mt-8">
                         <Button

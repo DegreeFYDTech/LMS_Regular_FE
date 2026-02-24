@@ -38,7 +38,7 @@ const AssignedLeadManually = ({
     const [journeyDetails, setJourneyDetails] = useState([]);
     const [hasMultipleJourneys, setHasMultipleJourneys] = useState(false);
     const [journeyReplacements, setJourneyReplacements] = useState({});
-    
+
     // New state for tab management
     const [activeTab, setActiveTab] = useState('single'); // 'single' or 'multiple'
     const [studentsWithSingleJourney, setStudentsWithSingleJourney] = useState([]);
@@ -88,7 +88,7 @@ const AssignedLeadManually = ({
 
                     // Categorize students based on journey count
                     const journeysByStudent = data.journeysByStudent || {};
-                    
+
                     const singleJourneyStudents = [];
                     const multipleJourneyStudents = [];
                     const singleJourneys = [];
@@ -109,6 +109,12 @@ const AssignedLeadManually = ({
                     setStudentsWithMultipleJourneys(multipleJourneyStudents);
                     setSingleJourneyDetails(singleJourneys);
                     setMultipleJourneyDetails(multipleJourneys);
+
+                    if (singleJourneyStudents.length === 0 && multipleJourneyStudents.length > 0) {
+                        setActiveTab('multiple');
+                    } else {
+                        setActiveTab('single');
+                    }
 
                     // Set current counsellor info for single journey students if they all have the same counsellor
                     if (singleJourneys.length > 0) {
@@ -210,7 +216,6 @@ const AssignedLeadManually = ({
         }
     };
 
-    // L3 Replacement Handler for single journey students
     const handleSingleReplace = async () => {
         if (!selectedNewCounsellor) {
             alert('Please select a new L3 counsellor');
@@ -219,10 +224,10 @@ const AssignedLeadManually = ({
 
         try {
             setReplaceLoading(true);
-            
+
             // Filter students with single journey
             const singleJourneyStudentIds = studentsWithSingleJourney;
-            
+
             if (singleJourneyStudentIds.length === 0) {
                 alert('No students with single journey found');
                 return;
@@ -459,7 +464,7 @@ const AssignedLeadManually = ({
     if (isL3Assignment) {
         const hasSingleJourneyStudents = studentsWithSingleJourney.length > 0;
         const hasMultipleJourneyStudents = studentsWithMultipleJourneys.length > 0;
-
+        console.log()
         return (
             <Modal
                 isOpen={true}
@@ -614,8 +619,8 @@ const AssignedLeadManually = ({
                                                         <div
                                                             key={counsellor.counsellor_id}
                                                             className={`px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center justify-between ${selectedNewCounsellor?.counsellor_id === counsellor.counsellor_id
-                                                                    ? 'bg-green-50 border-l-4 border-l-green-500'
-                                                                    : ''
+                                                                ? 'bg-green-50 border-l-4 border-l-green-500'
+                                                                : ''
                                                                 } ${currentCounsellorInfo?.assigned_l3_counsellor_id === counsellor.counsellor_id
                                                                     ? 'opacity-50 cursor-not-allowed'
                                                                     : ''
