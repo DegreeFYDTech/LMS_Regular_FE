@@ -5,12 +5,13 @@ import {
   DatePicker,
   Spin,
   Empty,
-  Tooltip
+  Tooltip,
+  Radio
 } from 'antd';
 import dayjs from 'dayjs';
 import axios from 'axios';
 import { BASE_URL } from '../config/api';
-import { Filter, Download, RotateCcw, Building2, Users, LayoutGrid, Eye } from 'lucide-react';
+import { Filter, Download, RotateCcw, Building2, Users, LayoutGrid, Eye, Calendar, Clock } from 'lucide-react';
 import DashboardHeader from '../components/MainReport/DashboardHeader';
 
 const { Option } = Select;
@@ -20,10 +21,12 @@ const CollegeStatusReports = () => {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [dateFilterType, setDateFilterType] = useState('main'); // 'main' or 'firstTime'
   const [filters, setFilters] = useState({
     reportType: 'colleges',
     startDate: dayjs().startOf('month'),
     endDate: dayjs(),
+    firstTimeDateRange: [null, null],
   });
 
   const fetchReportData = useCallback(async () => {
@@ -31,9 +34,18 @@ const CollegeStatusReports = () => {
     try {
       const params = {
         reportType: filters.reportType,
-        startDate: filters.startDate.format('YYYY-MM-DD'),
-        endDate: filters.endDate.format('YYYY-MM-DD'),
       };
+
+      // Only include the active date filter based on selection
+      if (dateFilterType === 'main') {
+        params.startDate = filters.startDate.format('YYYY-MM-DD');
+        params.endDate = filters.endDate.format('YYYY-MM-DD');
+      } else if (dateFilterType === 'firstTime') {
+        if (filters.firstTimeDateRange[0] && filters.firstTimeDateRange[1]) {
+          params.firstTimeFrom = filters.firstTimeDateRange[0].format('YYYY-MM-DD');
+          params.firstTimeTo = filters.firstTimeDateRange[1].format('YYYY-MM-DD');
+        }
+      }
 
       const response = await axios.get(`${BASE_URL}/StudentCourseStatusLogs/reports`, { params });
 
@@ -64,7 +76,7 @@ const CollegeStatusReports = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, dateFilterType]);
 
   useEffect(() => {
     fetchReportData();
@@ -84,7 +96,37 @@ const CollegeStatusReports = () => {
         startDate: dates[0],
         endDate: dates[1]
       }));
+      // Automatically switch to main date filter type
+      setDateFilterType('main');
+    } else {
+      // If dates are cleared, reset to default
+      setFilters(prev => ({
+        ...prev,
+        startDate: dayjs().startOf('month'),
+        endDate: dayjs()
+      }));
     }
+  };
+
+  const handleFirstTimeDateRangeChange = (dates) => {
+    if (dates) {
+      setFilters(prev => ({
+        ...prev,
+        firstTimeDateRange: [dates[0], dates[1]]
+      }));
+      // Automatically switch to first time date filter type
+      setDateFilterType('firstTime');
+    } else {
+      // If dates are cleared, reset to null
+      setFilters(prev => ({
+        ...prev,
+        firstTimeDateRange: [null, null]
+      }));
+    }
+  };
+
+  const handleDateFilterTypeChange = (e) => {
+    setDateFilterType(e.target.value);
   };
 
   const handleResetFilters = () => {
@@ -92,16 +134,25 @@ const CollegeStatusReports = () => {
       reportType: 'colleges',
       startDate: dayjs().startOf('month'),
       endDate: dayjs(),
+      firstTimeDateRange: [null, null],
     });
+    setDateFilterType('main');
   };
 
   const handleExport = async () => {
     try {
       const params = {
-        ...filters,
-        startDate: filters.startDate.format('YYYY-MM-DD'),
-        endDate: filters.endDate.format('YYYY-MM-DD')
+        reportType: filters.reportType,
       };
+
+      // Only include the active date filter in export
+      if (dateFilterType === 'main') {
+        params.startDate = filters.startDate.format('YYYY-MM-DD');
+        params.endDate = filters.endDate.format('YYYY-MM-DD');
+      } else if (dateFilterType === 'firstTime') {
+        params.firstTimeFrom = filters.firstTimeDateRange[0] ? filters.firstTimeDateRange[0].format('YYYY-MM-DD') : null;
+        params.firstTimeTo = filters.firstTimeDateRange[1] ? filters.firstTimeDateRange[1].format('YYYY-MM-DD') : null;
+      }
 
       const response = await axios.get(`${BASE_URL}/StudentCourseStatusLogs/reports/export`, {
         params,
@@ -241,6 +292,22 @@ const CollegeStatusReports = () => {
 
   const statsCards = getStatsCards();
 
+  // Format date display
+  const formatDateRange = () => {
+    return `${filters.startDate.format('DD MMM')} - ${filters.endDate.format('DD MMM YYYY')}`;
+  };
+
+  const formatFirstTimeDateRange = () => {
+    if (filters.firstTimeDateRange[0] && filters.firstTimeDateRange[1]) {
+      return `${filters.firstTimeDateRange[0].format('DD MMM')} - ${filters.firstTimeDateRange[1].format('DD MMM YYYY')}`;
+    }
+    return null;
+  };
+
+  // Determine which date range is active
+  const isMainDateActive = dateFilterType === 'main';
+  const isFirstTimeDateActive = dateFilterType === 'firstTime';
+
   return (
     <div className="p-2 md:p-4 animate-in fade-in duration-500">
       <div className="mx-auto">
@@ -250,15 +317,15 @@ const CollegeStatusReports = () => {
           actions={
             <>
               <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all font-bold text-xs shadow-sm shadow-slate-100 border ${showFilters ? 'bg-blue-500 text-white border-blue-600' : 'bg-blue-600 text-white border-slate-200 hover:border-blue-300'}`}
+                onClick={handleExport}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all font-bold text-xs shadow-sm shadow-slate-100 border bg-emerald-600 text-white border-slate-200 hover:bg-emerald-700"
               >
-                <Filter size={14} />
-                {showFilters ? 'HIDE FILTERS' : 'FILTERS'}
+                <Download size={14} />
+                EXPORT
               </button>
               <button
                 onClick={handleResetFilters}
-                className="flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all font-bold text-xs shadow-sm shadow-slate-100 border bg-blue-600 text-white border-slate-200 hover:border-blue-300"
+                className="flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all font-bold text-xs shadow-sm shadow-slate-100 border bg-blue-600 text-white border-slate-200 hover:bg-blue-700"
               >
                 <RotateCcw size={14} />
                 RESET
@@ -267,43 +334,103 @@ const CollegeStatusReports = () => {
           }
         />
 
-        {/* Filter Panel */}
-        {showFilters && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex flex-wrap items-end gap-6">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Date Range</label>
+        {/* Filters Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex flex-col gap-4">
+            {/* Date Filter Type Selection */}
+            <div className="flex items-center gap-4 pb-2 border-b border-gray-100">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Active Date Filter:
+              </span>
+              <Radio.Group
+                value={dateFilterType}
+                onChange={handleDateFilterTypeChange}
+                size="small"
+                optionType="button"
+                buttonStyle="solid"
+              >
+                <Radio.Button value="main">First Time Date Range</Radio.Button>
+                <Radio.Button value="firstTime"> Main Date Range</Radio.Button>
+              </Radio.Group>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Main Date Range Picker - disabled when firstTime is active */}
+              <div className={`flex items-center gap-2 rounded-lg px-3 py-1 border transition-all ${isMainDateActive
+                ? 'bg-blue-50 border-blue-200'
+                : 'bg-slate-50 border-slate-200 opacity-50'
+                }`}>
+                <Calendar size={18} className={isMainDateActive ? 'text-blue-500' : 'text-slate-400'} />
                 <RangePicker
                   value={[filters.startDate, filters.endDate]}
                   onChange={handleDateRangeChange}
                   format="DD/MM/YYYY"
                   size="middle"
-                  className="!rounded-lg"
+                  className="!border-0 !bg-transparent !shadow-none !p-0"
+                  allowClear={false}
+                  suffixIcon={null}
+                  placeholder={['Start Date', 'End Date']}
+                  disabled={!isMainDateActive}
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Report Type</label>
-                <Select
-                  className="w-44"
-                  value={filters.reportType}
-                  onChange={(value) => handleFilterChange('reportType', value)}
+
+              {/* First Time Date Range Picker - disabled when main is active */}
+              <div className={`flex items-center gap-2 rounded-lg px-3 py-1 border transition-all ${isFirstTimeDateActive
+                ? 'bg-purple-50 border-purple-200'
+                : 'bg-slate-50 border-slate-200 opacity-50'
+                }`}>
+                <Clock size={18} className={isFirstTimeDateActive ? 'text-purple-500' : 'text-slate-400'} />
+                <RangePicker
+                  value={[filters.firstTimeDateRange[0], filters.firstTimeDateRange[1]]}
+                  onChange={handleFirstTimeDateRangeChange}
+                  format="DD/MM/YYYY"
                   size="middle"
-                >
-                  <Option value="colleges">Colleges</Option>
-                  <Option value="l2">L2 Counsellors</Option>
-                  <Option value="l3">L3 Counsellors</Option>
-                </Select>
+                  className="!border-0 !bg-transparent !shadow-none !p-0"
+                  placeholder={['First Time From', 'First Time To']}
+                  allowClear={true}
+                  suffixIcon={null}
+                  disabled={!isFirstTimeDateActive}
+                />
               </div>
-              <button
-                onClick={fetchReportData}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg cursor-pointer transition-all font-bold text-xs bg-blue-600 text-white hover:bg-blue-700"
+
+              {/* Report Type Dropdown */}
+              <Select
+                value={filters.reportType}
+                onChange={(value) => handleFilterChange('reportType', value)}
+                size="middle"
+                className="min-w-[160px]"
+                dropdownClassName="rounded-lg"
               >
-                <Filter size={13} />
-                GENERATE
-              </button>
+                <Option value="colleges">Colleges</Option>
+                <Option value="l2">L2 Counsellors</Option>
+                <Option value="l3">L3 Counsellors</Option>
+              </Select>
+
+              {/* Active Filter Indicators */}
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-xs text-slate-400">Active:</span>
+                <span className="text-xs font-semibold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full">
+                  {filters.reportType === 'colleges' ? 'Colleges' : filters.reportType === 'l2' ? 'L2' : 'L3'}
+                </span>
+                {isMainDateActive && (
+                  <span className="text-xs font-semibold bg-green-50 text-green-600 px-3 py-1.5 rounded-full">
+                    Main: {formatDateRange()}
+                  </span>
+                )}
+                {isFirstTimeDateActive && filters.firstTimeDateRange[0] && filters.firstTimeDateRange[1] && (
+                  <span className="text-xs font-semibold bg-purple-50 text-purple-600 px-3 py-1.5 rounded-full">
+                    First: {formatFirstTimeDateRange()}
+                  </span>
+                )}
+                {isFirstTimeDateActive && (!filters.firstTimeDateRange[0] || !filters.firstTimeDateRange[1]) && (
+                  <span className="text-xs font-semibold bg-gray-50 text-gray-600 px-3 py-1.5 rounded-full">
+                    First: Not Set
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Stats Cards */}
         {reportData?.data && (
@@ -349,7 +476,7 @@ const CollegeStatusReports = () => {
             ) : (
               <div className="py-16">
                 <Empty description={
-                  <span className="text-slate-400 font-medium">Select filters and click Generate to view report</span>
+                  <span className="text-slate-400 font-medium">No data available for selected filters</span>
                 } />
               </div>
             )}
@@ -378,6 +505,41 @@ const CollegeStatusReports = () => {
         }
         .college-status-table .ant-table-cell {
           white-space: nowrap !important;
+        }
+        
+        /* Custom Picker styles */
+        .ant-picker-range, .ant-picker {
+          border: none !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+        .ant-picker-range .ant-picker-input input,
+        .ant-picker input {
+          font-size: 13px !important;
+          font-weight: 500 !important;
+          color: #1e293b !important;
+        }
+        .ant-picker-range .ant-picker-active-bar {
+          background: #3b82f6 !important;
+        }
+        .ant-picker-range:hover,
+        .ant-picker:hover {
+          background: transparent !important;
+        }
+        .ant-picker-range-focused,
+        .ant-picker-focused {
+          box-shadow: none !important;
+        }
+        .ant-picker-clear {
+          background: transparent !important;
+        }
+        
+        /* Radio button styles */
+        .ant-radio-group-small .ant-radio-button-wrapper {
+          font-size: 11px;
+          padding: 0 12px;
+          height: 28px;
+          line-height: 26px;
         }
       `}</style>
     </div>
