@@ -8,6 +8,7 @@ import CollegeStatusReports from './CollegeStatusReports';
 import CounsellorStatsDashboard from './CounsellorReport';
 import TabsNavigation from '../components/ReportAnalysis/TabsNavigation';
 import { useSelector } from 'react-redux';
+import FormToAdmissionsReport from './FormAdmission';
 
 const MainReport = () => {
   const storedRole = useSelector((state) => state.auth.role);
@@ -46,6 +47,8 @@ const MainReport = () => {
         return <CollegeStatusReports key="collegeStatusReports" />;
       case 'counsellorReport':
         return <CounsellorStatsDashboard key="counsellorReport" />;
+      case 'formToAdmissions':
+        return <FormToAdmissionsReport key="formToAdmissions" />;
       default:
         return <ReportAnalysis key="default" forcedTab="lead" leadSubTabProp={leadSubTab} setLeadSubTabProp={setLeadSubTab} />;
     }

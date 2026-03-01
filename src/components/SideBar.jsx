@@ -231,12 +231,6 @@ const Sidebar = ({
         onClick: () => navigate('/analysisreport')
       },
       {
-        key: "courseStatus Reports",
-        icon: <SolutionOutlined />,
-        label: "Course Status Reports",
-        onClick: () => navigate('/collegeStatusReports')
-      },
-      {
         key: "manage-courses",
         icon: <AppstoreOutlined />,
         label: "Manage Courses",

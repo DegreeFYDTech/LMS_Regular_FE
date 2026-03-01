@@ -9,6 +9,7 @@ import {
 import AuthChecker from "../components/AuthChecker";
 import CollegeStatusReports from "../pages/CollegeStatusReports";
 import CounsellorStatsDashboard from "../pages/CounsellorReport";
+import FormToAdmissionsReport from "../pages/FormAdmission";
 
 const Loader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -146,6 +147,14 @@ const AppRoutes = () => {
                 }
               />
               <Route
+                path="/form-to-admission"
+                element={
+                  <RoleBasedRoute allowedRoles={["Supervisor", "to"]}>
+                    <FormToAdmissionsReport />
+                  </RoleBasedRoute>
+                }
+              />
+              <Route
                 path="/counsellorslisting"
                 element={
                   <RoleBasedRoute allowedRoles={["Supervisor", "to"]}>
@@ -237,14 +246,7 @@ const AppRoutes = () => {
                   </RoleBasedRoute>
                 }
               />
-              <Route
-                path="/collegeStatusReports"
-                element={
-                  <RoleBasedRoute allowedRoles={["Supervisor"]}>
-                    <CollegeStatusReports />
-                  </RoleBasedRoute>
-                }
-              />
+
               <Route
                 path="/payment-reports"
                 element={

@@ -84,6 +84,11 @@ const TabsNavigation = ({ activeTab, setActiveTab, leadSubTab, setLeadSubTab }) 
         label: 'Counsellor Report',
         icon: UserCheck
       },
+      {
+        id: 'formToAdmissions',
+        label: 'Form to Admissions',
+        icon: UserCheck
+      },
     ];
   };
 
