@@ -182,10 +182,6 @@ const UnifiedCallModal = ({
       return funnel === "Enrolled";
     }
 
-    if (currentFunnel === "NotInterested") {
-      return funnel === "NotInterested" || funnel === "Pre Application";
-    }
-
     return true;
   };
 
@@ -713,27 +709,14 @@ const UnifiedCallModal = ({
                   <option value="">Select Sub Status</option>
                   {leadStatus.funnel1 &&
                     funnelConfig[leadStatus.funnel1]?.map((status) => {
-                      const isAllowed = isSubStatusAllowed(
-                        status,
-                        leadStatus.funnel1,
-                      );
-                      const isDisabled = isOptionDisabled(status) || !isAllowed;
+                      
 
                       return (
                         <option
                           key={status}
-                          value={status}
-                          disabled={isDisabled}
-                          className={
-                            isDisabled ? "bg-gray-100 text-gray-400" : ""
-                          }
-                          style={
-                            isDisabled
-                              ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
-                              : {}
-                          }
+                          value={status}                         
                         >
-                          {status} {!isAllowed ? "(Not allowed)" : ""}
+                          {status}
                         </option>
                       );
                     })}

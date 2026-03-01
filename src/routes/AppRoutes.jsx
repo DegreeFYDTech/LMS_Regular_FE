@@ -8,6 +8,7 @@ import {
 } from "../routes/ProtectedRoutes";
 import AuthChecker from "../components/AuthChecker";
 import CollegeStatusReports from "../pages/CollegeStatusReports";
+import CounsellorStatsDashboard from "../pages/CounsellorReport";
 
 const Loader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -39,9 +40,7 @@ const ManageCourses = lazy(() => import("../pages/ManageCourses"));
 const WebsiteChatDashboard = lazy(
   () => import("../components/chat/WebsiteChatDashboard"),
 );
-const TrackerReportAnalysis3 = lazy(
-  () => import("../pages/TrackerReportAnalysis3"),
-);
+
 const AnalyserBucket = lazy(() => import("../pages/AnalyserBucket"));
 const CollegeBrochure = lazy(() => import("../pages/CollegeBrochure"));
 const ManageNILeads = lazy(() => import("../pages/ManageNILeads"));
@@ -102,7 +101,6 @@ const AppRoutes = () => {
                 }
               />
 
-              {/* Unified Report Route - Added "to" role */}
               <Route
                 path="/analysisreport"
                 element={
@@ -120,6 +118,16 @@ const AppRoutes = () => {
                     allowedRoles={["Supervisor", "Analyser", "to"]}
                   >
                     <Tracker4 />
+                  </RoleBasedRoute>
+                }
+              />
+              <Route
+                path="/counsellorReport"
+                element={
+                  <RoleBasedRoute
+                    allowedRoles={["Supervisor", "Analyser", "to"]}
+                  >
+                    <CounsellorStatsDashboard />
                   </RoleBasedRoute>
                 }
               />

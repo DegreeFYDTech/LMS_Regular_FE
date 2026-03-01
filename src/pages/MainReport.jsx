@@ -4,6 +4,8 @@ import TrackReportAnalysis from './TrackReportAnalysis';
 import TrackerRportAnalysis1 from './TrackerRportAnalysis1';
 import TrackerReportAnalysis2 from './TrackerReportAnalysis2';
 import TrackerReportAnalysis3 from './TrackerReportAnalysis3';
+import CollegeStatusReports from './CollegeStatusReports';
+import CounsellorStatsDashboard from './CounsellorReport';
 import TabsNavigation from '../components/ReportAnalysis/TabsNavigation';
 import { useSelector } from 'react-redux';
 
@@ -40,8 +42,10 @@ const MainReport = () => {
         return <TrackerRportAnalysis1 key="attempt" forcedGroupBy={leadSubTab === 'hour' ? 'hour' : 'counsellor'} />;
       case 'tracker2':
         return <TrackerReportAnalysis2 key="tracker2" forcedGroupBy={leadSubTab === 'counsellor' ? 'counsellor' : 'slot'} />;
-      case 'tracker3':
-        return <TrackerReportAnalysis3 key="tracker3" />;
+      case 'collegeStatusReports':
+        return <CollegeStatusReports key="collegeStatusReports" />;
+      case 'counsellorReport':
+        return <CounsellorStatsDashboard key="counsellorReport" />;
       default:
         return <ReportAnalysis key="default" forcedTab="lead" leadSubTabProp={leadSubTab} setLeadSubTabProp={setLeadSubTab} />;
     }

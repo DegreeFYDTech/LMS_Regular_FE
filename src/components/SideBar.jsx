@@ -355,7 +355,7 @@ const Sidebar = ({
   };
 
   return (
-    <div className={`bg-white border-r border-gray-100 h-screen flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+    <div className={`bg-white border-r border-gray-100 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center">

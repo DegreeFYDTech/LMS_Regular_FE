@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  BarChart2, 
-  PhoneCall, 
-  FileText, 
+import {
+  LayoutDashboard,
+  BarChart2,
+  PhoneCall,
+  FileText,
   PieChart,
   Target,
   Zap
@@ -21,8 +21,7 @@ const SoberReportNav = ({ activeLevel, setActiveLevel, activeTab, setActiveTab }
     { id: 'remarks', label: 'Counsellor Remarks', icon: PieChart },
     { id: 'track', label: 'General Track', icon: BarChart2 },
     { id: 'attempt', label: 'Lead Attempt', icon: PhoneCall },
-    { id: 'tracker2', label: 'Unique Tracker', icon: FileText },
-    { id: 'tracker3', label: 'Attribute Insights', icon: LayoutDashboard }
+    { id: 'tracker2', label: 'Unique Tracker', icon: FileText }
   ];
 
   return (
@@ -35,11 +34,10 @@ const SoberReportNav = ({ activeLevel, setActiveLevel, activeTab, setActiveTab }
             <button
               key={level.id}
               onClick={() => setActiveLevel(level.id)}
-              className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all duration-300 flex items-center gap-2 ${
-                isActive
+              className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all duration-300 flex items-center gap-2 ${isActive
                   ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <level.icon size={16} />
               {level.label}
@@ -57,9 +55,8 @@ const SoberReportNav = ({ activeLevel, setActiveLevel, activeTab, setActiveTab }
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`pb-4 pt-2 text-xs font-black uppercase tracking-widest relative transition-all duration-300 whitespace-nowrap ${
-                  isActive ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
-                }`}
+                className={`pb-4 pt-2 text-xs font-black uppercase tracking-widest relative transition-all duration-300 whitespace-nowrap ${isActive ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+                  }`}
               >
                 {tab.label}
                 {isActive && (

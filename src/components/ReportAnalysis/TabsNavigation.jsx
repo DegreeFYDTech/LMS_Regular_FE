@@ -11,7 +11,9 @@ import {
   PhoneCall,
   LayoutDashboard,
   Database,
-  Search
+  Search,
+  Building2,
+  UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -73,14 +75,14 @@ const TabsNavigation = ({ activeTab, setActiveTab, leadSubTab, setLeadSubTab }) 
         ]
       },
       {
-        id: 'tracker3',
-        label: 'Attribute Insights',
-        icon: LayoutDashboard
+        id: 'collegeStatusReports',
+        label: 'College Status Reports',
+        icon: Building2
       },
       {
-        id: 'tracker4',
-        label: 'Reassign Insights',
-        icon: LayoutDashboard
+        id: 'counsellorReport',
+        label: 'Counsellor Report',
+        icon: UserCheck
       },
     ];
   };
