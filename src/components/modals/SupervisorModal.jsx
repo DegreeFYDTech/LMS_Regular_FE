@@ -14,7 +14,7 @@ const SupervisorModal = ({
   loading = false,
 }) => {
   const [localSelectedSupervisorId, setLocalSelectedSupervisorId] = useState(selectedSupervisorId);
-  
+
   // Sync local state with prop
   useEffect(() => {
     if (isOpen) {
@@ -55,12 +55,12 @@ const SupervisorModal = ({
       onConfirm={handleConfirm}
       title="Change Supervisor"
       icon={UserCog}
-      iconColor="indigo"
+      iconColor="blue"
       size="xl"
       height="xl"
       confirmText={isNoChange ? "No Changes" : "Update Supervisor"}
       cancelText="Cancel"
-      confirmColor={isNoChange ? "gray" : "indigo"}
+      confirmColor={isNoChange ? "gray" : "blue"}
       loading={loading}
       loadingText="Updating..."
       disableConfirm={isNoChange}
@@ -148,11 +148,10 @@ const SupervisorModal = ({
               <div className="text-gray-600">Status:</div>
               <div className="font-medium text-gray-900">
                 <span
-                  className={`inline-flex px-2 py-0.5 rounded-full ${
-                    selectedSupervisor.status === "active"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
+                  className={`inline-flex px-2 py-0.5 rounded-full ${selectedSupervisor.status === "active"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                    }`}
                 >
                   {selectedSupervisor.status === "active"
                     ? "Active"

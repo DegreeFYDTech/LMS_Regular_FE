@@ -72,22 +72,25 @@ const UserListing = () => {
           getAllCounsellors(),
           getAllSupervisors()
         ]);
-        
+        console.log(supervisorsData);
         const counsellors = counsellorsResponse.counsellors || counsellorsResponse.data || counsellorsResponse;
-        const supervisorsList = supervisorsData.counsellors || supervisorsData.data || supervisorsData;
-        
+        let supervisorsList = supervisorsData.counsellors || supervisorsData.data || supervisorsData;
+
+        // Filter supervisors by role = "to" (Team Lead)
+        supervisorsList = supervisorsList.filter(sup => sup.role === "to");
+
         // Create supervisor map for quick lookup
         const supervisorMap = {};
         supervisorsList.forEach(sup => {
           supervisorMap[sup.counsellor_id] = sup.counsellor_name;
         });
-        
+
         // Add supervisor_name to each counsellor
         const formattedCounsellors = counsellors.map(counsellor => ({
           ...counsellor,
           supervisor_name: counsellor.assigned_to ? supervisorMap[counsellor.assigned_to] || null : null
         }));
-        
+
         setUsers(formattedCounsellors);
         setSupervisors(supervisorsList);
         setError(null);
@@ -223,31 +226,31 @@ const UserListing = () => {
   };
 
 
-const confirmChangeSupervisor = async () => {
-  try {
-    await changeSupervisor(selectedUser.counsellor_id, selectedSupervisorId || null);
+  const confirmChangeSupervisor = async () => {
+    try {
+      await changeSupervisor(selectedUser.counsellor_id, selectedSupervisorId || null);
 
-    // Update local state
-    const updatedSupervisorName = selectedSupervisorId 
-      ? supervisors.find(s => s.counsellor_id === selectedSupervisorId)?.counsellor_name 
-      : null;
-    
-    setUsers(users.map((user) =>
-      user.counsellor_id === selectedUser.counsellor_id
-        ? { 
-            ...user, 
+      // Update local state
+      const updatedSupervisorName = selectedSupervisorId
+        ? supervisors.find(s => s.counsellor_id === selectedSupervisorId)?.counsellor_name
+        : null;
+
+      setUsers(users.map((user) =>
+        user.counsellor_id === selectedUser.counsellor_id
+          ? {
+            ...user,
             assigned_to: selectedSupervisorId || null,
             supervisor_name: updatedSupervisorName
           }
-        : user
-    ));
-    setShowSupervisorModal(false);
-    alert("Supervisor updated successfully!");
-  } catch (error) {
-    console.error("Error changing supervisor:", error);
-    alert(`Failed to change supervisor: ${error.message}`);
-  }
-};
+          : user
+      ));
+      setShowSupervisorModal(false);
+      alert("Supervisor updated successfully!");
+    } catch (error) {
+      console.error("Error changing supervisor:", error);
+      alert(`Failed to change supervisor: ${error.message}`);
+    }
+  };
 
   const dashboardStats = useMemo(() => {
     if (!users) return {};
@@ -275,9 +278,9 @@ const confirmChangeSupervisor = async () => {
 
       const roleMatch = !roleFilter || user.role === roleFilter;
       const statusMatch = !statusFilter || user.status === statusFilter;
-      
-      const supervisorMatch = !supervisorFilter || 
-        (supervisorFilter === "unassigned" && !user.assigned_to) || 
+
+      const supervisorMatch = !supervisorFilter ||
+        (supervisorFilter === "unassigned" && !user.assigned_to) ||
         user.assigned_to === supervisorFilter;
 
       const userCreatedAt = user.created_at ? new Date(user.created_at) : null;
@@ -505,23 +508,21 @@ const confirmChangeSupervisor = async () => {
 
                       {/* Role */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.role === 'to' ? 'bg-purple-100 text-purple-800' :
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'to' ? 'bg-purple-100 text-purple-800' :
                           user.role === 'l3' ? 'bg-blue-100 text-blue-800' :
-                          user.role === 'l2' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                            user.role === 'l2' ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                          }`}>
                           {user.role?.toUpperCase() || 'N/A'}
                         </span>
                       </td>
 
                       {/* Status */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.status === 'active' ? 'bg-green-100 text-green-800' :
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' :
                           user.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
                           {displayStatus(user)}
                         </span>
                       </td>
@@ -548,11 +549,10 @@ const confirmChangeSupervisor = async () => {
 
                       {/* Mode */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          user.counsellor_preferred_mode === 'Online' 
-                            ? 'bg-indigo-100 text-indigo-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.counsellor_preferred_mode === 'Online'
+                          ? 'bg-indigo-100 text-indigo-800'
+                          : 'bg-gray-100 text-gray-800'
+                          }`}>
                           <Wifi className={`mr-1 h-3 w-3 ${user.counsellor_preferred_mode === 'Online' ? 'text-indigo-600' : 'text-gray-500'}`} />
                           {user.counsellor_preferred_mode || 'Regular'}
                         </span>
@@ -560,9 +560,8 @@ const confirmChangeSupervisor = async () => {
 
                       {/* Session */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
                           {user.status === 'active' ? 'Active' : 'Logged Out'}
                         </span>
                       </td>
@@ -857,17 +856,17 @@ const confirmChangeSupervisor = async () => {
         setSelectedRole={setSelectedRole}
       />
 
- <SupervisorModal
-  isOpen={showSupervisorModal}
-  onClose={() => setShowSupervisorModal(false)}
-  onConfirm={confirmChangeSupervisor}
-  user={selectedUser}
-  supervisors={supervisors}
-  users={users}
-  selectedSupervisorId={selectedSupervisorId}
-  setSelectedSupervisorId={setSelectedSupervisorId}
-  loading={false} // Add loading state if needed
-/>
+      <SupervisorModal
+        isOpen={showSupervisorModal}
+        onClose={() => setShowSupervisorModal(false)}
+        onConfirm={confirmChangeSupervisor}
+        user={selectedUser}
+        supervisors={supervisors}
+        users={users}
+        selectedSupervisorId={selectedSupervisorId}
+        setSelectedSupervisorId={setSelectedSupervisorId}
+        loading={false} // Add loading state if needed
+      />
     </div>
   );
 };
