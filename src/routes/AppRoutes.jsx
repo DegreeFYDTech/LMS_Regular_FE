@@ -10,6 +10,7 @@ import AuthChecker from "../components/AuthChecker";
 import CollegeStatusReports from "../pages/CollegeStatusReports";
 import CounsellorStatsDashboard from "../pages/CounsellorReport";
 import FormToAdmissionsReport from "../pages/FormAdmission";
+import FormDashboard from "../pages/FormDashboard";
 
 const Loader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -250,8 +251,18 @@ const AppRoutes = () => {
               <Route
                 path="/payment-reports"
                 element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "Analyser", "to", "l2", "l3",]}>
+                  <RoleBasedRoute
+                    allowedRoles={["Supervisor", "Analyser", "to", "l2", "l3"]}
+                  >
                     <PaymentDashboard />
+                  </RoleBasedRoute>
+                }
+              />
+              <Route
+                path="/form-dashboard"
+                element={
+                  <RoleBasedRoute allowedRoles={["Supervisor"]}>
+                    <FormDashboard />
                   </RoleBasedRoute>
                 }
               />
