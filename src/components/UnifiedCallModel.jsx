@@ -40,7 +40,9 @@ const UnifiedCallModal = ({
   const [disconnectReason, setDisconnectReason] = useState("");
   const [universities, setUniversities] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [selectedUniversity, setSelectedUniversity] = useState(preselectedUniversity);
+  const [selectedUniversity, setSelectedUniversity] = useState(
+    preselectedUniversity,
+  );
   const [selectedCourse, setSelectedCourse] = useState(preselectedCourse);
   const [selectedCourseDetails, setSelectedCourseDetails] = useState(null);
   const [feesAmount, setFeesAmount] = useState("");
@@ -184,21 +186,22 @@ const UnifiedCallModal = ({
   // Check if credential fields should be shown for L2 users
   const shouldShowCredentialFields = () => {
     if (activeRole !== "l2") return false;
-    
+
     // Show for Application status or Pre Application with Walkin marked
-    const showForAppOrPre = 
-      leadStatus.funnel1 === "Application" || 
-      (leadStatus.funnel1 === "Pre Application" && leadStatus.funnel2 === "Walkin marked");
-    
+    const showForAppOrPre =
+      leadStatus.funnel1 === "Application" ||
+      (leadStatus.funnel1 === "Pre Application" &&
+        leadStatus.funnel2 === "Walkin marked");
+
     if (!showForAppOrPre) return false;
     if (!selectedUniversity || !selectedCourse) return false;
-    
+
     const hasExistingCreds = checkExistingCredentials(
       { course_id: selectedCourse, university_name: selectedUniversity },
       selectedStudent,
     );
     const isOnline = isOnlineCollege(selectedUniversity);
-    
+
     return !hasExistingCreds && !isOnline;
   };
 
@@ -210,7 +213,7 @@ const UnifiedCallModal = ({
         selectedStudent,
       );
       setIsCredsFound(hasExistingCreds);
-      
+
       // Reset credential fields when selection changes
       setFormID("");
       setCouponCode("");
@@ -220,15 +223,20 @@ const UnifiedCallModal = ({
   }, [selectedUniversity, selectedCourse, selectedStudent]);
 
   // Define colors at the top level
-  const modalTitle = showCourseSelection && activeRole === "l3"
-    ? "Select Course & College"
-    : isConnectedCall
-    ? "Call Connected - Update Status"
-    : "Call Not Connected - Update Status";
-    
-  const confirmColor = showCourseSelection && activeRole === "l3" ? "blue" 
-    : isConnectedCall ? "green" : "blue";
-  
+  const modalTitle =
+    showCourseSelection && activeRole === "l3"
+      ? "Select Course & College"
+      : isConnectedCall
+        ? "Call Connected - Update Status"
+        : "Call Not Connected - Update Status";
+
+  const confirmColor =
+    showCourseSelection && activeRole === "l3"
+      ? "blue"
+      : isConnectedCall
+        ? "green"
+        : "blue";
+
   const focusRingColor = isConnectedCall
     ? "focus:ring-green-500 focus:border-green-500"
     : "focus:ring-blue-500 focus:border-blue-500";
@@ -323,12 +331,12 @@ const UnifiedCallModal = ({
       if (funnel === "Admission" || funnel === "Enrolled") {
         return false;
       }
-      
+
       // If current status is Application, disable Pre Application
       if (currentFunnel === "Application" && funnel === "Pre Application") {
         return false;
       }
-      
+
       // If current status is Pre Application, allow all except Admission/Enrolled
       return true;
     }
@@ -410,7 +418,7 @@ const UnifiedCallModal = ({
         // If we have preselected values, find the course details
         if (preselectedUniversity && preselectedCourse) {
           const courseDetail = courseList.find(
-            (c) => c.course_id === preselectedCourse
+            (c) => c.course_id === preselectedCourse,
           );
           setSelectedCourseDetails(courseDetail);
         }
@@ -490,7 +498,12 @@ const UnifiedCallModal = ({
 
     let courseFieldsValid = true;
     if (isConnectedCall && activeRole !== "to") {
-      const needsCollegeInfo = activeRole === "l2" ? (leadStatus.funnel1 === "Application" || (leadStatus.funnel1 === "Pre Application" && leadStatus.funnel2 === "Walkin marked")) : true;
+      const needsCollegeInfo =
+        activeRole === "l2"
+          ? leadStatus.funnel1 === "Application" ||
+            (leadStatus.funnel1 === "Pre Application" &&
+              leadStatus.funnel2 === "Walkin marked")
+          : true;
       if (needsCollegeInfo && leadStatus.funnel1 !== "NotInterested") {
         courseFieldsValid = selectedUniversity && selectedCourse;
 
@@ -553,7 +566,7 @@ const UnifiedCallModal = ({
       // Save credentials first if needed
       if (shouldShowCredentialFields() && validateCredentialForm()) {
         setIsUpdatingCreds(true);
-        
+
         try {
           const counsellorId = agent?.counsellor_id || agent?.id;
           const counsellorName = agent?.name;
@@ -634,7 +647,7 @@ const UnifiedCallModal = ({
         } else {
           const url = window.location.origin + window.location.pathname;
           window.history.replaceState({}, document.title, url);
-          window.location.reload();
+          // window.location.reload();
         }
       }
     } catch (error) {
@@ -745,7 +758,7 @@ const UnifiedCallModal = ({
     if (filledForm) {
       const url = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, url);
-      window.location.reload();
+      // window.location.reload();
     } else {
       setIsFormPopupOpen(true);
     }
@@ -755,16 +768,17 @@ const UnifiedCallModal = ({
     setIsFormPopupOpen(false);
     const url = window.location.origin + window.location.pathname;
     window.history.replaceState({}, document.title, url);
-    window.location.reload();
+    // window.location.reload();
   };
 
-  const confirmText = showCourseSelection && activeRole === "l3"
-    ? "Close"
-    : isSubmitting || isUpdatingCreds
-    ? "Submitting..."
-    : isFormValid()
-    ? "Submit"
-    : "Fill Required Fields";
+  const confirmText =
+    showCourseSelection && activeRole === "l3"
+      ? "Close"
+      : isSubmitting || isUpdatingCreds
+        ? "Submitting..."
+        : isFormValid()
+          ? "Submit"
+          : "Fill Required Fields";
 
   // Get validation message for username
   const getUsernameValidationMessage = (collegeType) => {
@@ -785,13 +799,18 @@ const UnifiedCallModal = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        onConfirm={showCourseSelection && activeRole === "l3" ? onClose : handleSubmit}
+        onConfirm={
+          showCourseSelection && activeRole === "l3" ? onClose : handleSubmit
+        }
         title={modalTitle}
         confirmText={confirmText}
         cancelText="Cancel"
         confirmColor={confirmColor}
         size={showCourseSelection && activeRole === "l3" ? "5xl" : "5xl"}
-        confirmDisabled={(!showCourseSelection || activeRole !== "l3") && (!isFormValid() || isSubmitting || isUpdatingCreds)}
+        confirmDisabled={
+          (!showCourseSelection || activeRole !== "l3") &&
+          (!isFormValid() || isSubmitting || isUpdatingCreds)
+        }
       >
         <div className="space-y-4 p-2">
           {/* Course Selection Mode for L3 - Table View */}
@@ -808,19 +827,34 @@ const UnifiedCallModal = ({
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         S.No
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         University
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Course Name
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Specialization
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Action
                       </th>
                     </tr>
@@ -839,7 +873,7 @@ const UnifiedCallModal = ({
                             {course.name}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {course.specialization || '-'}
+                            {course.specialization || "-"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <button
@@ -853,7 +887,10 @@ const UnifiedCallModal = ({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
+                        <td
+                          colSpan="5"
+                          className="px-6 py-8 text-center text-sm text-gray-500"
+                        >
                           No courses available
                         </td>
                       </tr>
@@ -959,7 +996,10 @@ const UnifiedCallModal = ({
                               }
                               style={
                                 !isAllowed
-                                  ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+                                  ? {
+                                      backgroundColor: "#f3f4f6",
+                                      color: "#9ca3af",
+                                    }
                                   : {}
                               }
                             >
@@ -968,13 +1008,6 @@ const UnifiedCallModal = ({
                           );
                         })}
                     </select>
-                    {/* Display current status info */}
-                    {latestRemark?.lead_status && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Current status: {latestRemark.lead_status}
-                        {latestRemark.lead_sub_status && ` → ${latestRemark.lead_sub_status}`}
-                      </p>
-                    )}
                   </div>
 
                   <div>
@@ -1068,168 +1101,215 @@ const UnifiedCallModal = ({
               </div>
 
               {/* Course & College Information with Integrated Credential Fields */}
-              {((leadStatus.funnel1 === "Pre Application" && leadStatus.funnel2 === "Walkin marked") ||
+              {((leadStatus.funnel1 === "Pre Application" &&
+                leadStatus.funnel2 === "Walkin marked") ||
                 leadStatus.funnel1 === "Application" ||
                 leadStatus.funnel1 === "Admission" ||
                 leadStatus.funnel1 === "Enrolled") &&
-               (activeRole === "l2" ? (leadStatus.funnel1 === "Application" || (leadStatus.funnel1 === "Pre Application" && leadStatus.funnel2 === "Walkin marked")) : true) && 
-               leadStatus.funnel1 !== "NotInterested" && !preselectedUniversity && (
-                <div className="bg-white border border-gray-200 rounded-xl p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <HiOutlineAcademicCap className="w-5 h-5 text-gray-600" />
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      Course & College Information
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                        Colleges <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        className={`w-full p-3 border rounded-lg ${focusRingColor} transition-colors ${
-                          !selectedUniversity ? "border-red-300" : "border-gray-300"
-                        }`}
-                        value={selectedUniversity || ""}
-                        onChange={(e) => handleUniversityChange(e.target.value)}
-                      >
-                        <option value="">Select a college</option>
-                        {universities.map((uni, index) => (
-                          <option key={index} value={uni}>
-                            {uni}
-                          </option>
-                        ))}
-                      </select>
+                (activeRole === "l2"
+                  ? leadStatus.funnel1 === "Application" ||
+                    (leadStatus.funnel1 === "Pre Application" &&
+                      leadStatus.funnel2 === "Walkin marked")
+                  : true) &&
+                leadStatus.funnel1 !== "NotInterested" &&
+                !preselectedUniversity && (
+                  <div className="bg-white border border-gray-200 rounded-xl p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <HiOutlineAcademicCap className="w-5 h-5 text-gray-600" />
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        Course & College Information
+                      </h3>
                     </div>
 
-                    <div>
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                        <FiBook className="w-4 h-4" />
-                        Courses <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        className={`w-full p-3 border rounded-lg ${focusRingColor} transition-colors disabled:bg-gray-100 ${
-                          !selectedCourse && selectedUniversity
-                            ? "border-red-300"
-                            : "border-gray-300"
-                        }`}
-                        value={selectedCourse || ""}
-                        onChange={(e) => handleCourseChange(e.target.value)}
-                        disabled={!selectedUniversity}
-                      >
-                        <option value="">
-                          {!selectedUniversity
-                            ? "First select a college"
-                            : "Select a course"}
-                        </option>
-                        {getFilteredCourses().map((course) => (
-                          <option key={course.id} value={course.course_id}>
-                            {course.name} - {course.specialization}
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                          Colleges <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          className={`w-full p-3 border rounded-lg ${focusRingColor} transition-colors ${
+                            !selectedUniversity
+                              ? "border-red-300"
+                              : "border-gray-300"
+                          }`}
+                          value={selectedUniversity || ""}
+                          onChange={(e) =>
+                            handleUniversityChange(e.target.value)
+                          }
+                        >
+                          <option value="">Select a college</option>
+                          {universities.map((uni, index) => (
+                            <option key={index} value={uni}>
+                              {uni}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                          <FiBook className="w-4 h-4" />
+                          Courses <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          className={`w-full p-3 border rounded-lg ${focusRingColor} transition-colors disabled:bg-gray-100 ${
+                            !selectedCourse && selectedUniversity
+                              ? "border-red-300"
+                              : "border-gray-300"
+                          }`}
+                          value={selectedCourse || ""}
+                          onChange={(e) => handleCourseChange(e.target.value)}
+                          disabled={!selectedUniversity}
+                        >
+                          <option value="">
+                            {!selectedUniversity
+                              ? "First select a college"
+                              : "Select a course"}
                           </option>
-                        ))}
-                      </select>
+                          {getFilteredCourses().map((course) => (
+                            <option key={course.id} value={course.course_id}>
+                              {course.name} - {course.specialization}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Credential Status and Fields - Integrated Inline */}
-                  {activeRole === "l2" && selectedUniversity && selectedCourse && (
-                    <div className="mt-4 border-t pt-4">
-                      {isCredsFound ? (
-                        <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                          <p className="text-sm text-green-800 flex items-center">
-                            <FiCheckCircle className="mr-2" />
-                            ✓ Credentials already exist for this college. You can directly update the status.
-                          </p>
-                        </div>
-                      ) : isOnlineCollege(selectedUniversity) ? (
-                        <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                          <p className="text-sm text-blue-800 flex items-center">
-                            <FiAlertCircle className="mr-2" />
-                            ℹ This is an online college. No form credentials are required.
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
-                            <p className="text-sm text-yellow-800 flex items-center">
-                              <FiAlertTriangle className="mr-2" />
-                              ⚠ First-time form submission. Please fill in the form credentials below.
-                            </p>
-                          </div>
-
-                          {/* Credential Fields - Inline */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Form ID{getCollegeType(selectedUniversity) === "amity" ? " *" : ""}
-                              </label>
-                              <input
-                                type="text"
-                                value={formID}
-                                onChange={(e) => setFormID(e.target.value)}
-                                className="w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter Form ID"
-                              />
+                    {activeRole === "l2" &&
+                      selectedUniversity &&
+                      selectedCourse &&
+                      leadStatus.funnel1 === "Application" && (
+                        <div className="mt-4 border-t pt-4">
+                          {isCredsFound ? (
+                            <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                              <p className="text-sm text-green-800 flex items-center">
+                                <FiCheckCircle className="mr-2" />✓ Credentials
+                                already exist for this college. You can directly
+                                update the status.
+                              </p>
                             </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Coupon Code{getCollegeType(selectedUniversity) === "amity" ? " *" : ""}
-                              </label>
-                              <input
-                                type="text"
-                                value={couponCode}
-                                onChange={(e) => setCouponCode(e.target.value)}
-                                className="w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter Coupon Code"
-                              />
+                          ) : isOnlineCollege(selectedUniversity) ? (
+                            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                              <p className="text-sm text-blue-800 flex items-center">
+                                <FiAlertCircle className="mr-2" />ℹ This is an
+                                online college. No form credentials are
+                                required.
+                              </p>
                             </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Password{getCollegeType(selectedUniversity) === "amity" ? " *" : ""}
-                              </label>
-                              <input
-                                type="text"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter Password"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Username
-                                {["amity", "lpu", "chandigarh"].includes(getCollegeType(selectedUniversity))
-                                  ? " *"
-                                  : ""}
-                              </label>
-                              <input
-                                type="text"
-                                value={userName}
-                                onChange={(e) => setUserName(e.target.value)}
-                                className={`w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500 ${
-                                  userName && !validateUsernameFormat(userName, getCollegeType(selectedUniversity))
-                                    ? "border-red-500"
-                                    : ""
-                                }`}
-                                placeholder={getUsernamePlaceholder(getCollegeType(selectedUniversity))}
-                              />
-                              {userName && !validateUsernameFormat(userName, getCollegeType(selectedUniversity)) && (
-                                <p className="text-red-500 text-xs mt-1">
-                                  {getUsernameValidationMessage(getCollegeType(selectedUniversity))}
+                          ) : (
+                            <>
+                              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                                <p className="text-sm text-yellow-800 flex items-center">
+                                  <FiAlertTriangle className="mr-2" />⚠
+                                  First-time form submission. Please fill in the
+                                  form credentials below.
                                 </p>
-                              )}
-                            </div>
-                          </div>
-                        </>
+                              </div>
+
+                              {/* Credential Fields - Inline */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Form ID
+                                    {getCollegeType(selectedUniversity) ===
+                                    "amity"
+                                      ? " *"
+                                      : ""}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={formID}
+                                    onChange={(e) => setFormID(e.target.value)}
+                                    className="w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Enter Form ID"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Coupon Code
+                                    {getCollegeType(selectedUniversity) ===
+                                    "amity"
+                                      ? " *"
+                                      : ""}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={couponCode}
+                                    onChange={(e) =>
+                                      setCouponCode(e.target.value)
+                                    }
+                                    className="w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Enter Coupon Code"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Password
+                                    {getCollegeType(selectedUniversity) ===
+                                    "amity"
+                                      ? " *"
+                                      : ""}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={password}
+                                    onChange={(e) =>
+                                      setPassword(e.target.value)
+                                    }
+                                    className="w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Enter Password"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Username
+                                    {["amity", "lpu", "chandigarh"].includes(
+                                      getCollegeType(selectedUniversity),
+                                    )
+                                      ? " *"
+                                      : ""}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={userName}
+                                    onChange={(e) =>
+                                      setUserName(e.target.value)
+                                    }
+                                    className={`w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500 ${
+                                      userName &&
+                                      !validateUsernameFormat(
+                                        userName,
+                                        getCollegeType(selectedUniversity),
+                                      )
+                                        ? "border-red-500"
+                                        : ""
+                                    }`}
+                                    placeholder={getUsernamePlaceholder(
+                                      getCollegeType(selectedUniversity),
+                                    )}
+                                  />
+                                  {userName &&
+                                    !validateUsernameFormat(
+                                      userName,
+                                      getCollegeType(selectedUniversity),
+                                    ) && (
+                                      <p className="text-red-500 text-xs mt-1">
+                                        {getUsernameValidationMessage(
+                                          getCollegeType(selectedUniversity),
+                                        )}
+                                      </p>
+                                    )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
 
               {needsCallback && (
                 <div className="border border-gray-200 rounded-xl p-5">
@@ -1291,7 +1371,8 @@ const UnifiedCallModal = ({
                 <div className="flex items-center gap-2 mb-4">
                   <FiMessageSquare className="w-5 h-5 text-gray-600" />
                   <h3 className="text-lg font-semibold text-gray-800">
-                    Call Summary & Remarks <span className="text-red-500">*</span>
+                    Call Summary & Remarks{" "}
+                    <span className="text-red-500">*</span>
                   </h3>
                 </div>
                 <textarea

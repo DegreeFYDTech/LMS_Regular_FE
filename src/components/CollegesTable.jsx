@@ -731,9 +731,7 @@ const CollegesTable = ({
                           <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
                             Status
                           </th>
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                            Action
-                          </th>
+                         
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
@@ -790,14 +788,7 @@ const CollegesTable = ({
                                   </div>
                                 )}
                             </td>
-                            <td className="px-6 py-4">
-                              <button
-                                onClick={() => onOpenStatusModal(college)}
-                                className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg"
-                              >
-                                Update Status
-                              </button>
-                            </td>
+                           
                           </tr>
                         ))}
                       </tbody>
