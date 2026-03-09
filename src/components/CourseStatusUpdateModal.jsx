@@ -55,6 +55,63 @@ const StatusUpdateModal = ({
     { type: "option", label: "NI - Student denied" },
   ];
 
+  const latestRemark = studentData?.student_remarks?.reduce(
+    (latest, remark) => {
+      return !latest || remark.remark_id > latest.remark_id ? remark : latest;
+    },
+    null,
+  );
+
+  const allNotInterestedOptions = [
+    "Multiple Attempts made",
+    "Invalid number / Wrong Number",
+    "Language Barrier",
+    "Not Enquired",
+    "Already Enrolled_Partner",
+    "First call Not Interested",
+    "Not Eligible",
+    "Dublicate_Same student exists",
+    "Only_Online course",
+    "Course Not Available",
+    "Next Year",
+    "Budget issue",
+    "Already Enrolled_NP",
+    "Reason not shared",
+    "Location issue",
+    "NI - College Reject",
+    "NI - Student denied",
+  ];
+
+  const filteredStatusOptions = () => {
+    const baseOptions = [
+      { type: "header", label: "Pre Form" },
+      { type: "option", label: "Walkin marked" },
+      { type: "header", label: "Applied" },
+      { type: "option", label: "Form Submitted – Portal Pending" },
+      { type: "option", label: "Form Submitted – Completed" },
+      { type: "option", label: "Walkin Completed" },
+      { type: "option", label: "Exam Interview Pending" },
+      { type: "option", label: "Offer Letter/Results Pending" },
+      { type: "option", label: "Offer Letter/Results Released" },
+      { type: "header", label: "Admission Completed" },
+      { type: "option", label: "Registration done" },
+      { type: "option", label: "Semester fee paid" },
+      { type: "option", label: "Partially Paid" },
+      { type: "header", label: "Drop" },
+    ];
+
+    const lastStatus = latestRemark?.lead_status;
+
+    if (lastStatus === "Pre Application") {
+      baseOptions.push(...allNotInterestedOptions.map(label => ({ type: "option", label })));
+    } else {
+      baseOptions.push({ type: "option", label: "NI - College Reject" });
+      baseOptions.push({ type: "option", label: "NI - Student denied" });
+    }
+
+    return baseOptions;
+  };
+
   const { studentId } = useParams();
 
   // Check if it's an online college
@@ -420,7 +477,7 @@ const StatusUpdateModal = ({
                 disabled={actualUpdatingStatus}
               >
                 <option value="">Select Status</option>
-                {statusOptions.map((option, index) =>
+                {filteredStatusOptions().map((option, index) =>
                   option.type === "header" ? (
                     <optgroup key={index} label={option.label} />
                   ) : (

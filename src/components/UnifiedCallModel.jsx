@@ -5,7 +5,6 @@ import { fetchShortlistedColleges1 } from "../network/colleges";
 import { useSelector } from "react-redux";
 import { LeadsContext } from "../context/LeadsContext";
 import StudentFormPopup from "../components/StudentFormPopup";
-
 import {
   FiPhone,
   FiPhoneOff,
@@ -32,13 +31,12 @@ const UnifiedCallModal = ({
   ...props
 }) => {
   const { leads, setLeads } = useContext(LeadsContext);
-  const [callOutcome, setCallOutcome] = useState("");
+  const [callOutcome, setCallOutcome] = useState("Warm");
   const [disconnectReason, setDisconnectReason] = useState("");
   const [universities, setUniversities] = useState([]);
   const [courses, setCourses] = useState([]);
   const [selectedUniversity, setSelectedUniversity] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [selectedStatus, setSelectedStatus] = useState(null);
   const [feesAmount, setFeesAmount] = useState("");
 
   const latestRemark = selectedStudent?.student_remarks?.reduce(
@@ -64,34 +62,10 @@ const UnifiedCallModal = ({
     useState(false);
   const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
 
-  const isOptionDisabled = (status) => {
-    return status === "Form Filled_Degreefyd";
-  };
-
   const agent = useSelector((state) => state.auth.user);
   const storedRole = localStorage.getItem("role");
   const activeRole =
     agent?.role || (storedRole !== "Supervisor" ? storedRole : null) || "l2";
-
-  const statusOptions = [
-    { type: "header", label: "Pre Form" },
-    { type: "option", label: "Shortlisted" },
-    { type: "option", label: "Walkin marked" },
-    { type: "header", label: "Applied" },
-    { type: "option", label: "Form Submitted – Portal Pending" },
-    { type: "option", label: "Form Submitted – Completed" },
-    { type: "option", label: "Walkin Completed" },
-    { type: "option", label: "Exam Interview Pending" },
-    { type: "option", label: "Offer Letter/Results Pending" },
-    { type: "option", label: "Offer Letter/Results Released" },
-    { type: "header", label: "Admission Completed" },
-    { type: "option", label: "Registration done" },
-    { type: "option", label: "Semester fee paid" },
-    { type: "option", label: "Partially Paid" },
-    { type: "header", label: "Drop" },
-    { type: "option", label: "NI - College Reject" },
-    { type: "option", label: "NI - Student denied" },
-  ];
 
   const timeSlots = [
     { value: "09:00", label: "9:00 AM - 9:30 AM" },
@@ -119,51 +93,69 @@ const UnifiedCallModal = ({
     { value: "20:30", label: "8:31 PM - 9:00 PM" },
   ];
 
+  const needsAdmissionNI =
+    selectedStudent?.student_remarks[0]?.lead_status === "Application" ||
+    selectedStudent?.student_remarks[0]?.lead_status === "Admission" ||
+    selectedStudent?.student_remarks[0]?.lead_status === "Enrolled";
+  console.log("Needs Admission NI:", needsAdmissionNI);
   const funnelConfig = {
     "Pre Application": [
       "Counselling Yet to be Done",
       "Initial Counseling Completed",
       "Ready to Pay",
+      "Walkin marked",
     ],
     Application: [
       "Form Filled_Degreefyd",
-      "Form Filled_Partner website",
-      "On Hold – Missing Docs",
+      "Form Submitted – Portal Pending",
+      "Form Submitted – Completed",
+      "Walkin Completed",
+      "Exam Interview Pending",
+      "Offer Letter/Results Pending",
+      "Offer Letter/Results Released",
     ],
-    Admission: [
-      "Registration Done",
-      "Partially Paid",
-      "Semester Paid",
-      "1st Year Fee Paid",
-      "Full Fee Paid",
-    ],
-    NotInterested: [
-      "Multiple Attempts made",
-      "Invalid number / Wrong Number",
-      "Language Barrier",
-      "Not Enquired",
-      "Already Enrolled_Partner",
-      "First call Not Interested",
-      "Not Eligible",
-      "Dublicate_Same student exists",
-      "Only_Online course",
-      "Course Not Available",
-      "Next Year",
-      "Budget issue",
-      "Already Enrolled_NP",
-      "Reason not shared",
-      "Location issue",
-    ],
+    Admission: ["Enrollment in Process"],
+    NotInterested: needsAdmissionNI
+      ? ["NI - College Reject", "NI - Student Denied"]
+      : [
+          "Multiple Attempts made",
+          "Invalid number / Wrong Number",
+          "Language Barrier",
+          "Not Enquired",
+          "Already Enrolled_Partner",
+          "First call Not Interested",
+          "Not Eligible",
+          "Dublicate_Same student exists",
+          "Only_Online course",
+          "Course Not Available",
+          "Next Year",
+          "Budget issue",
+          "Already Enrolled_NP",
+          "Reason not shared",
+          "Location issue",
+        ],
     Enrolled: ["Enrolled"],
   };
 
   const isFunnelAllowed = (funnel) => {
-    if (!latestRemark?.lead_status) return true;
+    const currentFunnel = latestRemark?.lead_status;
 
-    const currentFunnel = latestRemark.lead_status;
-
-    if (currentFunnel === "Pre Application") {
+    if (activeRole === "l2") {
+      if (funnel === "Admission" || funnel === "Enrolled") {
+        return false;
+      }
       return true;
+    }
+
+    if (activeRole === "l3") {
+      if (funnel === "Pre Application" || funnel === "Application") {
+        return false;
+      }
+      return true;
+    }
+
+    if (!currentFunnel) {
+      return funnel !== "Admission" && funnel !== "Enrolled";
     }
 
     if (currentFunnel === "Application") {
@@ -171,51 +163,11 @@ const UnifiedCallModal = ({
     }
 
     if (currentFunnel === "Admission") {
-      return (
-        funnel !== "Pre Application" &&
-        funnel !== "Application" &&
-        funnel !== "NotInterested"
-      );
+      return funnel !== "Pre Application" && funnel !== "Application";
     }
 
     if (currentFunnel === "Enrolled") {
       return funnel === "Enrolled";
-    }
-
-    return true;
-  };
-
-  const isSubStatusAllowed = (subStatus, funnelName) => {
-    if (!latestRemark?.lead_status) return true;
-
-    const currentFunnel = latestRemark.lead_status;
-
-    if (!currentFunnel || currentFunnel === "Pre Application") {
-      return true;
-    }
-
-    if (currentFunnel === "Application") {
-      const preAppSubStatuses = funnelConfig["Pre Application"] || [];
-      return !preAppSubStatuses.includes(subStatus);
-    }
-
-    if (currentFunnel === "Admission") {
-      const preAppSubStatuses = funnelConfig["Pre Application"] || [];
-      const appSubStatuses = funnelConfig.Application || [];
-      return (
-        !preAppSubStatuses.includes(subStatus) &&
-        !appSubStatuses.includes(subStatus)
-      );
-    }
-
-    if (currentFunnel === "Enrolled") {
-      const enrolledSubStatuses = funnelConfig.Enrolled || [];
-      return enrolledSubStatuses.includes(subStatus);
-    }
-
-    if (currentFunnel === "NotInterested") {
-      const notInterestedSubStatuses = funnelConfig.NotInterested || [];
-      return notInterestedSubStatuses.includes(subStatus);
     }
 
     return true;
@@ -240,11 +192,15 @@ const UnifiedCallModal = ({
 
   useEffect(() => {
     const fetchColleges = async () => {
-      if (activeRole === "l2" || activeRole === "to") return;
+      if (activeRole === "to") return;
 
       try {
+        const isApplicationOrPre =
+          leadStatus.funnel1 === "Application" ||
+          leadStatus.funnel1 === "Pre Application";
         let response = await fetchShortlistedColleges1(
           selectedStudent.student_id,
+          isApplicationOrPre,
         );
         const data = response.data;
 
@@ -268,7 +224,12 @@ const UnifiedCallModal = ({
     if (selectedStudent?.student_id) {
       fetchColleges();
     }
-  }, [selectedStudent?.student_id, isConnectedCall, activeRole]);
+  }, [
+    selectedStudent?.student_id,
+    isConnectedCall,
+    activeRole,
+    leadStatus.funnel1,
+  ]);
 
   const getTodayDate = () => {
     const today = new Date();
@@ -314,29 +275,34 @@ const UnifiedCallModal = ({
   };
 
   const isFormValid = () => {
-    const primaryField = isConnectedCall ? callOutcome : disconnectReason;
+    const primaryField = isConnectedCall ? true : disconnectReason;
     const basicFieldsValid =
       primaryField &&
       leadStatus.funnel1 &&
-      leadStatus.funnel1 !== "Fresh" &&
       leadStatus.funnel2 &&
-      leadStatus.funnel2 !== "Untouched Lead" &&
       messageText.trim();
 
     const callbackFieldsValid =
       !needsCallback || (callbackDate && callbackTime);
 
     let courseFieldsValid = true;
-    if (isConnectedCall && activeRole !== "l2" && activeRole !== "to") {
-      courseFieldsValid =
-        selectedUniversity && selectedCourse && selectedStatus;
+    if (isConnectedCall && activeRole !== "to") {
+      const needsCollegeInfo =
+        activeRole === "l2"
+          ? leadStatus.funnel1 === "Application" ||
+            (leadStatus.funnel1 === "Pre Application" &&
+              leadStatus.funnel2 === "Walkin marked")
+          : true;
+      if (needsCollegeInfo && leadStatus.funnel1 !== "NotInterested") {
+        courseFieldsValid = selectedUniversity && selectedCourse;
 
-      if (leadStatus.funnel1 === "Admission") {
-        courseFieldsValid =
-          courseFieldsValid &&
-          feesAmount &&
-          !isNaN(feesAmount) &&
-          Number(feesAmount) > 0;
+        if (leadStatus.funnel1 === "Admission") {
+          courseFieldsValid =
+            courseFieldsValid &&
+            feesAmount &&
+            !isNaN(feesAmount) &&
+            Number(feesAmount) > 0;
+        }
       }
     }
 
@@ -379,10 +345,16 @@ const UnifiedCallModal = ({
         ...(enrolledDocumentUrl && { enrolledDocumentUrl }),
         ...(leadStatus.funnel1 === "Admission" &&
           feesAmount && { feesAmount: Number(feesAmount) }),
-        ...((activeRole === "l3" || activeRole === "Supervisor") && {
+        ...((activeRole === "l3" ||
+          activeRole === "Supervisor" ||
+          activeRole === "to" ||
+          (activeRole === "l2" &&
+            (leadStatus.funnel1 === "Application" ||
+              (leadStatus.funnel1 === "Pre Application" &&
+                leadStatus.funnel2 === "Walkin marked")))) && {
           selectedUniversity: selectedUniversity,
           selectedCourse: selectedCourse,
-          collegeCourseStatus: selectedStatus,
+          collegeCourseStatus: leadStatus.funnel2,
         }),
       };
 
@@ -413,7 +385,6 @@ const UnifiedCallModal = ({
           return;
         }
         if (isConnectedCall) {
-          console.log("hello");
           setShowCounselingFormPrompt(true);
         } else {
           const url = window.location.origin + window.location.pathname;
@@ -463,7 +434,6 @@ const UnifiedCallModal = ({
   const handleUniversityChange = (university) => {
     setSelectedUniversity(university);
     setSelectedCourse(null);
-    setSelectedStatus(null);
     setFeesAmount("");
   };
 
@@ -500,22 +470,14 @@ const UnifiedCallModal = ({
       }),
     );
 
-    console.log("harsh - filledForm:", filledForm);
     setShowCounselingFormPrompt(false);
 
     if (filledForm) {
-      console.log("YES clicked - reloading");
       const url = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, url);
       window.location.reload();
     } else {
-      console.log("NO clicked - tiger");
-      console.log("Setting isFormPopupOpen to true");
       setIsFormPopupOpen(true);
-
-      setTimeout(() => {
-        console.log("After timeout - isFormPopupOpen should be true");
-      }, 100);
     }
   };
 
@@ -554,50 +516,14 @@ const UnifiedCallModal = ({
         confirmDisabled={!isFormValid() || isSubmitting}
       >
         <div className="space-y-4 p-2">
-          <div className="bg-white border-gray-200 rounded-xl">
-            <div className="flex items-center gap-2 mb-4">
-              {isConnectedCall ? (
-                <>
-                  <FiTrendingUp className="w-5 h-5 text-gray-600" />
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Call Outcome <span className="text-red-500">*</span>
-                  </h3>
-                </>
-              ) : (
-                <>
-                  <FiPhoneOff className="w-5 h-5 text-gray-600" />
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Disconnect Reason <span className="text-red-500">*</span>
-                  </h3>
-                </>
-              )}
-            </div>
-
-            {isConnectedCall ? (
-              <div className="grid grid-cols-3 gap-3">
-                {["Hot", "Warm", "Cold"].map((outcome) => (
-                  <label
-                    key={outcome}
-                    className={`flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      callOutcome === outcome
-                        ? getOutcomeColor(outcome) +
-                          " shadow-md transform scale-105"
-                        : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="callOutcome"
-                      value={outcome}
-                      checked={callOutcome === outcome}
-                      onChange={() => setCallOutcome(outcome)}
-                      className="sr-only"
-                    />
-                    <span className="font-medium text-sm">{outcome}</span>
-                  </label>
-                ))}
+          {!isConnectedCall && (
+            <div className="bg-white border-gray-200 rounded-xl">
+              <div className="flex items-center gap-2 mb-4">
+                <FiPhoneOff className="w-5 h-5 text-gray-600" />
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Disconnect Reason <span className="text-red-500">*</span>
+                </h3>
               </div>
-            ) : (
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 {disconnectReasons.map((reason) => {
                   const IconComponent = reason.icon;
@@ -629,8 +555,8 @@ const UnifiedCallModal = ({
                   );
                 })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="bg-white border border-gray-200 rounded-xl p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -655,32 +581,44 @@ const UnifiedCallModal = ({
                   onChange={(e) => handleLeadStatusChange(e.target.value)}
                 >
                   <option value="">Select Lead Status</option>
-                  {Object.keys(funnelConfig).map((status) => {
-                    const isAllowed = isFunnelAllowed(status);
-                    return (
-                      <option
-                        key={status}
-                        value={status}
-                        disabled={!isAllowed}
-                        className={
-                          !isAllowed ? "bg-gray-100 text-gray-400" : ""
-                        }
-                        style={
-                          !isAllowed
-                            ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
-                            : {}
-                        }
-                      >
-                        {status} {!isAllowed ? "(Not allowed)" : ""}
-                      </option>
-                    );
-                  })}
+                  {Object.keys(funnelConfig)
+                    .filter((status) => {
+                      if (
+                        activeRole === "l2" &&
+                        (status === "Admission" || status === "Enrolled")
+                      ) {
+                        return false;
+                      }
+                      if (
+                        activeRole === "l3" &&
+                        (status === "Pre Application" ||
+                          status === "Application")
+                      ) {
+                        return false;
+                      }
+                      return isFunnelAllowed(status);
+                    })
+                    .map((status) => {
+                      const isAllowed = isFunnelAllowed(status);
+                      return (
+                        <option
+                          key={status}
+                          value={status}
+                          disabled={!isAllowed}
+                          className={
+                            !isAllowed ? "bg-gray-100 text-gray-400" : ""
+                          }
+                          style={
+                            !isAllowed
+                              ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+                              : {}
+                          }
+                        >
+                          {status}
+                        </option>
+                      );
+                    })}
                 </select>
-                {latestRemark?.lead_status && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Previous status: {latestRemark.lead_status}
-                  </p>
-                )}
               </div>
 
               <div>
@@ -709,12 +647,15 @@ const UnifiedCallModal = ({
                   <option value="">Select Sub Status</option>
                   {leadStatus.funnel1 &&
                     funnelConfig[leadStatus.funnel1]?.map((status) => {
-                      
-
+                      const isDisabled = status === "Form Filled_Degreefyd";
                       return (
                         <option
                           key={status}
-                          value={status}                         
+                          value={status}
+                          disabled={isDisabled}
+                          className={
+                            isDisabled ? "bg-gray-100 text-gray-400" : ""
+                          }
                         >
                           {status}
                         </option>
@@ -770,104 +711,78 @@ const UnifiedCallModal = ({
             )}
           </div>
 
-          {(activeRole == "l3" || activeRole == "Supervisor") && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <HiOutlineAcademicCap className="w-5 h-5 text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Course & College Information
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    Colleges <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    className={`w-full p-3 border rounded-lg ${focusRingColor} transition-colors ${
-                      !selectedUniversity ? "border-red-300" : "border-gray-300"
-                    }`}
-                    value={selectedUniversity || ""}
-                    onChange={(e) => handleUniversityChange(e.target.value)}
-                  >
-                    <option value="">Select a college</option>
-                    {universities.map((uni, index) => (
-                      <option key={index} value={uni}>
-                        {uni}
-                      </option>
-                    ))}
-                  </select>
+          {((leadStatus.funnel1 === "Pre Application" &&
+            leadStatus.funnel2 === "Walkin marked") ||
+            leadStatus.funnel1 === "Application" ||
+            leadStatus.funnel1 === "Admission" ||
+            leadStatus.funnel1 === "Enrolled") &&
+            (activeRole === "l2"
+              ? leadStatus.funnel1 === "Application" ||
+                (leadStatus.funnel1 === "Pre Application" &&
+                  leadStatus.funnel2 === "Walkin marked")
+              : true) &&
+            leadStatus.funnel1 !== "NotInterested" && (
+              <div className="bg-white border border-gray-200 rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <HiOutlineAcademicCap className="w-5 h-5 text-gray-600" />
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Course & College Information
+                  </h3>
                 </div>
 
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <FiBook className="w-4 h-4" />
-                    Courses <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    className={`w-full p-3 border rounded-lg ${focusRingColor} transition-colors disabled:bg-gray-100 ${
-                      !selectedCourse && selectedUniversity
-                        ? "border-red-300"
-                        : "border-gray-300"
-                    }`}
-                    value={selectedCourse || ""}
-                    onChange={(e) => setSelectedCourse(e.target.value)}
-                    disabled={!selectedUniversity}
-                  >
-                    <option value="">
-                      {!selectedUniversity
-                        ? "First select a college"
-                        : "Select a course"}
-                    </option>
-                    {getFilteredCourses().map((course) => (
-                      <option key={course.id} value={course.course_id}>
-                        {course.name} - {course.specialization}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <FiAlertCircle className="w-4 h-4" />
-                    College Course Status{" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={selectedStatus || ""}
-                    onChange={(e) => {
-                      setSelectedStatus(e.target.value);
-                    }}
-                    className={`w-full border rounded-lg py-3 px-3 text-gray-700 ${focusRingColor} transition-colors ${
-                      !selectedStatus ? "border-red-300" : "border-gray-300"
-                    }`}
-                  >
-                    <option value="">Select Status</option>
-                    {statusOptions.map((option, index) =>
-                      option.type === "header" ? (
-                        <optgroup
-                          key={index}
-                          label={option.label}
-                          style={{
-                            backgroundColor: "#FEF3C7",
-                            color: "#9A3412",
-                            fontWeight: "bold",
-                          }}
-                        ></optgroup>
-                      ) : (
-                        <option key={index} value={option.label}>
-                          {option.label}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      Colleges <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      className={`w-full p-3 border rounded-lg ${focusRingColor} transition-colors ${
+                        !selectedUniversity
+                          ? "border-red-300"
+                          : "border-gray-300"
+                      }`}
+                      value={selectedUniversity || ""}
+                      onChange={(e) => handleUniversityChange(e.target.value)}
+                    >
+                      <option value="">Select a college</option>
+                      {universities.map((uni, index) => (
+                        <option key={index} value={uni}>
+                          {uni}
                         </option>
-                      ),
-                    )}
-                  </select>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <FiBook className="w-4 h-4" />
+                      Courses <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      className={`w-full p-3 border rounded-lg ${focusRingColor} transition-colors disabled:bg-gray-100 ${
+                        !selectedCourse && selectedUniversity
+                          ? "border-red-300"
+                          : "border-gray-300"
+                      }`}
+                      value={selectedCourse || ""}
+                      onChange={(e) => setSelectedCourse(e.target.value)}
+                      disabled={!selectedUniversity}
+                    >
+                      <option value="">
+                        {!selectedUniversity
+                          ? "First select a college"
+                          : "Select a course"}
+                      </option>
+                      {getFilteredCourses().map((course) => (
+                        <option key={course.id} value={course.course_id}>
+                          {course.name} - {course.specialization}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {needsCallback && (
             <div className="border border-gray-200 rounded-xl p-5">
@@ -955,7 +870,6 @@ const UnifiedCallModal = ({
         <Modal
           isOpen={showCounselingFormPrompt}
           onClose={() => {
-            console.log("Modal onClose called");
             setShowCounselingFormPrompt(false);
             setIsFormPopupOpen(true);
           }}
@@ -963,18 +877,15 @@ const UnifiedCallModal = ({
           confirmText="Yes, I filled it"
           cancelText="No, fill now"
           onConfirm={() => {
-            console.log("Yes button clicked");
             handleCounselingFormResponse(true);
           }}
           onCancel={() => {
-            console.log("No button clicked");
             handleCounselingFormResponse(false);
           }}
           confirmColor="green"
           size="md"
         >
           <div className="p-6 text-center">
-            {console.log(showCounselingFormPrompt)}{" "}
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
               <FiCheckCircleIcon className="h-6 w-6 text-green-600" />
             </div>
@@ -988,7 +899,6 @@ const UnifiedCallModal = ({
           </div>
         </Modal>
       )}
-      {console.log(isFormPopupOpen)}
       {isFormPopupOpen && (
         <StudentFormPopup
           studentId={selectedStudent?.student_id}

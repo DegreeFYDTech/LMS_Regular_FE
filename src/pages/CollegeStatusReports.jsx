@@ -21,12 +21,12 @@ const CollegeStatusReports = () => {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [dateFilterType, setDateFilterType] = useState('main'); // 'main' or 'firstTime'
+  const [dateFilterType, setDateFilterType] = useState('firstTime'); // 'main' or 'firstTime'
   const [filters, setFilters] = useState({
     reportType: 'colleges',
-    startDate: dayjs().startOf('month'),
-    endDate: dayjs(),
-    firstTimeDateRange: [null, null],
+    startDate: null,
+    endDate: null,
+    firstTimeDateRange: [dayjs().startOf('month'), dayjs()],
   });
 
   const fetchReportData = useCallback(async () => {
@@ -38,8 +38,11 @@ const CollegeStatusReports = () => {
 
       // Only include the active date filter based on selection
       if (dateFilterType === 'main') {
-        params.startDate = filters.startDate.format('YYYY-MM-DD');
-        params.endDate = filters.endDate.format('YYYY-MM-DD');
+        if (filters.startDate && filters.endDate) {
+          params.startDate = filters.startDate.format('YYYY-MM-DD');
+          params.endDate = filters.endDate.format('YYYY-MM-DD');
+        }
+        // If main dates are empty, no date params sent = all-time data
       } else if (dateFilterType === 'firstTime') {
         if (filters.firstTimeDateRange[0] && filters.firstTimeDateRange[1]) {
           params.firstTimeFrom = filters.firstTimeDateRange[0].format('YYYY-MM-DD');
@@ -99,11 +102,11 @@ const CollegeStatusReports = () => {
       // Automatically switch to main date filter type
       setDateFilterType('main');
     } else {
-      // If dates are cleared, reset to default
+      // If dates are cleared, reset to null (all-time)
       setFilters(prev => ({
         ...prev,
-        startDate: dayjs().startOf('month'),
-        endDate: dayjs()
+        startDate: null,
+        endDate: null
       }));
     }
   };
@@ -132,11 +135,11 @@ const CollegeStatusReports = () => {
   const handleResetFilters = () => {
     setFilters({
       reportType: 'colleges',
-      startDate: dayjs().startOf('month'),
-      endDate: dayjs(),
-      firstTimeDateRange: [null, null],
+      startDate: null,
+      endDate: null,
+      firstTimeDateRange: [dayjs().startOf('month'), dayjs()],
     });
-    setDateFilterType('main');
+    setDateFilterType('firstTime');
   };
 
   const handleExport = async () => {
@@ -147,8 +150,10 @@ const CollegeStatusReports = () => {
 
       // Only include the active date filter in export
       if (dateFilterType === 'main') {
-        params.startDate = filters.startDate.format('YYYY-MM-DD');
-        params.endDate = filters.endDate.format('YYYY-MM-DD');
+        if (filters.startDate && filters.endDate) {
+          params.startDate = filters.startDate.format('YYYY-MM-DD');
+          params.endDate = filters.endDate.format('YYYY-MM-DD');
+        }
       } else if (dateFilterType === 'firstTime') {
         params.firstTimeFrom = filters.firstTimeDateRange[0] ? filters.firstTimeDateRange[0].format('YYYY-MM-DD') : null;
         params.firstTimeTo = filters.firstTimeDateRange[1] ? filters.firstTimeDateRange[1].format('YYYY-MM-DD') : null;
@@ -294,7 +299,10 @@ const CollegeStatusReports = () => {
 
   // Format date display
   const formatDateRange = () => {
-    return `${filters.startDate.format('DD MMM')} - ${filters.endDate.format('DD MMM YYYY')}`;
+    if (filters.startDate && filters.endDate) {
+      return `${filters.startDate.format('DD MMM')} - ${filters.endDate.format('DD MMM YYYY')}`;
+    }
+    return 'All Time';
   };
 
   const formatFirstTimeDateRange = () => {
@@ -349,8 +357,8 @@ const CollegeStatusReports = () => {
                 optionType="button"
                 buttonStyle="solid"
               >
-                <Radio.Button value="main">First Time Date Range</Radio.Button>
-                <Radio.Button value="firstTime"> Main Date Range</Radio.Button>
+                <Radio.Button value="main">Main Date Range</Radio.Button>
+                <Radio.Button value="firstTime">First Time Date Range</Radio.Button>
               </Radio.Group>
             </div>
 
@@ -362,14 +370,14 @@ const CollegeStatusReports = () => {
                 }`}>
                 <Calendar size={18} className={isMainDateActive ? 'text-blue-500' : 'text-slate-400'} />
                 <RangePicker
-                  value={[filters.startDate, filters.endDate]}
+                  value={filters.startDate && filters.endDate ? [filters.startDate, filters.endDate] : null}
                   onChange={handleDateRangeChange}
                   format="DD/MM/YYYY"
                   size="middle"
                   className="!border-0 !bg-transparent !shadow-none !p-0"
-                  allowClear={false}
+                  allowClear={true}
                   suffixIcon={null}
-                  placeholder={['Start Date', 'End Date']}
+                  placeholder={['All Time', 'All Time']}
                   disabled={!isMainDateActive}
                 />
               </div>
