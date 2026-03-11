@@ -342,10 +342,11 @@ const UnifiedCallModal = ({
     }
 
     if (activeRole === "l3") {
-      // L3 cannot select Pre Application or Application
-      if (funnel === "Pre Application" || funnel === "Application") {
-        return false;
+      // L3 can ONLY select Application (NOT Pre Application)
+      if (funnel === "Pre Application") {
+        return false; // Block Pre Application
       }
+      // Allow Application and all other statuses
       return true;
     }
 
@@ -647,7 +648,7 @@ const UnifiedCallModal = ({
         } else {
           const url = window.location.origin + window.location.pathname;
           window.history.replaceState({}, document.title, url);
-          // window.location.reload();
+          window.location.reload();
         }
       }
     } catch (error) {
@@ -758,7 +759,7 @@ const UnifiedCallModal = ({
     if (filledForm) {
       const url = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, url);
-      // window.location.reload();
+      window.location.reload();
     } else {
       setIsFormPopupOpen(true);
     }
@@ -768,7 +769,7 @@ const UnifiedCallModal = ({
     setIsFormPopupOpen(false);
     const url = window.location.origin + window.location.pathname;
     window.history.replaceState({}, document.title, url);
-    // window.location.reload();
+    window.location.reload();
   };
 
   const confirmText =
@@ -970,6 +971,13 @@ const UnifiedCallModal = ({
                       {Object.keys(funnelConfig)
                         .filter((status) => {
                           if (
+                            latestRemark?.lead_status === "Admission" &&
+                            status === "Application"
+                          ) {
+                            return false;
+                          }
+
+                          if (
                             activeRole === "l2" &&
                             (status === "Admission" || status === "Enrolled")
                           ) {
@@ -977,8 +985,7 @@ const UnifiedCallModal = ({
                           }
                           if (
                             activeRole === "l3" &&
-                            (status === "Pre Application" ||
-                              status === "Application")
+                            status === "Pre Application" // Only filter out Pre Application for L3
                           ) {
                             return false;
                           }

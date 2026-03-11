@@ -15,7 +15,6 @@ import {
   Empty,
   Badge,
   Spin,
-  Drawer,
   Divider,
 } from "antd";
 import {
@@ -30,24 +29,24 @@ import {
   FileDoneOutlined,
   FilterOutlined,
   ClearOutlined,
-  PhoneFilled,
-  WhatsAppOutlined,
   BankOutlined,
   ReadOutlined,
-  CloseOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import { BASE_URL } from "../config/api";
 import { fetchFilterOptions } from "../network/filterOptions";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 
 const FormDashboard = () => {
   const navigate = useNavigate();
+  const userRole = useSelector((state) => state.auth.user?.role);
+
   const [loading, setLoading] = useState(false);
   const [loadingFilters, setLoadingFilters] = useState(false);
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
   const [stats, setStats] = useState({
     total: 0,
     fresh: 0,
@@ -216,12 +215,6 @@ const FormDashboard = () => {
     setSearchTerm(e.target.value);
   };
 
-  const applyFilters = () => {
-    setFilterDrawerOpen(false);
-    fetchData(1, pagination.pageSize);
-    message.success("Filters applied");
-  };
-
   const clearFilters = () => {
     setSelectedColleges([]);
     setSelectedCourses([]);
@@ -253,7 +246,7 @@ const FormDashboard = () => {
     navigate(`/student/${studentId}`);
   };
 
-  // Table columns - Only first 2 columns fixed
+  // Table columns
   const columns = [
     {
       title: "Created At",
@@ -294,7 +287,6 @@ const FormDashboard = () => {
       title: "Student Name",
       key: "studentName",
       width: 200,
-      // No fixed property - will scroll
       render: (_, record) => (
         <div className="flex items-center gap-2">
           <div>
@@ -449,40 +441,20 @@ const FormDashboard = () => {
       title: "Actions",
       key: "actions",
       width: 120,
-      fixed: "right", // Actions column fixed on right
+      fixed: "right",
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Call">
+          <Tooltip title="Open Lead">
             <Button
               type="text"
-              icon={<PhoneFilled style={{ color: "#16a34a", fontSize: 16 }} />}
+              icon={<UserOutlined style={{ color: "#3b82f6", fontSize: 16 }} />}
               size="small"
-              className="hover:bg-green-50"
+              className="hover:bg-blue-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStudentClick(record.studentId);
+              }}
             />
-          </Tooltip>
-          <Tooltip title="Missed Call">
-            <Button
-              type="text"
-              icon={
-                <PhoneOutlined style={{ color: "#dc2626", fontSize: 16 }} />
-              }
-              size="small"
-              className="hover:bg-red-50"
-            />
-          </Tooltip>
-          <Tooltip title="WhatsApp">
-            <Badge
-              count={record.student?.unreadMessages}
-              size="small"
-              offset={[-5, 5]}
-            >
-              <Button
-                type="text"
-                icon={<WhatsAppOutlined style={{ fontSize: 16 }} />}
-                size="small"
-                className="hover:bg-green-50"
-              />
-            </Badge>
           </Tooltip>
         </Space>
       ),
@@ -496,25 +468,36 @@ const FormDashboard = () => {
     }));
   }, [students]);
 
-  const StatCard = ({ title, value, icon, color }) => (
-    <Card
-      className="hover:shadow-lg transition-all duration-300"
-      bodyStyle={{ padding: "20px" }}
-    >
+  // Enhanced Stat Card Component with gradients and icons
+  const StatCard = ({ title, value, icon, gradient }) => (
+    <Card className="hover:scale-105 transition-all duration-300 cursor-pointer border-2 border-gray-200 rounded-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <Text type="secondary" className="text-sm uppercase tracking-wider">
+          <Text
+            className="text-white text-opacity-90 text-sm uppercase tracking-wider font-medium"
+            style={{
+              background: gradient,
+              WebkitBackgroundClip: "text",
+              color: "transparent",
+            }}
+          >
             {title}
           </Text>
-          <div className="text-3xl font-bold mt-2" style={{ color }}>
+          <div
+            className="text-4xl font-bold mt-2 text-white"
+            style={{
+              background: gradient,
+              WebkitBackgroundClip: "text",
+              color: "transparent",
+            }}
+          >
             {value}
           </div>
         </div>
-        <div
-          className="p-3 rounded-full"
-          style={{ backgroundColor: `${color}20` }}
-        >
-          {React.cloneElement(icon, { style: { color, fontSize: "24px" } })}
+        <div className="p-3 rounded-full">
+          {React.cloneElement(icon, {
+            style: { color: gradient, fontSize: "28px" },
+          })}
         </div>
       </div>
     </Card>
@@ -534,15 +517,25 @@ const FormDashboard = () => {
   ].length;
 
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      {/* Stats Cards */}
-      <Row gutter={[16, 16]} className="mb-6">
+    <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <div className="mb-8">
+        <Title level={2} className="!mb-1 text-gray-800">
+          Form Dashboard
+        </Title>
+        <Text type="secondary" className="text-lg">
+          Track and manage all student forms
+        </Text>
+      </div>
+
+      {/* Enhanced Stats Cards */}
+      <Row gutter={[24, 24]} className="mb-8">
         <Col xs={24} sm={12} lg={6}>
           <StatCard
             title="Total Students"
             value={stats.total}
             icon={<TeamOutlined />}
-            color="#1890ff"
+            gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -550,7 +543,7 @@ const FormDashboard = () => {
             title="Fresh"
             value={stats.fresh}
             icon={<RiseOutlined />}
-            color="#52c41a"
+            gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -558,7 +551,7 @@ const FormDashboard = () => {
             title="Admission"
             value={stats.admission}
             icon={<BookOutlined />}
-            color="#faad14"
+            gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -566,90 +559,34 @@ const FormDashboard = () => {
             title="Enrollment"
             value={stats.enrollment}
             icon={<FileDoneOutlined />}
-            color="#722ed1"
+            gradient="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
           />
         </Col>
       </Row>
 
-      {/* Search Bar and Filter Button */}
-      <div className="mb-6 flex gap-3">
-        <Input
-          placeholder="Search by name, email, phone..."
-          value={searchTerm}
-          onChange={handleSearch}
-          prefix={<SearchOutlined className="text-gray-400" />}
-          className="flex-1"
-          size="large"
-          allowClear
-        />
-        <Badge count={activeFilterCount} offset={[-5, 5]}>
-          <Button
-            type="primary"
-            icon={<FilterOutlined />}
-            onClick={() => setFilterDrawerOpen(true)}
-            size="large"
-            className="bg-blue-600"
-          >
-            Filters
-          </Button>
-        </Badge>
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={handleRefresh}
-          loading={loading}
-          size="large"
-        >
-          Refresh
-        </Button>
-      </div>
-
-      {/* Filter Drawer */}
-      <Drawer
-        title={
-          <div className="flex justify-between items-center">
-            <span>Filters</span>
-            <Button
-              type="text"
-              icon={<CloseOutlined />}
-              onClick={() => setFilterDrawerOpen(false)}
+      {/* Filters Section - All in one line always visible */}
+      <Card className="mb-6 shadow-sm border-0" bodyStyle={{ padding: "20px" }}>
+        <Row gutter={[16, 16]} align="middle">
+          {/* Search Input */}
+          <Col xs={24} md={6} lg={5}>
+            <Input
+              placeholder="Search by name, email, phone..."
+              value={searchTerm}
+              onChange={handleSearch}
+              prefix={<SearchOutlined className="text-gray-400" />}
+              size="large"
+              allowClear
             />
-          </div>
-        }
-        placement="right"
-        onClose={() => setFilterDrawerOpen(false)}
-        open={filterDrawerOpen}
-        width={400}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button onClick={clearFilters}>Clear All</Button>
-            <Button
-              type="primary"
-              onClick={applyFilters}
-              className="bg-blue-600"
-            >
-              Apply Filters
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          {loadingFilters && (
-            <div className="text-center py-4">
-              <Spin />
-              <p className="text-gray-500 mt-2">Loading filters...</p>
-            </div>
-          )}
+          </Col>
 
-          <div>
-            <Text strong className="text-gray-700">
-              University
-            </Text>
+          {/* University Filter */}
+          <Col xs={24} md={4} lg={4}>
             <Select
               mode="multiple"
-              placeholder="Select universities"
+              placeholder="University"
               value={selectedColleges}
               onChange={setSelectedColleges}
-              className="w-full mt-1"
+              className="w-full"
               options={universityOptions}
               maxTagCount="responsive"
               loading={loadingFilters}
@@ -657,21 +594,18 @@ const FormDashboard = () => {
               showSearch
               optionFilterProp="label"
               size="large"
+              maxTagPlaceholder={(omittedValues) => `+${omittedValues.length}`}
             />
-          </div>
+          </Col>
 
-          <Divider className="my-3" />
-
-          <div>
-            <Text strong className="text-gray-700">
-              Course
-            </Text>
+          {/* Course Filter */}
+          <Col xs={24} md={4} lg={4}>
             <Select
               mode="multiple"
-              placeholder="Select courses"
+              placeholder="Course"
               value={selectedCourses}
               onChange={setSelectedCourses}
-              className="w-full mt-1"
+              className="w-full"
               options={courseOptions}
               maxTagCount="responsive"
               loading={loadingFilters}
@@ -679,42 +613,38 @@ const FormDashboard = () => {
               showSearch
               optionFilterProp="label"
               size="large"
+              maxTagPlaceholder={(omittedValues) => `+${omittedValues.length}`}
             />
-          </div>
+          </Col>
 
-          <Divider className="my-3" />
+          {/* Clear All Button - After Course */}
 
-          <div>
-            <Text strong className="text-gray-700">
-              Lead Sub Status
-            </Text>
+          {/* Lead Sub Status Filter */}
+          <Col xs={24} md={4} lg={4}>
             <Select
               mode="multiple"
-              placeholder="Select sub status"
+              placeholder="Lead Status"
               value={selectedLeadSubStatus}
               onChange={setSelectedLeadSubStatus}
-              className="w-full mt-1"
+              className="w-full"
               options={leadSubStatusOptions}
               maxTagCount="responsive"
               allowClear
               showSearch
               optionFilterProp="label"
               size="large"
+              maxTagPlaceholder={(omittedValues) => `+${omittedValues.length}`}
             />
-          </div>
+          </Col>
 
-          <Divider className="my-3" />
-
-          <div>
-            <Text strong className="text-gray-700">
-              Source
-            </Text>
+          {/* Source Filter */}
+          <Col xs={24} md={3} lg={3}>
             <Select
               mode="multiple"
-              placeholder="Select sources"
+              placeholder="Source"
               value={selectedSource}
               onChange={setSelectedSource}
-              className="w-full mt-1"
+              className="w-full"
               options={sourceOptions}
               maxTagCount="responsive"
               loading={loadingFilters}
@@ -722,13 +652,108 @@ const FormDashboard = () => {
               showSearch
               optionFilterProp="label"
               size="large"
+              maxTagPlaceholder={(omittedValues) => `+${omittedValues.length}`}
             />
+          </Col>
+
+          {/* Refresh Button */}
+          <Col xs={24} md={1} lg={2}>
+            <Tooltip title="Refresh data">
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleRefresh}
+                loading={loading}
+                size="large"
+                className="w-full"
+              />
+            </Tooltip>
+          </Col>
+          <Col xs={24} md={2} lg={2}>
+            <Tooltip title="Clear all filters">
+              <Button
+                icon={<ClearOutlined />}
+                onClick={clearFilters}
+                size="large"
+                danger={hasActiveFilters}
+                disabled={!hasActiveFilters}
+                className="w-full"
+              >
+                Clear All
+              </Button>
+            </Tooltip>
+          </Col>
+        </Row>
+
+        {/* Active Filters Summary */}
+        {hasActiveFilters && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <Space size={[0, 8]} wrap>
+              <Text type="secondary" className="text-sm mr-2">
+                Active filters:
+              </Text>
+              {selectedColleges.map((college) => (
+                <Tag
+                  key={college}
+                  closable
+                  onClose={() =>
+                    setSelectedColleges(
+                      selectedColleges.filter((c) => c !== college),
+                    )
+                  }
+                  className="bg-blue-50 border-blue-200 text-blue-700"
+                >
+                  {college}
+                </Tag>
+              ))}
+              {selectedCourses.map((course) => (
+                <Tag
+                  key={course}
+                  closable
+                  onClose={() =>
+                    setSelectedCourses(
+                      selectedCourses.filter((c) => c !== course),
+                    )
+                  }
+                  className="bg-green-50 border-green-200 text-green-700"
+                >
+                  {course}
+                </Tag>
+              ))}
+              {selectedLeadSubStatus.map((status) => (
+                <Tag
+                  key={status}
+                  closable
+                  onClose={() =>
+                    setSelectedLeadSubStatus(
+                      selectedLeadSubStatus.filter((s) => s !== status),
+                    )
+                  }
+                  className="bg-purple-50 border-purple-200 text-purple-700"
+                >
+                  {status}
+                </Tag>
+              ))}
+              {selectedSource.map((source) => (
+                <Tag
+                  key={source}
+                  closable
+                  onClose={() =>
+                    setSelectedSource(
+                      selectedSource.filter((s) => s !== source),
+                    )
+                  }
+                  className="bg-orange-50 border-orange-200 text-orange-700"
+                >
+                  {source}
+                </Tag>
+              ))}
+            </Space>
           </div>
-        </div>
-      </Drawer>
+        )}
+      </Card>
 
       {/* Table */}
-      <Card className="shadow-sm">
+      <Card className="shadow-sm border-0" bodyStyle={{ padding: 0 }}>
         <Table
           columns={columns}
           dataSource={dataSource}
@@ -747,7 +772,6 @@ const FormDashboard = () => {
           rowClassName="hover:bg-gray-50 cursor-pointer"
           onRow={(record) => ({
             onClick: (e) => {
-              // Only trigger if not clicking on action buttons
               if (!e.target.closest(".ant-btn")) {
                 handleStudentClick(record.studentId);
               }
