@@ -38,7 +38,6 @@ import StudentFormPopup from "../components/StudentFormPopup";
 import { useSelector } from "react-redux";
 import { WhatsAppOutlined, DollarOutlined } from "@ant-design/icons";
 import WatsaapChat from "../components/WatsaapChat";
-import PaymentStatus from "../components/PaymentStatus";
 
 const StudentPage = () => {
   const { studentId } = useParams();
@@ -422,6 +421,7 @@ const StudentPage = () => {
           <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
             <WatsaapChat
               isOpen={openChatModal}
+              setOpenChatModal={setOpenChatModal}
               onClose={() => setOpenChatModal(false)}
               student={student}
             />

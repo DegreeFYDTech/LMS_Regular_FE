@@ -56,15 +56,15 @@ const HomePage = memo(() => {
     const limitFromURL = urlFilters.limit || 10;
 
     updateFilters(urlFilters);
-   setCurrentPage(Number(pageFromURL)); // Ensure it's a number
-  setLeadsPerPage(Number(limitFromURL)); // Ensure it's a numbe
+    setCurrentPage(Number(pageFromURL)); // Ensure it's a number
+    setLeadsPerPage(Number(limitFromURL)); // Ensure it's a numbe
 
     const autoFilters = getTabAutoFilters(activeTab);
     const combinedFilters = {
       ...autoFilters,
       ...urlFilters,
       page: Number(pageFromURL), // Convert to number
-    limit: Number(limitFromURL) // Convert to number
+      limit: Number(limitFromURL) // Convert to number
     };
 
     fetchLeads(combinedFilters, pageFromURL, true);
@@ -81,7 +81,7 @@ const HomePage = memo(() => {
   }, []);
 
   useEffect(() => {
-    if (storedRole === "Supervisor"|| storedRole==="to") {
+    if (storedRole === "Supervisor" || storedRole === "to") {
       fetchAgents();
     }
   }, [storedRole, fetchAgents]);
@@ -90,121 +90,121 @@ const HomePage = memo(() => {
     if (tab === activeTab) return;
     setActiveTab(tab);
     setCurrentPage(1);
-  setLeadsPerPage(10); // Reset to default limit
+    setLeadsPerPage(10); // Reset to default limit
 
     // If you added setCurrentTab to useFilters, call it here
     // setCurrentTab(tab); // Uncomment if you want to track tab in useFilters
 
     const autoFilters = getTabAutoFilters(tab);
     const filtersWithPagination = {
-    ...autoFilters,
-    page: 1,
-    limit: 10 // Default limit
-  };
-      updateFilters(filtersWithPagination);
-  fetchLeads(filtersWithPagination, 1, true);
-  updateURL(filtersWithPagination, true);
+      ...autoFilters,
+      page: 1,
+      limit: 10 // Default limit
+    };
+    updateFilters(filtersWithPagination);
+    fetchLeads(filtersWithPagination, 1, true);
+    updateURL(filtersWithPagination, true);
   }, [activeTab, getTabAutoFilters, updateFilters, fetchLeads, updateURL]);
 
- const handleFilterChange = useCallback((key, value, previousFilters) => {
-  const newFilters = key === 'bulk' ?
-    { 
-      ...value, 
-      data: value.data || filters.data || activeRole,
-      page: 1, // Reset to page 1 on filter change
-      limit: leadsPerPage // Keep current limit
-    } :
-    { 
-      ...previousFilters, 
-      [key]: value, 
-      data: filters.data || activeRole,
-      page: 1, // Reset to page 1 on filter change
-      limit: leadsPerPage // Keep current limit
-    };
-  
-  updateFilters(newFilters);
-  setCurrentPage(1);
-  updateURL(newFilters);
-  fetchLeads(newFilters, 1, true);
-}, [filters, activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads]);
+  const handleFilterChange = useCallback((key, value, previousFilters) => {
+    const newFilters = key === 'bulk' ?
+      {
+        ...value,
+        data: value.data || filters.data || activeRole,
+        page: 1,
+        limit: leadsPerPage
+      } :
+      {
+        ...previousFilters,
+        [key]: value,
+        data: filters.data || activeRole,
+        page: 1, // Reset to page 1 on filter change
+        limit: leadsPerPage // Keep current limit
+      };
 
-const handleApplyFilters = useCallback((newFilters) => {
-  const filtersWithDataAndPagination = {
-    ...newFilters,
-    data: newFilters.data || filters.data || activeRole,
-    page: 1, // Reset to page 1 when applying filters
-    limit: leadsPerPage // Keep current limit
-  };
-  
-  updateFilters(filtersWithDataAndPagination);
-  setCurrentPage(1);
-  updateURL(filtersWithDataAndPagination, true);
-  fetchLeads(filtersWithDataAndPagination, 1, true);
-}, [filters, activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads]);
-
-const handleClearFilters = useCallback(() => {
-  const clearedFilters = clearFilters(activeTab);
-  const filtersWithPagination = {
-    ...clearedFilters,
-    page: 1,
-    limit: leadsPerPage // Keep current limit
-  };
-  
-  setCurrentPage(1);
-  updateURL(filtersWithPagination, true);
-  fetchLeads(filtersWithPagination, 1, true);
-}, [clearFilters, activeTab, leadsPerPage, updateURL, fetchLeads]);
-
- const handleAgentClick = useCallback((selectedAgent) => {
-  try {
-    localStorage.setItem("agent", JSON.stringify(selectedAgent));
-    setAgent(selectedAgent);
-
-    const updatedFilters = {
-      ...filters,
-      selectedagent: selectedAgent.counsellor_id,
-      data: selectedAgent.role || activeRole,
-      page: 1, // Reset to page 1
-      limit: leadsPerPage // Keep current limit
-    };
-
-    updateFilters(updatedFilters);
+    updateFilters(newFilters);
     setCurrentPage(1);
-    updateURL(updatedFilters, true);
-    fetchLeads(updatedFilters, 1, true);
+    updateURL(newFilters);
+    fetchLeads(newFilters, 1, true);
+  }, [filters, activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads]);
 
-    secureCache.clear();
-  } catch (error) {
-    console.error("Error updating agent:", error);
-  }
-}, [activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads, filters]);
-
-const handleRoleSwitch = useCallback(() => {
-  const newRole = activeRole === "l3" ? "l2" : "l3";
-  const updatedAgent = { ...agent, role: newRole };
-
-  try {
-    localStorage.setItem("agent", JSON.stringify(updatedAgent));
-    setAgent(updatedAgent);
-
-    const updatedFilters = {
-      ...filters,
-      data: newRole,
-      selectedagent: updatedAgent.counsellor_id || agent.counsellor_id || roletosend?.counsellor_id || agent?.id,
-      page: 1, // Reset to page 1
+  const handleApplyFilters = useCallback((newFilters) => {
+    const filtersWithDataAndPagination = {
+      ...newFilters,
+      data: newFilters.data || filters.data || activeRole,
+      page: 1, // Reset to page 1 when applying filters
       limit: leadsPerPage // Keep current limit
     };
 
-    updateFilters(updatedFilters);
+    updateFilters(filtersWithDataAndPagination);
     setCurrentPage(1);
-    updateURL(updatedFilters, true);
-    fetchLeads(updatedFilters, 1, true);
+    updateURL(filtersWithDataAndPagination, true);
+    fetchLeads(filtersWithDataAndPagination, 1, true);
+  }, [filters, activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads]);
 
-    secureCache.clear();
-  } catch (error) {
-    console.error("Error switching roles:", error);
-  }
-}, [activeRole, agent, filters, leadsPerPage, roletosend, updateFilters, updateURL, fetchLeads]);
+  const handleClearFilters = useCallback(() => {
+    const clearedFilters = clearFilters(activeTab);
+    const filtersWithPagination = {
+      ...clearedFilters,
+      page: 1,
+      limit: leadsPerPage // Keep current limit
+    };
+
+    setCurrentPage(1);
+    updateURL(filtersWithPagination, true);
+    fetchLeads(filtersWithPagination, 1, true);
+  }, [clearFilters, activeTab, leadsPerPage, updateURL, fetchLeads]);
+
+  const handleAgentClick = useCallback((selectedAgent) => {
+    try {
+      localStorage.setItem("agent", JSON.stringify(selectedAgent));
+      setAgent(selectedAgent);
+
+      const updatedFilters = {
+        ...filters,
+        selectedagent: selectedAgent.counsellor_id,
+        data: selectedAgent.role || activeRole,
+        page: 1, // Reset to page 1
+        limit: leadsPerPage // Keep current limit
+      };
+
+      updateFilters(updatedFilters);
+      setCurrentPage(1);
+      updateURL(updatedFilters, true);
+      fetchLeads(updatedFilters, 1, true);
+
+      secureCache.clear();
+    } catch (error) {
+      console.error("Error updating agent:", error);
+    }
+  }, [activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads, filters]);
+
+  const handleRoleSwitch = useCallback(() => {
+    const newRole = activeRole === "l3" ? "l2" : "l3";
+    const updatedAgent = { ...agent, role: newRole };
+
+    try {
+      localStorage.setItem("agent", JSON.stringify(updatedAgent));
+      setAgent(updatedAgent);
+
+      const updatedFilters = {
+        ...filters,
+        data: newRole,
+        selectedagent: updatedAgent.counsellor_id || agent.counsellor_id || roletosend?.counsellor_id || agent?.id,
+        page: 1, // Reset to page 1
+        limit: leadsPerPage // Keep current limit
+      };
+
+      updateFilters(updatedFilters);
+      setCurrentPage(1);
+      updateURL(updatedFilters, true);
+      fetchLeads(updatedFilters, 1, true);
+
+      secureCache.clear();
+    } catch (error) {
+      console.error("Error switching roles:", error);
+    }
+  }, [activeRole, agent, filters, leadsPerPage, roletosend, updateFilters, updateURL, fetchLeads]);
   const handlePageChange = useCallback((newPage) => {
     if (newPage === currentPage) return;
 
@@ -212,19 +212,19 @@ const handleRoleSwitch = useCallback(() => {
     const updatedFilters = {
       ...filters,
       page: newPage,
-      limit: leadsPerPage 
+      limit: leadsPerPage
     };
     updateURL(updatedFilters);
     fetchLeads(updatedFilters, newPage, true);
   }, [currentPage, filters, leadsPerPage, updateURL, fetchLeads]);
 
   const handleLimitChange = useCallback((newLimit) => {
-    setCurrentPage(1); 
+    setCurrentPage(1);
     setLeadsPerPage(newLimit);
     const updatedFilters = {
       ...filters,
       limit: newLimit,
-      page: 1 
+      page: 1
     };
     updateURL(updatedFilters, true);
     fetchLeads(updatedFilters, 1, true);

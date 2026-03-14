@@ -54,7 +54,7 @@ const buildTemplatePlainText = (templateData) => {
   return parts.join("\n\n");
 };
 
-const WhatsAppChatInterface = ({ student, setOpenwhatsappPopup }) => {
+const WhatsAppChatInterface = ({ student, setOpenwhatsappPopup ,setOpenChatModal}) => {
   const hasUnreadMessages = student?.number_of_unread_messages > 0;
 
   const [templates, setTemplates] = useState([]);
@@ -701,7 +701,7 @@ const WhatsAppChatInterface = ({ student, setOpenwhatsappPopup }) => {
               {ConnectionStatus}
             </div>
             <button
-              onClick={setOpenwhatsappPopup}
+              onClick={setOpenChatModal ? () => setOpenChatModal(false) : null}
               className="text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors"
               aria-label="Close"
             >
