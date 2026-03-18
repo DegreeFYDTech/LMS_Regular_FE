@@ -35,6 +35,7 @@ const Sidebar = ({
   handleTabChange,
   setIsAddLeadModalOpen,
   agents,
+  selectedAgent,
   handleAgentClick,
   navigate,
 }) => {
@@ -452,6 +453,7 @@ const Sidebar = ({
             <AgentsDropdown
               agents={agents}
               onAgentSelect={handleAgentClick}
+              selectedAgentProp={selectedAgent}
               sidebarCollapsed={sidebarCollapsed}
             />
           </div>

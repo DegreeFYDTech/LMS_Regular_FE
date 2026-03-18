@@ -98,6 +98,7 @@ const HomePage = memo(() => {
     const autoFilters = getTabAutoFilters(tab);
     const filtersWithPagination = {
       ...autoFilters,
+      selectedagent: filters.selectedagent || autoFilters.selectedagent,
       page: 1,
       limit: 10 // Default limit
     };
@@ -111,6 +112,7 @@ const HomePage = memo(() => {
       {
         ...value,
         data: value.data || filters.data || activeRole,
+        selectedagent: value.selectedagent || filters.selectedagent,
         page: 1,
         limit: leadsPerPage
       } :
@@ -146,6 +148,7 @@ const HomePage = memo(() => {
     const clearedFilters = clearFilters(activeTab);
     const filtersWithPagination = {
       ...clearedFilters,
+      selectedagent: filters.selectedagent,
       page: 1,
       limit: leadsPerPage // Keep current limit
     };
@@ -305,6 +308,7 @@ const HomePage = memo(() => {
         activeTab={activeTab}
         handleTabChange={handleTabChange}
         agents={agents}
+        selectedAgent={agent}
         handleAgentClick={handleAgentClick}
         navigate={navigate}
         setIsAddLeadModalOpen={setIsAddLeadModalOpen}

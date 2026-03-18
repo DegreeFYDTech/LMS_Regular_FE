@@ -10,14 +10,34 @@ import {
 } from '@ant-design/icons';
 import { Input, Badge, Avatar, Tag } from 'antd';
 
-const AgentsDropdown = ({ agents, onAgentSelect, sidebarCollapsed }) => {
+const AgentsDropdown = ({ agents, onAgentSelect, selectedAgentProp, sidebarCollapsed }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedAgent, setSelectedAgent] = useState({
-        name: "All Agents",
-        counsellor_id: null,
+    const [selectedAgent, setSelectedAgent] = useState(() => {
+        if (selectedAgentProp && (selectedAgentProp.counsellor_id || selectedAgentProp.name)) {
+            return selectedAgentProp;
+        }
+        try {
+            const savedAgent = localStorage.getItem("agent");
+            return savedAgent ? JSON.parse(savedAgent) : {
+                name: "All Agents",
+                counsellor_id: null,
+            };
+        } catch {
+            return {
+                name: "All Agents",
+                counsellor_id: null,
+            };
+        }
     });
     const dropdownRef = useRef(null);
+    
+    // Sync state if prop changes
+    useEffect(() => {
+        if (selectedAgentProp && (selectedAgentProp.counsellor_id !== selectedAgent.counsellor_id || selectedAgentProp.name !== selectedAgent.name)) {
+            setSelectedAgent(selectedAgentProp);
+        }
+    }, [selectedAgentProp]);
 
     // Helper function to get the correct ID from agent object
     const getAgentId = useCallback((agent) => {
