@@ -70,7 +70,7 @@ const AppRoutes = () => {
                 index
                 element={
                   <RoleBasedRoute
-                    allowedRoles={["Supervisor", "l2", "l3", "Analyser", "to"]}
+                    allowedRoles={["Supervisor", "l2", "l3", "Analyser", "to","to_l3"]}
                   >
                     <Home />
                   </RoleBasedRoute>
@@ -80,7 +80,7 @@ const AppRoutes = () => {
                 path="/student/:studentId"
                 element={
                   <RoleBasedRoute
-                    allowedRoles={["Supervisor", "l2", "l3", "Analyser", "to"]}
+                    allowedRoles={["Supervisor", "l2", "l3", "Analyser", "to","to_l3"]}
                   >
                     <StudentPage />
                   </RoleBasedRoute>
@@ -89,7 +89,7 @@ const AppRoutes = () => {
               <Route
                 path="/scroreboard"
                 element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "to"]}>
+                  <RoleBasedRoute allowedRoles={["Supervisor", "to","to_l3"]}>
                     <ScoreBoard />
                   </RoleBasedRoute>
                 }
@@ -107,7 +107,7 @@ const AppRoutes = () => {
                 path="/analysisreport"
                 element={
                   <RoleBasedRoute
-                    allowedRoles={["Supervisor", "Analyser", "to"]}
+                    allowedRoles={["Supervisor", "Analyser", "to","to_l3"]}
                   >
                     <MainReport />
                   </RoleBasedRoute>
@@ -127,7 +127,7 @@ const AppRoutes = () => {
                 path="/counsellorReport"
                 element={
                   <RoleBasedRoute
-                    allowedRoles={["Supervisor", "Analyser", "to"]}
+                    allowedRoles={["Supervisor", "Analyser", "to","to_l3"]}
                   >
                     <CounsellorStatsDashboard />
                   </RoleBasedRoute>
@@ -142,7 +142,7 @@ const AppRoutes = () => {
               <Route
                 path="/counsellors-break-dashboard"
                 element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "to"]}>
+                  <RoleBasedRoute allowedRoles={["Supervisor", "to","to_l3"]}>
                     <CounsellorBreakDashboard />
                   </RoleBasedRoute>
                 }
@@ -150,7 +150,7 @@ const AppRoutes = () => {
               <Route
                 path="/form-to-admission"
                 element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "to"]}>
+                  <RoleBasedRoute allowedRoles={["Supervisor", "to","to_l3"]}>
                     <FormToAdmissionsReport />
                   </RoleBasedRoute>
                 }
@@ -158,7 +158,7 @@ const AppRoutes = () => {
               <Route
                 path="/counsellorslisting"
                 element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "to"]}>
+                  <RoleBasedRoute allowedRoles={["Supervisor", "to","to_l3"]}>
                     <CounsellorListing />
                   </RoleBasedRoute>
                 }
@@ -166,7 +166,7 @@ const AppRoutes = () => {
               <Route
                 path="/addcounsellor"
                 element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "to"]}>
+                  <RoleBasedRoute allowedRoles={["Supervisor", "to","to_l3"]}>
                     <AddCounsellor />
                   </RoleBasedRoute>
                 }
@@ -224,7 +224,7 @@ const AppRoutes = () => {
                 path="/website-chat"
                 element={
                   <RoleBasedRoute
-                    allowedRoles={["Supervisor", "l2", "l3", "Analyser", "to"]}
+                    allowedRoles={["Supervisor", "l2", "l3", "Analyser", "to","to_l3"]}
                   >
                     <WebsiteChatDashboard />
                   </RoleBasedRoute>
@@ -252,7 +252,7 @@ const AppRoutes = () => {
                 path="/payment-reports"
                 element={
                   <RoleBasedRoute
-                    allowedRoles={["Supervisor", "Analyser", "to", "l2", "l3"]}
+                    allowedRoles={["Supervisor", "Analyser", "to", "l2", "l3","to_l3"]}
                   >
                     <PaymentDashboard />
                   </RoleBasedRoute>
