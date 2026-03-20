@@ -76,8 +76,7 @@ const UserListing = () => {
         const counsellors = counsellorsResponse.counsellors || counsellorsResponse.data || counsellorsResponse;
         let supervisorsList = supervisorsData.counsellors || supervisorsData.data || supervisorsData;
 
-        // Filter supervisors by role = "to" (Team Lead)
-        supervisorsList = supervisorsList.filter(sup => sup.role === "to");
+        supervisorsList = supervisorsList.filter(sup => sup.role === "to" || sup.role === "to_l3");
 
         // Create supervisor map for quick lookup
         const supervisorMap = {};
@@ -226,31 +225,32 @@ const UserListing = () => {
   };
 
 
-  const confirmChangeSupervisor = async () => {
-    try {
-      await changeSupervisor(selectedUser.counsellor_id, selectedSupervisorId || null);
+const confirmChangeSupervisor = async (supervisorId) => {
+  try {
+    // Use the passed supervisorId instead of selectedSupervisorId state
+    await changeSupervisor(selectedUser.counsellor_id, supervisorId || null);
 
-      // Update local state
-      const updatedSupervisorName = selectedSupervisorId
-        ? supervisors.find(s => s.counsellor_id === selectedSupervisorId)?.counsellor_name
-        : null;
+    // Update local state
+    const updatedSupervisorName = supervisorId
+      ? supervisors.find(s => s.counsellor_id === supervisorId)?.counsellor_name
+      : null;
 
-      setUsers(users.map((user) =>
-        user.counsellor_id === selectedUser.counsellor_id
-          ? {
+    setUsers(users.map((user) =>
+      user.counsellor_id === selectedUser.counsellor_id
+        ? {
             ...user,
-            assigned_to: selectedSupervisorId || null,
+            assigned_to: supervisorId || null,
             supervisor_name: updatedSupervisorName
           }
-          : user
-      ));
-      setShowSupervisorModal(false);
-      alert("Supervisor updated successfully!");
-    } catch (error) {
-      console.error("Error changing supervisor:", error);
-      alert(`Failed to change supervisor: ${error.message}`);
-    }
-  };
+        : user
+    ));
+    setShowSupervisorModal(false);
+    alert("Supervisor updated successfully!");
+  } catch (error) {
+    console.error("Error changing supervisor:", error);
+    alert(`Failed to change supervisor: ${error.message}`);
+  }
+};
 
   const dashboardStats = useMemo(() => {
     if (!users) return {};
@@ -496,7 +496,7 @@ const UserListing = () => {
                           </div>
                           <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">{user.counsellor_name}</div>
-                            <div className="text-xs text-gray-500">ID: {user.id_code || `CNS-${user.counsellor_id}`}</div>
+                            <div className="text-xs text-gray-500">ID: {user.id_code || `${user.counsellor_id}`}</div>
                           </div>
                         </div>
                       </td>

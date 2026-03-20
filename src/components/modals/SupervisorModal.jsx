@@ -34,7 +34,7 @@ const SupervisorModal = ({
     // Update parent state first
     setSelectedSupervisorId(localSelectedSupervisorId);
     // Then call onConfirm
-    onConfirm();
+    onConfirm(localSelectedSupervisorId);
   };
 
   const handleClose = () => {
