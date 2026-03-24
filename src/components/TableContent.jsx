@@ -156,6 +156,7 @@ const TableContent = ({
           const aDate =
             activeRole === "l2" ||
               activeRole === "to" ||
+              activeRole === "to_l3" ||
               activeRole === "Supervisor" ||
               activeRole === "Analyser"
               ? a.created_at
@@ -163,6 +164,7 @@ const TableContent = ({
           const bDate =
             activeRole === "l2" ||
               activeRole === "to" ||
+              activeRole === "to_l3" ||
               activeRole === "Supervisor" ||
               activeRole === "Analyser"
               ? b.created_at
@@ -190,6 +192,7 @@ const TableContent = ({
           const aRemarks =
             activeRole === "l2" ||
               activeRole === "to" ||
+              activeRole === "to_l3" ||
               activeRole === "Supervisor" ||
               activeRole === "Analyser"
               ? a.remark_count || a.remarks_count || 0
@@ -197,6 +200,7 @@ const TableContent = ({
           const bRemarks =
             activeRole === "l2" ||
               activeRole === "to" ||
+              activeRole === "to_l3" ||
               activeRole === "Supervisor" ||
               activeRole === "Analyser"
               ? b.remark_count || b.remarks_count || 0
@@ -645,6 +649,7 @@ const TableContent = ({
         createdAt:
           activeRole === "l2" ||
             activeRole === "to" ||
+            activeRole === "to_l3" ||
             activeRole === "Supervisor" ||
             activeRole === "Analyser"
             ? lead.created_at
@@ -657,6 +662,7 @@ const TableContent = ({
         remarks: Number(
           activeRole === "l2" ||
             activeRole === "to" ||
+            activeRole === "to_l3" ||
             activeRole === "Supervisor" ||
             activeRole === "Analyser"
             ? lead.remark_count || lead.remarks_count || 0

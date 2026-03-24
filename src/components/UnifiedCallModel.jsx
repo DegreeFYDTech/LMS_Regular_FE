@@ -76,6 +76,7 @@ const UnifiedCallModal = ({
 
   const isL2 = activeRole === "l2";
   const isL3 = activeRole === "l3" || activeRole === "to_l3";
+  const isTO = activeRole === "to" || activeRole === "to_l3";
 
   // Get existing course_id from selectedStudent
   const existingCourseId = selectedStudent?.course_id || null;
@@ -98,7 +99,7 @@ const UnifiedCallModal = ({
 
   const getAvailableSteps = () => {
     if (isSupervisor) return [...l2Steps, { id: "adm", label: "Admission", funnel: "Admission", leadSubStatus: "Admission" }, { id: "enr", label: "Enrolled", funnel: "Enrolled", leadSubStatus: "Enrolled" }];
-    if (isL3) return l3Steps;
+    if (isL3 || isTO) return l3Steps;
     return l2Steps;
   };
 
@@ -247,6 +248,9 @@ const UnifiedCallModal = ({
   };
 
   const needsCourseSelection = () => {
+    // "to" and "to_l3" roles always see the education details section — no check required
+    if (isTO) return true;
+
     const f = isEnrDone ? "Enrolled" : (isAdmissionDone ? "Admission" : (isAppDone ? "Application" : leadStatus.funnel1));
     if (isAppStepSelectedFromProgress || (isAdmissionDone && !existingCourseId)) return true;
 
@@ -263,7 +267,8 @@ const UnifiedCallModal = ({
       if (!callbackDate || !callbackTime) return true;
       const f = isEnrDone ? "Enrolled" : (isAdmissionDone ? "Admission" : (isAppDone ? "Application" : leadStatus.funnel1));
       if (f === "Admission" && (!feesAmount || Number(feesAmount) <= 0)) return true;
-      if (needsCourseSelection() && (!selectedUniversity || !course_id)) return true;
+      // "to" / "to_l3": course selection is optional — they can submit even without selecting one
+      if (!isTO && needsCourseSelection() && (!selectedUniversity || !course_id)) return true;
       if (shouldShowCredentialFields() && !validateCredentialForm()) return true;
       if (isAppDone && !leadStatus.funnel2) return true;
     }
@@ -347,7 +352,8 @@ const UnifiedCallModal = ({
             <div className="space-y-3.5">
               {[
                 { id: "icc", label: "ICC Done", checked: isICCDone, handler: handleICCToggle, color: "blue", hidden: leadStatus.funnel1 !== "Pre Application" || (!isL2 && !isSupervisor) },
-                { id: "app", label: "App Done", checked: isAppDone, handler: handleAppToggle, color: "indigo", hidden: (isL3 && !isSupervisor) || (leadStatus.funnel1 !== "Initial Counselling Completed" && !isSupervisor) },
+                // "to" / "to_l3": App Done is always visible; they can manually push to Application anytime
+                { id: "app", label: "App Done", checked: isAppDone, handler: handleAppToggle, color: "indigo", hidden: isTO ? false : ((isL3 && !isSupervisor) || (leadStatus.funnel1 !== "Initial Counselling Completed" && !isSupervisor)) },
                 { id: "adm", label: "Admission Done", checked: isAdmissionDone, handler: handleAdmissionToggle, color: "emerald", hidden: leadStatus.funnel1 !== "Application" && !isSupervisor },
                 { id: "enr", label: "Enrolled", checked: isEnrDone, handler: handleEnrToggle, color: "violet", hidden: leadStatus.funnel1 !== "Admission" && !isSupervisor },
                 { id: "ni", label: "Not Interested", checked: isNotInterestedDone, handler: handleNotInterestedToggle, color: "rose", hidden: false },
@@ -405,7 +411,8 @@ const UnifiedCallModal = ({
                       <FiPaperclip className="w-12 h-12" />
                     </div>
                     <div>
-                      <Label required>Target University</Label>
+                      {/* For "to"/"to_l3": label is optional (no asterisk) — selection is not mandatory */}
+                      <Label required={!isTO}>Target University</Label>
                       <select
                         value={selectedUniversity || ""}
                         onChange={handleUniversityChange}
@@ -416,7 +423,7 @@ const UnifiedCallModal = ({
                       </select>
                     </div>
                     <div>
-                      <Label required>Intended Course</Label>
+                      <Label required={!isTO}>Intended Course</Label>
                       <select
                         value={course_id || ""}
                         onChange={handleCourseChange}
