@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { BASE_URL } from "../config/api";
+import { Button, DatePicker, Form, message, Modal, TimePicker } from "antd";
+import dayjs from "dayjs";
 
 // Technical Details Modal Component
 const TechnicalDetailsModal = ({ isOpen, onClose, title, details }) => {
@@ -29,7 +31,12 @@ const TechnicalDetailsModal = ({ isOpen, onClose, title, details }) => {
           <div className="absolute inset-0  opacity-75" onClick={onClose}></div>
         </div>
 
-        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <span
+          className="hidden sm:inline-block sm:align-middle sm:h-screen"
+          aria-hidden="true"
+        >
+          &#8203;
+        </span>
 
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -46,16 +53,17 @@ const TechnicalDetailsModal = ({ isOpen, onClose, title, details }) => {
                     {details ? (
                       <div className="space-y-4">
                         {/* Status Section */}
-                       
-
-                     
 
                         {/* Course Details */}
                         {details.course_name && (
                           <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Course</h4>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                              Course
+                            </h4>
                             <div className="bg-white p-3 rounded border border-gray-200">
-                              <p className="text-sm font-medium">{details.course_name}</p>
+                              <p className="text-sm font-medium">
+                                {details.course_name}
+                              </p>
                             </div>
                           </div>
                         )}
@@ -63,10 +71,16 @@ const TechnicalDetailsModal = ({ isOpen, onClose, title, details }) => {
                         {/* API Response */}
                         {details.response_from_api && (
                           <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">API Response</h4>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                              API Response
+                            </h4>
                             <div className="bg-white p-3 rounded border border-gray-200">
                               <pre className="text-xs text-gray-600 whitespace-pre-wrap font-mono">
-                                {JSON.stringify(details.response_from_api, null, 2)}
+                                {JSON.stringify(
+                                  details.response_from_api,
+                                  null,
+                                  2,
+                                )}
                               </pre>
                             </div>
                           </div>
@@ -75,17 +89,25 @@ const TechnicalDetailsModal = ({ isOpen, onClose, title, details }) => {
                         {/* Full Payload */}
                         {details.college_api_sent_payload && (
                           <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Full Payload</h4>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                              Full Payload
+                            </h4>
                             <div className="bg-white p-3 rounded border border-gray-200">
                               <pre className="text-xs text-gray-600 whitespace-pre-wrap font-mono">
-                                {JSON.stringify(details.college_api_sent_payload, null, 2)}
+                                {JSON.stringify(
+                                  details.college_api_sent_payload,
+                                  null,
+                                  2,
+                                )}
                               </pre>
                             </div>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">No technical details available</p>
+                      <p className="text-sm text-gray-500">
+                        No technical details available
+                      </p>
                     )}
                   </div>
                 </div>
@@ -123,7 +145,7 @@ const CollegesTable = ({
   const [technicalModal, setTechnicalModal] = useState({
     isOpen: false,
     title: "",
-    details: null
+    details: null,
   });
 
   useEffect(() => {
@@ -156,7 +178,8 @@ const CollegesTable = ({
   const handleTechnicalClick = (universityName, courses) => {
     // Find the course with technical issues
     const technicalCourse = courses.find(
-      (course) => course.college_api_sent_status === "Failed due to Technical Issues"
+      (course) =>
+        course.college_api_sent_status === "Failed due to Technical Issues",
     );
 
     if (technicalCourse) {
@@ -165,27 +188,34 @@ const CollegesTable = ({
         title: universityName,
         details: {
           status: technicalCourse.college_api_sent_status,
-          reason: technicalCourse.college_api_sent_payload?.ExceptionMessage || 
-                  technicalCourse.response_from_api?.message || 
-                  "No reason provided",
+          reason:
+            technicalCourse.college_api_sent_payload?.ExceptionMessage ||
+            technicalCourse.response_from_api?.message ||
+            "No reason provided",
           response_from_api: technicalCourse.response_from_api,
           college_api_sent_payload: technicalCourse.college_api_sent_payload,
           university_api: technicalCourse.university_api,
           course_name: technicalCourse.course_name,
-          course_id: technicalCourse.course_id
-        }
+          course_id: technicalCourse.course_id,
+        },
       });
     }
   };
 
-  const StatusBadge = ({ status, onClick, showReason = false, reason = "" }) => {
+  const StatusBadge = ({
+    status,
+    onClick,
+    showReason = false,
+    reason = "",
+  }) => {
     const getStatusStyle = (status) => {
       const styles = {
         Pending: "bg-amber-100 text-amber-800",
         Approved: "bg-emerald-100 text-emerald-800",
         Rejected: "bg-red-100 text-red-800",
         "Under Review": "bg-blue-100 text-blue-800",
-        "Failed due to Technical Issues": "bg-amber-100 text-amber-800 cursor-pointer hover:bg-amber-200",
+        "Failed due to Technical Issues":
+          "bg-amber-100 text-amber-800 cursor-pointer hover:bg-amber-200",
         Proceed: "bg-emerald-100 text-emerald-800",
         "Do not Proceed": "bg-red-100 text-red-800",
         "Do Not Proceed": "bg-red-100 text-red-800",
@@ -339,7 +369,6 @@ const CollegesTable = ({
     );
   };
 
-  // Get status for a specific contact and university
   const getContactStatus = (contact, universityName) => {
     if (
       !contact.status_by_university ||
@@ -350,13 +379,11 @@ const CollegesTable = ({
     return contact.status_by_university[universityName];
   };
 
-  // Check if PRIMARY contact succeeded for this university
   const hasSuccessfulPrimaryContact = (universityName) => {
     const primaryStatus = primaryStatuses[universityName];
     return primaryStatus?.status === "Proceed";
   };
 
-  // Check if ANY secondary contact succeeded for this university
   const hasSuccessfulSecondaryContact = (universityName) => {
     const sentContacts = getSentToUniversity(universityName);
     return sentContacts.some((contact) => {
@@ -365,7 +392,6 @@ const CollegesTable = ({
     });
   };
 
-  // Determine university status based on API responses
   const getUniversityStatus = (university) => {
     const universityApiStatus = getData(university.courses);
     const hasPrimarySuccess = hasSuccessfulPrimaryContact(
@@ -394,11 +420,10 @@ const CollegesTable = ({
       type: "other",
       label: universityApiStatus.status,
       reason: universityApiStatus.reason,
-      details: universityApiStatus.details
+      details: universityApiStatus.details,
     };
   };
 
-  // Check if primary contact failed and needs secondary
   const needsSecondaryContacts = (university) => {
     const universityStatus = getData(university.courses);
     return [
@@ -408,7 +433,6 @@ const CollegesTable = ({
     ].includes(universityStatus.status);
   };
 
-  // Check if we should show secondary section
   const shouldShowSecondarySection = (university) => {
     const sentContacts = getSentToUniversity(university.universityName);
     const needsSecondary = needsSecondaryContacts(university);
@@ -430,7 +454,6 @@ const CollegesTable = ({
     );
   };
 
-  // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -438,15 +461,158 @@ const CollegesTable = ({
       maximumFractionDigits: 0,
     }).format(amount || 0);
   };
+  const [isOpenWalkin, setIsOpenWalkin] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
 
   return (
     <>
       <TechnicalDetailsModal
         isOpen={technicalModal.isOpen}
-        onClose={() => setTechnicalModal({ isOpen: false, title: "", details: null })}
+        onClose={() =>
+          setTechnicalModal({ isOpen: false, title: "", details: null })
+        }
         title={technicalModal.title}
         details={technicalModal.details}
       />
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-green-600" />
+            <span>Mark Walk-in</span>
+          </div>
+        }
+        open={isOpenWalkin}
+        onCancel={() => {
+          setIsOpenWalkin(false);
+          form.resetFields();
+        }}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setIsOpenWalkin(false);
+              form.resetFields();
+            }}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={loading}
+            onClick={async () => {
+              try {
+                const values = await form.validateFields();
+
+                // Combine date and time
+                const eventDateTime = dayjs(values.walkinDate)
+                  .hour(values.walkinTime.hour())
+                  .minute(values.walkinTime.minute())
+                  .second(0)
+                  .format("YYYY-MM-DD HH:mm:ss");
+
+                setLoading(true);
+
+                // API call
+                const response = await fetch(
+                  `${BASE_URL}/student/mark-walkin`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    credentials: "include", 
+                    body: JSON.stringify({
+                      student_id: studentData?.student_id,
+                      course_id: selectedCourse?.course_id,
+                      event_time: eventDateTime,
+                    }),
+                  },
+                );
+
+                if (!response.ok) {
+                  throw new Error("Failed to mark walkin");
+                }
+
+                const data = await response.json();
+                message.success("Walk-in marked successfully!");
+
+                // Call callback if provided
+                if (onMarkWalkin) {
+                  onMarkWalkin(data);
+                }
+
+                setIsOpenWalkin(false);
+                form.resetFields();
+              } catch (error) {
+                if (error.errorFields) {
+                  // Validation error
+                  return;
+                }
+                message.error(error.message || "Something went wrong");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            Mark Walk-in
+          </Button>,
+        ]}
+        width={500}
+      >
+        <div className="py-4">
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Course:</span>{" "}
+              {selectedCourse?.course_name || "N/A"}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">
+              <span className="font-medium">Student ID:</span>{" "}
+              {studentData?.student_id || "N/A"}
+            </p>
+          </div>
+
+          <Form
+            form={form}
+            layout="vertical"
+            initialValues={{
+              walkinDate: dayjs(),
+              walkinTime: dayjs(),
+            }}
+          >
+            <Form.Item
+              label="Walk-in Date"
+              name="walkinDate"
+              rules={[
+                { required: true, message: "Please select walk-in date" },
+              ]}
+            >
+              <DatePicker
+                className="w-full"
+                format="YYYY-MM-DD"
+                placeholder="Select date"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Walk-in Time"
+              name="walkinTime"
+              rules={[
+                { required: true, message: "Please select walk-in time" },
+              ]}
+            >
+              <TimePicker
+                className="w-full"
+                format="HH:mm"
+                placeholder="Select time"
+              />
+            </Form.Item>
+          </Form>
+        </div>
+      </Modal>
 
       <div className="space-y-6">
         {Object.values(groupedColleges).map((university) => {
@@ -490,19 +656,26 @@ const CollegesTable = ({
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {(statusDisplay.status === "" || statusDisplay.status === "Failed due to Technical Issues") &&
+                  {(statusDisplay.status === "" ||
+                    statusDisplay.status ===
+                      "Failed due to Technical Issues") &&
                   !university.universityName.includes("Amity University") ? (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onSendRequest(e, university.courses[0]?.university_name);
+                        onSendRequest(
+                          e,
+                          university.courses[0]?.university_name,
+                        );
                       }}
                       disabled={
                         sendingToCollege[university.courses[0]?.universityName]
                       }
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {sendingToCollege[university.courses[0]?.universityName] ? (
+                      {sendingToCollege[
+                        university.courses[0]?.universityName
+                      ] ? (
                         <>
                           <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
                           Sending...
@@ -518,19 +691,27 @@ const CollegesTable = ({
 
                   {statusDisplay.status !== "" && (
                     <div className="flex flex-col items-end gap-1">
-                      <StatusBadge 
-                        status={statusDisplay.label} 
+                      <StatusBadge
+                        status={statusDisplay.label}
                         onClick={() => {
-                          if (statusDisplay.status === "Failed due to Technical Issues") {
-                            handleTechnicalClick(university.universityName, university.courses);
+                          if (
+                            statusDisplay.status ===
+                            "Failed due to Technical Issues"
+                          ) {
+                            handleTechnicalClick(
+                              university.universityName,
+                              university.courses,
+                            );
                           }
                         }}
                       />
-                      {statusDisplay.reason && statusDisplay.status !== "Failed due to Technical Issues" && (
-                        <div className="text-xs text-red-600 mt-1">
-                          {statusDisplay.reason}
-                        </div>
-                      )}
+                      {statusDisplay.reason &&
+                        statusDisplay.status !==
+                          "Failed due to Technical Issues" && (
+                          <div className="text-xs text-red-600 mt-1">
+                            {statusDisplay.reason}
+                          </div>
+                        )}
                       {statusDisplay.type === "secondary" && (
                         <span className="text-xs text-emerald-600 font-medium">
                           Via Secondary Contact
@@ -886,11 +1067,17 @@ const CollegesTable = ({
                             <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
                               Status
                             </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
+                              Action
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {university.courses.map((college) => (
-                            <tr key={college.id || college.course_id} className="hover:bg-gray-50">
+                            <tr
+                              key={college.id || college.course_id}
+                              className="hover:bg-gray-50"
+                            >
                               <td className="px-6 py-4">
                                 <div>
                                   <div className="font-medium text-gray-900">
@@ -930,13 +1117,21 @@ const CollegesTable = ({
                                   <StatusBadge
                                     status={college.latest_course_status}
                                     onClick={() => {
-                                      if (college.college_api_sent_status === "Failed due to Technical Issues") {
-                                        handleTechnicalClick(university.universityName, [college]);
+                                      if (
+                                        college.college_api_sent_status ===
+                                        "Failed due to Technical Issues"
+                                      ) {
+                                        handleTechnicalClick(
+                                          university.universityName,
+                                          [college],
+                                        );
                                       }
                                     }}
                                   />
                                   <div className="text-sm">
-                                    <span className="text-gray-600">Assigned To: </span>
+                                    <span className="text-gray-600">
+                                      Assigned To:{" "}
+                                    </span>
                                     <span className="font-medium">
                                       {college.assigned_l3_counsellor?.name ||
                                         "Not Assigned"}
@@ -945,15 +1140,22 @@ const CollegesTable = ({
                                   {college.college_api_sent_status &&
                                     college.college_api_sent_status !==
                                       "Proceed" && (
-                                      <div 
+                                      <div
                                         className={`text-xs mt-2 flex items-center gap-1 ${
-                                          college.college_api_sent_status === "Failed due to Technical Issues" 
-                                            ? "text-amber-600 cursor-pointer hover:text-amber-800" 
+                                          college.college_api_sent_status ===
+                                          "Failed due to Technical Issues"
+                                            ? "text-amber-600 cursor-pointer hover:text-amber-800"
                                             : "text-amber-600"
                                         }`}
                                         onClick={() => {
-                                          if (college.college_api_sent_status === "Failed due to Technical Issues") {
-                                            handleTechnicalClick(university.universityName, [college]);
+                                          if (
+                                            college.college_api_sent_status ===
+                                            "Failed due to Technical Issues"
+                                          ) {
+                                            handleTechnicalClick(
+                                              university.universityName,
+                                              [college],
+                                            );
                                           }
                                         }}
                                       >
@@ -962,6 +1164,17 @@ const CollegesTable = ({
                                       </div>
                                     )}
                                 </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <button
+                                  className="border px-5 py-2 bg-blue-600 text-white rounded-lg"
+                                  onClick={() => {
+                                    setSelectedCourse(college);
+                                    setIsOpenWalkin(true);
+                                  }}
+                                >
+                                  Mark Walk In
+                                </button>
                               </td>
                             </tr>
                           ))}
@@ -985,33 +1198,34 @@ function getData(courses) {
   if (!Array.isArray(courses) || courses.length === 0) return { status: "" };
 
   const courseWithFailedStatus = courses.find(
-    (val) => val.college_api_sent_status === "Failed due to Technical Issues"
+    (val) => val.college_api_sent_status === "Failed due to Technical Issues",
   );
 
   if (courseWithFailedStatus) {
     return {
       status: "Failed due to Technical Issues",
-      reason: courseWithFailedStatus.college_api_sent_payload?.ExceptionMessage || 
-              courseWithFailedStatus.response_from_api?.message || 
-              "No reason provided",
-      details: courseWithFailedStatus
+      reason:
+        courseWithFailedStatus.college_api_sent_payload?.ExceptionMessage ||
+        courseWithFailedStatus.response_from_api?.message ||
+        "No reason provided",
+      details: courseWithFailedStatus,
     };
   }
 
   const hasProceed = courses.some(
-    (val) => val.college_api_sent_status === "Proceed"
+    (val) => val.college_api_sent_status === "Proceed",
   );
   if (hasProceed) return { status: "Proceed" };
 
   const hasDoNotProceed = courses.some(
     (val) =>
       val.college_api_sent_status === "Do not Proceed" ||
-      val.college_api_sent_status === "Do Not Proceed"
+      val.college_api_sent_status === "Do Not Proceed",
   );
   if (hasDoNotProceed) return { status: "Do Not Proceed" };
 
   const hasFieldMissing = courses.some(
-    (val) => val.college_api_sent_status === "Field Missing"
+    (val) => val.college_api_sent_status === "Field Missing",
   );
   if (hasFieldMissing) return { status: "Field Missing" };
 

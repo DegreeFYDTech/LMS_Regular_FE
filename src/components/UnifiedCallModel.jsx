@@ -86,31 +86,97 @@ const UnifiedCallModal = ({
 
   // Steps configuration
   const l2Steps = [
-    { id: "preapp", label: "Pre Application", funnel: "Pre Application", leadSubStatus: "Counselling Yet to be Done" },
-    { id: "icc", label: "Initial Counselling Completed", funnel: "Initial Counselling Completed", leadSubStatus: "Initial Counselling Completed" },
-    { id: "app", label: "Application", funnel: "Application", leadSubStatus: "Form Submitted – Portal Pending" },
+    {
+      id: "preapp",
+      label: "Pre Application",
+      funnel: "Pre Application",
+      leadSubStatus: "Counselling Yet to be Done",
+    },
+    {
+      id: "icc",
+      label: "Initial Counselling Completed",
+      funnel: "Initial Counselling Completed",
+      leadSubStatus: "Initial Counselling Completed",
+    },
+    {
+      id: "app",
+      label: "Application",
+      funnel: "Application",
+      leadSubStatus: "Form Submitted – Portal Pending",
+    },
   ];
 
   const l3Steps = [
-    { id: "app", label: "Application", funnel: "Application", leadSubStatus: "Form Submitted – Completed" },
-    { id: "adm", label: "Admission", funnel: "Admission", leadSubStatus: "Admission" },
-    { id: "enr", label: "Enrolled", funnel: "Enrolled", leadSubStatus: "Enrolled" },
+    {
+      id: "app",
+      label: "Application",
+      funnel: "Application",
+      leadSubStatus: "Form Submitted – Completed",
+    },
+    {
+      id: "adm",
+      label: "Admission",
+      funnel: "Admission",
+      leadSubStatus: "Admission",
+    },
+    {
+      id: "enr",
+      label: "Enrolled",
+      funnel: "Enrolled",
+      leadSubStatus: "Enrolled",
+    },
   ];
 
   const getAvailableSteps = () => {
-    if (isSupervisor) return [...l2Steps, { id: "adm", label: "Admission", funnel: "Admission", leadSubStatus: "Admission" }, { id: "enr", label: "Enrolled", funnel: "Enrolled", leadSubStatus: "Enrolled" }];
+    if (isSupervisor)
+      return [
+        ...l2Steps,
+        {
+          id: "adm",
+          label: "Admission",
+          funnel: "Admission",
+          leadSubStatus: "Admission",
+        },
+        {
+          id: "enr",
+          label: "Enrolled",
+          funnel: "Enrolled",
+          leadSubStatus: "Enrolled",
+        },
+      ];
     // to_l3 gets l3 steps (isL3), "to" role uses l2 steps as Admission/Enrolled are not for them
     if (isL3) return l3Steps;
     return l2Steps;
   };
 
-  const statusOrder = { NotInterested: 0, "Pre Application": 1, Fresh: 1, "Initial Counseling Completed": 2, "Initial Counselling Completed": 2, Application: 3, Admission: 4, "Welcome Call Pending": 5, "Document In Process": 6, Enrolled: 7 };
+  const statusOrder = {
+    NotInterested: 0,
+    "Pre Application": 1,
+    Fresh: 1,
+    "Initial Counseling Completed": 2,
+    "Initial Counselling Completed": 2,
+    Application: 3,
+    Admission: 4,
+    "Welcome Call Pending": 5,
+    "Document In Process": 6,
+    Enrolled: 7,
+  };
 
-  const [selectedAction, setSelectedAction] = useState(isConnectedCall ? "Connected" : "Not Connected");
+  const [selectedAction, setSelectedAction] = useState(
+    isConnectedCall ? "Connected" : "Not Connected",
+  );
 
-  const modalTitle = showCourseSelection && activeRole === "l3" ? "Select Course & College" : selectedAction === "Connected" ? "Call Connected - Update Status" : "Call Not Connected - Update Status";
+  const modalTitle =
+    showCourseSelection && activeRole === "l3"
+      ? "Select Course & College"
+      : selectedAction === "Connected"
+        ? "Call Connected - Update Status"
+        : "Call Not Connected - Update Status";
 
-  const isOnlineCollege = (collegeName) => ["Online", "Distance", "E-Learning"].some(kw => collegeName?.toLowerCase().includes(kw.toLowerCase()));
+  const isOnlineCollege = (collegeName) =>
+    ["Online", "Distance", "E-Learning"].some((kw) =>
+      collegeName?.toLowerCase().includes(kw.toLowerCase()),
+    );
   const getCollegeType = (cn) => {
     const n = cn?.toLowerCase() || "";
     if (n.includes("amity")) return "amity";
@@ -133,8 +199,14 @@ const UnifiedCallModal = ({
   };
   console.log(course_id, "leadStatus.funnel1");
   const shouldShowCredentialFields = () => {
+    if (isNotInterestedDone) return false;
+
     if (activeRole !== "l2" || !selectedUniversity || !course_id) return false;
-    const show = leadStatus.funnel1 === "Application" || isAppDone || ((leadStatus.funnel1.includes("Initial Counsel")) && leadStatus.funnel2 === "Walkin marked");
+    const show =
+      leadStatus.funnel1 === "Application" ||
+      isAppDone ||
+      (leadStatus.funnel1.includes("Initial Counsel") &&
+        leadStatus.funnel2 === "Walkin marked");
     if (!show) return false;
     return !isOnlineCollege(selectedUniversity);
   };
@@ -146,13 +218,28 @@ const UnifiedCallModal = ({
     return to >= co || ts === "NotInterested";
   };
 
-  const isStatusDisabled = (s) => isSupervisor ? false : (currentStudentStatus === "NotInterested" || currentStudentStatus === "Fresh" ? false : (isNotInterestedDone ? s !== "NotInterested" : (selectedAction === "Connected" ? !canSelectStatus(s) : false)));
+  const isStatusDisabled = (s) =>
+    isSupervisor
+      ? false
+      : currentStudentStatus === "NotInterested" ||
+          currentStudentStatus === "Fresh"
+        ? false
+        : isNotInterestedDone
+          ? s !== "NotInterested"
+          : selectedAction === "Connected"
+            ? !canSelectStatus(s)
+            : false;
 
   useEffect(() => {
     if (isOpen && selectedStudent && !initialLoadDone) {
       let f1 = selectedStudent?.current_student_status || "Pre Application";
-      let f2 = selectedStudent?.student_remarks?.[0]?.leadSubStatus || "Counselling Yet to be Done";
-      if (f1 === "Fresh" || f1 === "NotInterested") { f1 = "Pre Application"; f2 = "Counselling Yet to be Done"; }
+      let f2 =
+        selectedStudent?.student_remarks?.[0]?.leadSubStatus ||
+        "Counselling Yet to be Done";
+      if (f1 === "Fresh" || f1 === "NotInterested") {
+        f1 = "Pre Application";
+        f2 = "Counselling Yet to be Done";
+      }
       setLeadStatus({ funnel1: f1, funnel2: f2 });
 
       const s = selectedStudent?.current_student_status || "";
@@ -162,8 +249,13 @@ const UnifiedCallModal = ({
       setIsEnrDone(s === "Enrolled");
       setIsNotInterestedDone(s === "NotInterested");
 
-      if (existingCourseId) { setSelectedUniversity(existingUniversity); setcourse_id(existingCourseId); }
-      else { setSelectedUniversity(preselectedUniversity); setcourse_id(precourse_id); }
+      if (existingCourseId) {
+        setSelectedUniversity(existingUniversity);
+        setcourse_id(existingCourseId);
+      } else {
+        setSelectedUniversity(preselectedUniversity);
+        setcourse_id(precourse_id);
+      }
 
       setIsAppStepSelectedFromProgress(false);
       setInitialLoadDone(true);
@@ -173,7 +265,9 @@ const UnifiedCallModal = ({
 
   useEffect(() => {
     if (course_id && selectedStudent?.collegeCredentials) {
-      const cred = selectedStudent.collegeCredentials.find(c => String(c.course_id) === String(course_id));
+      const cred = selectedStudent.collegeCredentials.find(
+        (c) => String(c.course_id) === String(course_id),
+      );
       if (cred) {
         setUserName(cred.userName || cred.username || "");
         setPassword(cred.password || "");
@@ -181,7 +275,11 @@ const UnifiedCallModal = ({
         setCouponCode(cred.couponCode || "");
         setIsCredsFound(true);
       } else {
-        setUserName(""); setPassword(""); setFormID(""); setCouponCode(""); setIsCredsFound(false);
+        setUserName("");
+        setPassword("");
+        setFormID("");
+        setCouponCode("");
+        setIsCredsFound(false);
       }
     }
   }, [course_id, selectedStudent]);
@@ -190,15 +288,37 @@ const UnifiedCallModal = ({
     const fetchColleges = async () => {
       if (!selectedStudent?.student_id) return;
       try {
-        const fetchAll = (leadStatus.funnel1 === "Admission" || isAdmissionDone) && !isAppStepSelectedFromProgress;
-        const res = await fetchShortlistedColleges1(selectedStudent.student_id, fetchAll);
+        const fetchAll =
+          (leadStatus.funnel1 === "Admission" || isAdmissionDone) &&
+          !isAppStepSelectedFromProgress;
+        const res = await fetchShortlistedColleges1(
+          selectedStudent.student_id,
+          fetchAll,
+        );
         const data = res.data;
-        setUniversities([...new Set(data.map(i => i.university_name))]);
-        setCourses(data.map(i => ({ id: i._id, name: i.course_name, specialization: i.specialization, university_name: i.university_name, course_id: i.course_id })));
-      } catch (e) { console.error(e); }
+        setUniversities([...new Set(data.map((i) => i.university_name))]);
+        setCourses(
+          data.map((i) => ({
+            id: i._id,
+            name: i.course_name,
+            specialization: i.specialization,
+            university_name: i.university_name,
+            course_id: i.course_id,
+          })),
+        );
+      } catch (e) {
+        console.error(e);
+      }
     };
-    if (leadStatus.funnel1 || isAppDone || isAdmissionDone || isICCDone) fetchColleges();
-  }, [selectedStudent, leadStatus.funnel1, isAppDone, isAdmissionDone, isICCDone]);
+    if (leadStatus.funnel1 || isAppDone || isAdmissionDone || isICCDone)
+      fetchColleges();
+  }, [
+    selectedStudent,
+    leadStatus.funnel1,
+    isAppDone,
+    isAdmissionDone,
+    isICCDone,
+  ]);
 
   const getEffectiveFunnel1 = () => {
     return leadStatus.funnel1;
@@ -222,56 +342,148 @@ const UnifiedCallModal = ({
     </label>
   );
 
-  const handleUniversityChange = (e) => { setSelectedUniversity(e.target.value); setcourse_id(null); setcourse_idDetails(null); setFeesAmount(""); };
-  const handleCourseChange = (e) => { const id = e.target.value; setcourse_id(id); setcourse_idDetails(courses.find(c => c.course_id === id)); };
+  const handleUniversityChange = (e) => {
+    setSelectedUniversity(e.target.value);
+    setcourse_id(null);
+    setcourse_idDetails(null);
+    setFeesAmount("");
+  };
+  const handleCourseChange = (e) => {
+    const id = e.target.value;
+    setcourse_id(id);
+    setcourse_idDetails(courses.find((c) => c.course_id === id));
+  };
 
   const handleLeadStatusChange = (f1, f2 = "") => {
-    if (isStatusDisabled(f1) && !isSupervisor) { message.warning(`Cannot select ${f1}`); return; }
-    let sub = f2 || (f1 === "Pre Application" ? "Counselling Yet to be Done" : (f1.includes("Initial Counsel") ? f1 : (f1 === "Application" ? "Form Filled_Degreefyd" : "Admission Done")));
+    if (isStatusDisabled(f1) && !isSupervisor) {
+      message.warning(`Cannot select ${f1}`);
+      return;
+    }
+    let sub =
+      f2 ||
+      (f1 === "Pre Application"
+        ? "Counselling Yet to be Done"
+        : f1.includes("Initial Counsel")
+          ? f1
+          : f1 === "Application"
+            ? "Form Filled_Degreefyd"
+            : "Admission Done");
     setLeadStatus({ funnel1: f1, funnel2: sub });
     if (f1 !== "Admission") setFeesAmount("");
   };
-  const [isDisabledCheckState, setIsDisabledCheckState] = useState(false)
-  const handleICCToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsICCDone(checked); if (checked) setSelectedAction("Connected"); };
-  const handleAppToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsAppDone(checked); setIsAppStepSelectedFromProgress(checked); if (checked) setSelectedAction("Connected"); };
-  const handleAdmissionToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsAdmissionDone(checked); if (checked) { setSelectedAction("Connected"); if (Number(coursecount) > 1) setIsAppStepSelectedFromProgress(true); } else { setIsAppStepSelectedFromProgress(false); } };
-  const handleEnrToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsEnrDone(checked); if (checked) setSelectedAction("Connected"); };
-  const handleNotInterestedToggle = (e) => {
-    const checked = e.target.checked; resetToggles1(); setIsNotInterestedDone(checked); if (checked) {
-      setSelectedAction("");
-      // Reset the funnel2 value when Not Interested is selected
-      setLeadStatus(prev => ({ ...prev, funnel2: "" }));
+  const [isDisabledCheckState, setIsDisabledCheckState] = useState(false);
+  const handleICCToggle = (e) => {
+    const checked = e.target.checked;
+    resetToggles();
+    setIsICCDone(checked);
+    if (checked) setSelectedAction("Connected");
+  };
+  const handleAppToggle = (e) => {
+    const checked = e.target.checked;
+    resetToggles();
+    setIsAppDone(checked);
+    setIsAppStepSelectedFromProgress(checked);
+    if (checked) setSelectedAction("Connected");
+  };
+  const handleAdmissionToggle = (e) => {
+    const checked = e.target.checked;
+    resetToggles();
+    setIsAdmissionDone(checked);
+    if (checked) {
+      setSelectedAction("Connected");
+      if (Number(coursecount) > 1) setIsAppStepSelectedFromProgress(true);
+    } else {
+      setIsAppDone(true);
+      setIsAppStepSelectedFromProgress(false);
     }
   };
-  const resetToggles = () => { setIsICCDone(false); setIsDisabledCheckState(!isDisabledCheckState); setIsAppDone(false); setIsAdmissionDone(false); setIsEnrDone(false); setIsNotInterestedDone(false); };
-  const resetToggles1 = () => { setIsICCDone(false); setIsAppDone(false); setIsAdmissionDone(false); setIsEnrDone(false); setIsNotInterestedDone(false); };
+  const handleEnrToggle = (e) => {
+    const checked = e.target.checked;
+    resetToggles();
+    setIsEnrDone(checked);
+    if (checked) setSelectedAction("Connected");
+  };
+  const handleNotInterestedToggle = (e) => {
+    const checked = e.target.checked;
+    resetToggles1();
+    setIsNotInterestedDone(checked);
+    if (checked) {
+      setSelectedAction("");
+      // Reset the funnel2 value when Not Interested is selected
+      setLeadStatus((prev) => ({ ...prev, funnel2: "" }));
+    }
+  };
+  const resetToggles = () => {
+    setIsICCDone(false);
+    setIsDisabledCheckState(!isDisabledCheckState);
+    setIsAppDone(false);
+    setIsAdmissionDone(false);
+    setIsEnrDone(false);
+    setIsNotInterestedDone(false);
+  };
+  const resetToggles1 = () => {
+    setIsICCDone(false);
+    setIsAppDone(false);
+    setIsAdmissionDone(false);
+    setIsEnrDone(false);
+    setIsNotInterestedDone(false);
+  };
   const handleStepClick = (s) => {
     resetToggles();
-    if (s === "Initial Counselling Completed") { setIsICCDone(true); handleLeadStatusChange(s); setSelectedAction("Connected"); }
-    else if (s === "Application") { setIsAppDone(true); handleLeadStatusChange(s); setSelectedAction("Connected"); setIsAppStepSelectedFromProgress(true); }
-    else if (s === "Admission") { setIsAdmissionDone(true); handleLeadStatusChange(s); setSelectedAction("Connected"); setIsAppStepSelectedFromProgress(true); }
-    else if (s === "Enrolled") { setIsEnrDone(true); handleLeadStatusChange(s); setSelectedAction("Connected"); }
-    else { handleLeadStatusChange(s); setSelectedAction("Connected"); }
+    if (s === "Initial Counselling Completed") {
+      setIsICCDone(true);
+      handleLeadStatusChange(s);
+      setSelectedAction("Connected");
+    } else if (s === "Application") {
+      setIsAppDone(true);
+      handleLeadStatusChange(s);
+      setSelectedAction("Connected");
+      setIsAppStepSelectedFromProgress(true);
+    } else if (s === "Admission") {
+      setIsAdmissionDone(true);
+      handleLeadStatusChange(s);
+      setSelectedAction("Connected");
+      setIsAppStepSelectedFromProgress(true);
+    } else if (s === "Enrolled") {
+      setIsEnrDone(true);
+      handleLeadStatusChange(s);
+      setSelectedAction("Connected");
+    } else {
+      handleLeadStatusChange(s);
+      setSelectedAction("Connected");
+    }
   };
 
   const needsCourseSelection = () => {
     if (isNotInterestedDone && coursecount <= 1) return false;
+    if (isICCDone && coursecount <= 1) return false;
 
-    const f = isEnrDone ? "Enrolled" : (isAdmissionDone ? "Admission" : (isAppDone ? "Application" : leadStatus.funnel1));
-    const isICC = f === "Initial Counselling Completed" || f.includes("Initial Counsel");
-    // if (isTO && !isICC) return true;
+    const f = isEnrDone
+      ? "Enrolled"
+      : isAdmissionDone
+        ? "Admission"
+        : isAppDone
+          ? "Application"
+          : leadStatus.funnel1;
 
-    if (isAppStepSelectedFromProgress || (isAdmissionDone && !existingCourseId)) return true;
+    if (isAppStepSelectedFromProgress || (isAdmissionDone && !existingCourseId))
+      return true;
 
     if (existingCourseId) {
       if (f === "Admission" || f === "Application") return coursecount > 1;
       return false;
     }
-    return f === "Application" || f === "Admission" || (f.includes("Initial Counsel") && leadStatus.funnel2 === "Walkin marked");
+    return f === "Application" || f === "Admission";
   };
 
   const isFormIncomplete = () => {
-    if (isSubmitting || isUpdatingCreds || !selectedAction || !messageText?.trim()) return true;
+    if (
+      isSubmitting ||
+      isUpdatingCreds ||
+      !selectedAction ||
+      !messageText?.trim()
+    )
+      return true;
 
     if (isNotInterestedDone) {
       if (!leadStatus.funnel2) return true;
@@ -280,11 +492,28 @@ const UnifiedCallModal = ({
 
     if (selectedAction === "Connected") {
       if (!callbackDate || !callbackTime) return true;
-      const f = isEnrDone ? "Enrolled" : (isAdmissionDone ? "Admission" : (isAppDone ? "Application" : leadStatus.funnel1));
-      if (f === "Admission" && (isL3 || isSupervisor) && (!feesAmount || Number(feesAmount) <= 0)) return true;
+      const f = isEnrDone
+        ? "Enrolled"
+        : isAdmissionDone
+          ? "Admission"
+          : isAppDone
+            ? "Application"
+            : leadStatus.funnel1;
+      if (
+        f === "Admission" &&
+        (isL3 || isSupervisor) &&
+        (!feesAmount || Number(feesAmount) <= 0)
+      )
+        return true;
       // "to" / "to_l3": course selection is optional — they can submit even without selecting one
-      if (!isTO && needsCourseSelection() && (!selectedUniversity || !course_id)) return true;
-      if (shouldShowCredentialFields() && !validateCredentialForm()) return true;
+      if (
+        !isTO &&
+        needsCourseSelection() &&
+        (!selectedUniversity || !course_id)
+      )
+        return true;
+      if (shouldShowCredentialFields() && !validateCredentialForm())
+        return true;
       if (isAppDone && !leadStatus.funnel2) return true;
     }
     return false;
@@ -294,31 +523,81 @@ const UnifiedCallModal = ({
     if (isFormIncomplete()) return;
     setIsSubmitting(true);
     try {
-      const f = isNotInterestedDone ? "NotInterested" : (isEnrDone ? "Enrolled" : (isAdmissionDone ? "Admission" : (isAppDone ? "Application" : (isICCDone ? "Initial Counselling Completed" : leadStatus.funnel1))));
-      const payload = { remark: messageText, leadStatus: f, leadSubStatus: leadStatus.funnel2, callingStatus: selectedAction === "Connected" ? "Connected" : "Not Connected" };
-      if (callbackDate) payload.callbackDate = callbackDate.format("YYYY-MM-DD");
+      const f = isNotInterestedDone
+        ? "NotInterested"
+        : isEnrDone
+          ? "Enrolled"
+          : isAdmissionDone
+            ? "Admission"
+            : isAppDone
+              ? "Application"
+              : isICCDone
+                ? "Initial Counselling Completed"
+                : leadStatus.funnel1;
+      const payload = {
+        remark: messageText,
+        leadStatus: f,
+        leadSubStatus: leadStatus.funnel2,
+        callingStatus:
+          selectedAction === "Connected" ? "Connected" : "Not Connected",
+      };
+      if (callbackDate)
+        payload.callbackDate = callbackDate.format("YYYY-MM-DD");
       if (callbackTime) payload.callbackTime = callbackTime;
       const cid = course_id || existingCourseId;
-      console.log(cid, "cid")
+      console.log(cid, "cid");
       if (cid) {
         payload.selectedCourse = cid;
         payload.course_status = f;
       }
-      if (f === "Admission" && feesAmount && (isL3 || isSupervisor)) payload.feesAmount = Number(feesAmount);
+      if (f === "Admission" && feesAmount && (isL3 || isSupervisor))
+        payload.feesAmount = Number(feesAmount);
 
-      if (shouldShowCredentialFields() && validateCredentialForm() && !isCredsFound) {
+      if (
+        shouldShowCredentialFields() &&
+        validateCredentialForm() &&
+        !isCredsFound
+      ) {
         setIsUpdatingCreds(true);
-        await updateCollegeSentStatusCreds({ formID, couponCode, userName, password, studentId: selectedStudent.student_id, courseId: cid, collegeName: selectedUniversity, counsellorId: agent?.id, counsellorName: agent?.name });
+        await updateCollegeSentStatusCreds({
+          formID,
+          couponCode,
+          userName,
+          password,
+          studentId: selectedStudent.student_id,
+          courseId: cid,
+          collegeName: selectedUniversity,
+          counsellorId: agent?.id,
+          counsellorName: agent?.name,
+        });
       }
-      const res = await updateStudentStatus(selectedStudent.student_id, payload);
+      const res = await updateStudentStatus(
+        selectedStudent.student_id,
+        payload,
+      );
       if (res.success) {
-        const i = leads.findIndex(l => l.student_id === selectedStudent.student_id);
-        if (i !== -1) { const nl = [...leads]; nl[i] = { ...nl[i], ...res.student, student_remarks: res.remark }; setLeads(nl); }
+        const i = leads.findIndex(
+          (l) => l.student_id === selectedStudent.student_id,
+        );
+        if (i !== -1) {
+          const nl = [...leads];
+          nl[i] = { ...nl[i], ...res.student, student_remarks: res.remark };
+          setLeads(nl);
+        }
         message.success("Success");
         if (selectedAction === "Connected") setShowCounselingFormPrompt(true);
-        else { onClose(); window.location.reload(); }
+        else {
+          onClose();
+          window.location.reload();
+        }
       }
-    } catch (e) { console.error(e); message.error("Fail"); } finally { setIsSubmitting(false); setIsUpdatingCreds(false); }
+    } catch (e) {
+      console.error(e);
+      message.error("Fail");
+    } finally {
+      setIsSubmitting(false);
+      setIsUpdatingCreds(false);
+    }
   };
 
   return (
@@ -328,8 +607,12 @@ const UnifiedCallModal = ({
         onCancel={onClose}
         title={
           <div className="flex items-center gap-4 py-3 border-b mb-4">
-            <div className={`w-1.5 h-8 rounded-full ${selectedAction === "Connected" ? "bg-emerald-500" : "bg-orange-500"}`} />
-            <span className="text-xl font-extrabold text-slate-800 tracking-tight">{modalTitle}</span>
+            <div
+              className={`w-1.5 h-8 rounded-full ${selectedAction === "Connected" ? "bg-emerald-500" : "bg-orange-500"}`}
+            />
+            <span className="text-xl font-extrabold text-slate-800 tracking-tight">
+              {modalTitle}
+            </span>
           </div>
         }
         footer={
@@ -359,32 +642,90 @@ const UnifiedCallModal = ({
           {/* Sidebar Section */}
           <div className="w-1/4 bg-slate-50 border-r border-slate-100 p-7 space-y-6">
             <div className="flex flex-col gap-1 mb-2">
-              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Core Actions</h2>
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+                Core Actions
+              </h2>
               <div className="h-0.5 w-8 bg-blue-500 rounded-full" />
             </div>
 
             <div className="space-y-3.5">
               {[
-                { id: "icc", label: "ICC Done", checked: isICCDone, handler: handleICCToggle, color: "blue", hidden: leadStatus.funnel1 !== "Pre Application" || (!isL2 && !isTO && !isSupervisor) },
-                { id: "app", label: "App Done", checked: isAppDone, handler: handleAppToggle, color: "indigo", hidden: agent.role === "to" ? false : (agent.role === "to_l3" || (leadStatus.funnel1 !== "Initial Counselling Completed" && !isSupervisor)) },
-                { id: "adm", label: "Admission Done", checked: isAdmissionDone, handler: handleAdmissionToggle, color: "emerald", hidden: (leadStatus.funnel1 !== "Application" && !isSupervisor) || (!isL3 && !isSupervisor) },
-                { id: "enr", label: "Enrolled", checked: isEnrDone, handler: handleEnrToggle, color: "violet", hidden: (leadStatus.funnel1 !== "Admission" && !isSupervisor) || (!isL3 && !isSupervisor) },
-                { id: "ni", label: "Not Interested", checked: isNotInterestedDone, handler: handleNotInterestedToggle, color: "rose", hidden: false },
-              ].map(a => !a.hidden && (
-                <button
-                  key={a.id}
-                  onClick={() => a.handler({ target: { checked: !a.checked } })}
-                  className={`w-full group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-300 font-semibold text-left ${a.checked
-                    ? `bg-white border-${a.color}-500 text-${a.color}-600  `
-                    : "bg-white border-white hover:border-slate-200 text-slate-500 hover:text-slate-600"
-                    }`}
-                >
-                  <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-transform duration-300 ${a.checked ? `bg-${a.color}-500 ` : "border-slate-200 "}`}>
-                    {a.checked && <FiCheckCircle className="text-white w-4 h-4" />}
-                  </div>
-                  <span className="flex-1 text-sm">{a.label}</span>
-                </button>
-              ))}
+                {
+                  id: "icc",
+                  label: "ICC Done",
+                  checked: isICCDone,
+                  handler: handleICCToggle,
+                  color: "blue",
+                  hidden:
+                    leadStatus.funnel1 !== "Pre Application" ||
+                    (!isL2 && !isTO && !isSupervisor),
+                },
+                {
+                  id: "app",
+                  label: "App Done",
+                  checked: isAppDone,
+                  handler: handleAppToggle,
+                  color: "indigo",
+                  hidden: !(
+                    (leadStatus.funnel1 == "Initial Counselling Completed" ||
+                      leadStatus.funnel1 == "Pre Application" ||
+                      leadStatus.funnel1 == "Fresh") &&
+                    (agent.role === "to" || agent.role === "l2" || isSupervisor)
+                  ),
+                },
+                {
+                  id: "adm",
+                  label: "Admission Done",
+                  checked: isAdmissionDone,
+                  handler: handleAdmissionToggle,
+                  color: "emerald",
+                  hidden:
+                    (leadStatus.funnel1 !== "Application" && !isSupervisor) ||
+                    (!isL3 && !isSupervisor),
+                },
+                {
+                  id: "enr",
+                  label: "Enrolled",
+                  checked: isEnrDone,
+                  handler: handleEnrToggle,
+                  color: "violet",
+                  hidden:
+                    (leadStatus.funnel1 !== "Admission" && !isSupervisor) ||
+                    (!isL3 && !isSupervisor),
+                },
+                {
+                  id: "ni",
+                  label: "Not Interested",
+                  checked: isNotInterestedDone,
+                  handler: handleNotInterestedToggle,
+                  color: "rose",
+                  hidden: false,
+                },
+              ].map(
+                (a) =>
+                  !a.hidden && (
+                    <button
+                      key={a.id}
+                      onClick={() =>
+                        a.handler({ target: { checked: !a.checked } })
+                      }
+                      className={`w-full group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-300 font-semibold text-left ${
+                        a.checked
+                          ? `bg-white border-${a.color}-500 text-${a.color}-600  `
+                          : "bg-white border-white hover:border-slate-200 text-slate-500 hover:text-slate-600"
+                      }`}
+                    >
+                      <div
+                        className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-transform duration-300 ${a.checked ? `bg-${a.color}-500 ` : "border-slate-200 "}`}
+                      >
+                        {a.checked && (
+                          <FiCheckCircle className="text-white w-4 h-4" />
+                        )}
+                      </div>
+                      <span className="flex-1 text-sm">{a.label}</span>
+                    </button>
+                  ),
+              )}
             </div>
           </div>
 
@@ -394,21 +735,40 @@ const UnifiedCallModal = ({
               {/* Visual Funnel */}
               <div className="flex mb-10 gap-2 px-1">
                 {getAvailableSteps().map((step, i) => {
-                  const allSteps = ["Pre Application", "Initial Counselling Completed", "Application", "Admission", "Enrolled"];
+                  const allSteps = [
+                    "Pre Application",
+                    "Initial Counselling Completed",
+                    "Application",
+                    "Admission",
+                    "Enrolled",
+                  ];
                   const fullIndex = allSteps.indexOf(step.funnel);
-                  const currentStatusIndex = allSteps.indexOf(getEffectiveFunnel1());
+                  const currentStatusIndex = allSteps.indexOf(
+                    getEffectiveFunnel1(),
+                  );
                   const isCompleted = fullIndex < currentStatusIndex;
                   const isCurrent = fullIndex === currentStatusIndex;
-                  console.log(agent, "agent")
-                  const isClickable = step.funnel === "Application" && (agent.role !== "l3" && agent !== "to_l3");
+                  console.log(agent, "agent");
+                  const isClickable =
+                    step.funnel === "Application" &&
+                    currentStudentStatus === "Application" &&
+                    agent.role !== "l3" &&
+                    agent !== "to_l3";
 
                   return (
                     <div
                       key={step.id}
-                      onClick={isClickable ? () => handleStepClick(step.funnel) : undefined}
+                      onClick={
+                        isClickable
+                          ? () => handleStepClick(step.funnel)
+                          : undefined
+                      }
                       className={`flex-1 h-12 flex items-center justify-center text-[11px] font-black uppercase tracking-wider transition-all duration-500 relative ${isClickable ? "cursor-pointer" : "cursor-default"}
                         ${isCurrent ? "bg-slate-800 text-white translate-y-[-2px]" : isCompleted ? "bg-emerald-500 text-white" : "bg-slate-50 text-slate-400 hover:bg-slate-100"}`}
-                      style={{ clipPath: "polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%, 10% 50%)" }}
+                      style={{
+                        clipPath:
+                          "polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%, 10% 50%)",
+                      }}
                     >
                       {step.label}
                     </div>
@@ -418,7 +778,6 @@ const UnifiedCallModal = ({
 
               {/* Form Content */}
               <div className="max-w-4xl mx-auto space-y-5 pb-12 px-2">
-
                 {needsCourseSelection() && (
                   <div className="p-7 bg-blue-50/40 rounded-3xl border border-blue-100/50 grid grid-cols-2 gap-8 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-[0.03] scale-[4]">
@@ -432,7 +791,11 @@ const UnifiedCallModal = ({
                         className="w-full p-3.5 bg-white border border-blue-100 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold text-slate-700"
                       >
                         <option value="">Select University</option>
-                        {universities.map(u => <option key={u} value={u}>{u}</option>)}
+                        {universities.map((u) => (
+                          <option key={u} value={u}>
+                            {u}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -443,22 +806,36 @@ const UnifiedCallModal = ({
                         disabled={!selectedUniversity}
                         className="w-full p-3.5 bg-white border border-blue-100 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold text-slate-700 disabled:opacity-50"
                       >
-                        <option value="">{selectedUniversity ? "Select Course" : "Choose University First"}</option>
-                        {courses.filter(c => c.university_name === selectedUniversity).map(c => (
-                          <option key={c.course_id} value={c.course_id}>{c.name}</option>
-                        ))}
+                        <option value="">
+                          {selectedUniversity
+                            ? "Select Course"
+                            : "Choose University First"}
+                        </option>
+                        {courses
+                          .filter(
+                            (c) => c.university_name === selectedUniversity,
+                          )
+                          .map((c) => (
+                            <option key={c.course_id} value={c.course_id}>
+                              {c.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>
                 )}
 
-                {/* Application Sub-Status */}
                 {isAppDone && (
                   <div className="p-6 bg-indigo-50/40 rounded-3xl border border-indigo-100/50">
                     <Label required>Application Sub-Status</Label>
                     <select
                       value={leadStatus.funnel2 || ""}
-                      onChange={e => setLeadStatus(p => ({ ...p, funnel2: e.target.value }))}
+                      onChange={(e) =>
+                        setLeadStatus((p) => ({
+                          ...p,
+                          funnel2: e.target.value,
+                        }))
+                      }
                       className="w-full p-3.5 bg-white border border-indigo-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-semibold text-slate-700"
                     >
                       <option value="">Select Sub-Status</option>
@@ -466,56 +843,78 @@ const UnifiedCallModal = ({
                         "Form Submitted – Portal Pending",
                         "Form Submitted – Completed",
                         "Walkin Completed",
-                        "Exam/Interview Scheduled", 
+                        "Exam/Interview Scheduled",
                         "Offer Letter/Results Pending",
                         "Offer Letter/Results Released",
-                        "Ready For Admission"
-                      ].map(s => <option key={s} value={s}>{s}</option>)}
+                        "Ready For Admission",
+                      ].map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 )}
 
                 {/* Admission Specifics */}
-                {isAdmissionDone && (isL3 || isSupervisor) && (
-                  <div className="p-7 bg-emerald-50/40 rounded-3xl border border-emerald-100/50 grid grid-cols-2 gap-8">
-                    <div>
-                      <Label>Fee Category</Label>
-                      <select
-                        value={leadStatus.funnel2 || ""}
-                        onChange={e => setLeadStatus(p => ({ ...p, funnel2: e.target.value }))}
-                        className="w-full p-3.5 bg-white border border-emerald-100 rounded-xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-semibold text-slate-700"
-                      >
-                        <option value="">Select Status</option>
-                        {["Partially Paid", "Semester Paid", "Admission Blocked"].map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <Label required>Amount Received (INR)</Label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-black">₹</span>
-                        <input
-                          type="number"
-                          value={feesAmount}
-                          onChange={e => setFeesAmount(e.target.value)}
-                          className="w-full p-3.5 pl-10 bg-white border border-emerald-100 rounded-xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-700"
-                          placeholder="0,000"
-                        />
+                {isAdmissionDone &&
+                  (isL3 || isSupervisor || agent.role == "to_l3") && (
+                    <div className="p-7 bg-emerald-50/40 rounded-3xl border border-emerald-100/50 grid grid-cols-2 gap-8">
+                      <div>
+                        <Label>Fee Category</Label>
+                        <select
+                          value={leadStatus.funnel2 || ""}
+                          onChange={(e) =>
+                            setLeadStatus((p) => ({
+                              ...p,
+                              funnel2: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3.5 bg-white border border-emerald-100 rounded-xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-semibold text-slate-700"
+                        >
+                          <option value="">Select Status</option>
+                          {[
+                            "Partially Paid",
+                            "Semester Paid",
+                            "Admission Blocked",
+                          ].map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <Label required>Amount Received (INR)</Label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-black">
+                            ₹
+                          </span>
+                          <input
+                            type="number"
+                            value={feesAmount}
+                            onChange={(e) => setFeesAmount(e.target.value)}
+                            className="w-full p-3.5 pl-10 bg-white border border-emerald-100 rounded-xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-700"
+                            placeholder="0,000"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Remarks - Unified Input */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between px-1">
                     <Label required>Disposition Remarks</Label>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${messageText.length > 0 ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-slate-400"}`}>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${messageText.length > 0 ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-slate-400"}`}
+                    >
                       {messageText.length} Characters
                     </span>
                   </div>
                   <textarea
                     value={messageText}
-                    onChange={e => setMessageText(e.target.value)}
+                    onChange={(e) => setMessageText(e.target.value)}
                     rows={3}
                     placeholder="Enter key discussion points and student requirements here..."
                     className="w-full p-6 bg-slate-50/50 border-2 border-slate-100 rounded-3xl outline-none focus:bg-white focus:border-blue-400 transition-all duration-300 text-slate-700 font-medium placeholder:text-slate-300 "
@@ -524,24 +923,27 @@ const UnifiedCallModal = ({
 
                 {/* Call Outcome Toggles */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-1">Call Connection Status</h3>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-1">
+                    Call Connection Status
+                  </h3>
                   <div className="flex gap-4">
                     <button
                       onClick={() => setSelectedAction("Connected")}
-                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${selectedAction === "Connected"
-                        ? "bg-emerald-50 border-emerald-500 text-emerald-700"
-                        : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                        }`}
+                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${
+                        selectedAction === "Connected"
+                          ? "bg-emerald-50 border-emerald-500 text-emerald-700"
+                          : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                      }`}
                     >
                       Connected
                     </button>
                     <button
                       onClick={() => setSelectedAction("Not Connected")}
-                      disabled={isDisabledCheckState}
-                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${selectedAction === "Not Connected"
-                        ? "bg-slate-800 border-slate-800 text-white"
-                        : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                        } ${isDisabledCheckState ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${
+                        selectedAction === "Not Connected"
+                          ? "bg-slate-800 border-slate-800 text-white"
+                          : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                      }`}
                     >
                       Not Connected
                     </button>
@@ -549,20 +951,51 @@ const UnifiedCallModal = ({
                 </div>
 
                 {/* University Credentials - Restoration */}
-                {shouldShowCredentialFields() && (
+                {shouldShowCredentialFields() && !isCredsFound && (
                   <div className="py-2 rounded-3xl  space-y-6 border-t border-slate-100">
                     <div className="flex items-center gap-3 text-amber-700 font-black text-[10px] uppercase tracking-widest">
-                      <FiZap className="w-4 h-4" /> {isCredsFound ? "Application Details (History Found)" : "Application Details Required"}
+                      <FiZap className="w-4 h-4" />{" "}
+                      {isCredsFound
+                        ? "Application Details (History Found)"
+                        : "Application Details Required"}
                     </div>
                     <div className="grid grid-cols-2 gap-6">
                       <>
-                        <div><Label>Form ID</Label><input value={formID} onChange={e => setFormID(e.target.value)} className="w-full p-3 bg-white border border-black-100 rounded-xl outline-none focus:border-black-400 font-medium" /></div>
-                        <div><Label>Coupon Code</Label><input value={couponCode} onChange={e => setCouponCode(e.target.value)} className="w-full p-3 bg-white border border-black-100 rounded-xl outline-none focus:border-black-400 font-medium" /></div>
+                        <div>
+                          <Label>Form ID</Label>
+                          <input
+                            value={formID}
+                            onChange={(e) => setFormID(e.target.value)}
+                            className="w-full p-3 bg-white border border-black-100 rounded-xl outline-none focus:border-black-400 font-medium"
+                          />
+                        </div>
+                        <div>
+                          <Label>Coupon Code</Label>
+                          <input
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value)}
+                            className="w-full p-3 bg-white border border-black-100 rounded-xl outline-none focus:border-black-400 font-medium"
+                          />
+                        </div>
                       </>
 
-                      <div><Label>Username / Email</Label><input value={userName} onChange={e => setUserName(e.target.value)} className={`w-full p-3 bg-white border border-black-100 rounded-xl outline-none font-medium ${userName && !validateUsernameFormat(userName, getCollegeType(selectedUniversity)) ? "border-red-500 bg-red-50" : "border-black-100 focus:border-black-400"}`} /></div>
-                      <div><Label>Password</Label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-white border border-black-100 rounded-xl outline-none focus:border-black-400 font-medium" /></div>
-
+                      <div>
+                        <Label>Username / Email</Label>
+                        <input
+                          value={userName}
+                          onChange={(e) => setUserName(e.target.value)}
+                          className={`w-full p-3 bg-white border border-black-100 rounded-xl outline-none font-medium ${userName && !validateUsernameFormat(userName, getCollegeType(selectedUniversity)) ? "border-red-500 bg-red-50" : "border-black-100 focus:border-black-400"}`}
+                        />
+                      </div>
+                      <div>
+                        <Label>Password</Label>
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full p-3 bg-white border border-black-100 rounded-xl outline-none focus:border-black-400 font-medium"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -574,11 +1007,26 @@ const UnifiedCallModal = ({
                         <Label required>Not Interested Primary Reason</Label>
                         <select
                           value={leadStatus.funnel2 || ""}
-                          onChange={e => setLeadStatus(p => ({ ...p, funnel2: e.target.value }))}
+                          onChange={(e) =>
+                            setLeadStatus((p) => ({
+                              ...p,
+                              funnel2: e.target.value,
+                            }))
+                          }
                           className="w-full p-3.5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-rose-400 transition-all font-bold text-slate-700"
                         >
                           <option value="">Select Reason</option>
-                          {["Low Eligibility", "High Fees", "Bad Lead", "Not Interested", "Call Disconnected"].map(r => <option key={r} value={r}>{r}</option>)}
+                          {[
+                            "Low Eligibility",
+                            "High Fees",
+                            "Bad Lead",
+                            "Not Interested",
+                            "Call Disconnected",
+                          ].map((r) => (
+                            <option key={r} value={r}>
+                              {r}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     ) : (
@@ -587,8 +1035,16 @@ const UnifiedCallModal = ({
                           <Label required>Next Follow-up Date</Label>
                           <input
                             type="date"
-                            value={callbackDate ? callbackDate.format("YYYY-MM-DD") : ""}
-                            onChange={e => setCallbackDate(e.target.value ? dayjs(e.target.value) : null)}
+                            value={
+                              callbackDate
+                                ? callbackDate.format("YYYY-MM-DD")
+                                : ""
+                            }
+                            onChange={(e) =>
+                              setCallbackDate(
+                                e.target.value ? dayjs(e.target.value) : null,
+                              )
+                            }
                             min={dayjs().format("YYYY-MM-DD")}
                             className="w-full p-3.5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-400 transition-all font-semibold text-slate-600"
                           />
@@ -597,11 +1053,15 @@ const UnifiedCallModal = ({
                           <Label required>Preferred Time Slot</Label>
                           <select
                             value={callbackTime || ""}
-                            onChange={e => setCallbackTime(e.target.value)}
+                            onChange={(e) => setCallbackTime(e.target.value)}
                             className="w-full p-3.5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-400 transition-all font-semibold text-slate-600"
                           >
                             <option value="">Select Slot</option>
-                            {generateTimeSlots().map(s => <option key={s.value} value={s.value}>{s.display}</option>)}
+                            {generateTimeSlots().map((s) => (
+                              <option key={s.value} value={s.value}>
+                                {s.display}
+                              </option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -618,17 +1078,48 @@ const UnifiedCallModal = ({
         <Modal
           open={showCounselingFormPrompt}
           onCancel={() => setIsFormPopupOpen(true)}
-          title={<span className="font-black text-slate-800">Final Verification</span>}
+          title={
+            <span className="font-black text-slate-800">
+              Final Verification
+            </span>
+          }
           centered
           footer={[
-            <button key="n" onClick={() => setIsFormPopupOpen(true)} className="px-6 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl mr-3">No, Fill Now</button>,
-            <button key="y" onClick={() => { onClose(); window.location.reload(); }} className="px-8 py-2 bg-emerald-600 text-white font-bold rounded-xl">Yes, Submitted</button>
+            <button
+              key="n"
+              onClick={() => setIsFormPopupOpen(true)}
+              className="px-6 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl mr-3"
+            >
+              No, Fill Now
+            </button>,
+            <button
+              key="y"
+              onClick={() => {
+                onClose();
+                window.location.reload();
+              }}
+              className="px-8 py-2 bg-emerald-600 text-white font-bold rounded-xl"
+            >
+              Yes, Submitted
+            </button>,
           ]}
         >
-          <div className="py-6 text-slate-600 font-medium">Have you completed and submitted the counseling form for this session?</div>
+          <div className="py-6 text-slate-600 font-medium">
+            Have you completed and submitted the counseling form for this
+            session?
+          </div>
         </Modal>
       )}
-      {isFormPopupOpen && <StudentFormPopup studentId={selectedStudent?.student_id} isOpen={isFormPopupOpen} onClose={() => { setIsFormPopupOpen(false); window.location.reload(); }} />}
+      {isFormPopupOpen && (
+        <StudentFormPopup
+          studentId={selectedStudent?.student_id}
+          isOpen={isFormPopupOpen}
+          onClose={() => {
+            setIsFormPopupOpen(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </>
   );
 };
