@@ -99,7 +99,8 @@ const UnifiedCallModal = ({
 
   const getAvailableSteps = () => {
     if (isSupervisor) return [...l2Steps, { id: "adm", label: "Admission", funnel: "Admission", leadSubStatus: "Admission" }, { id: "enr", label: "Enrolled", funnel: "Enrolled", leadSubStatus: "Enrolled" }];
-    if (isL3 || isTO) return l3Steps;
+    // to_l3 gets l3 steps (isL3), "to" role uses l2 steps as Admission/Enrolled are not for them
+    if (isL3) return l3Steps;
     return l2Steps;
   };
 
@@ -230,14 +231,20 @@ const UnifiedCallModal = ({
     setLeadStatus({ funnel1: f1, funnel2: sub });
     if (f1 !== "Admission") setFeesAmount("");
   };
-
+  const [isDisabledCheckState, setIsDisabledCheckState] = useState(false)
   const handleICCToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsICCDone(checked); if (checked) setSelectedAction("Connected"); };
-  const handleAppToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsAppDone(checked); if (checked) { setSelectedAction("Connected"); setIsAppStepSelectedFromProgress(true); } };
-  const handleAdmissionToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsAdmissionDone(checked); if (checked) { setSelectedAction("Connected"); if (Number(coursecount) > 1) setIsAppStepSelectedFromProgress(true); } };
+  const handleAppToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsAppDone(checked); setIsAppStepSelectedFromProgress(checked); if (checked) setSelectedAction("Connected"); };
+  const handleAdmissionToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsAdmissionDone(checked); if (checked) { setSelectedAction("Connected"); if (Number(coursecount) > 1) setIsAppStepSelectedFromProgress(true); } else { setIsAppStepSelectedFromProgress(false); } };
   const handleEnrToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsEnrDone(checked); if (checked) setSelectedAction("Connected"); };
-  const handleNotInterestedToggle = (e) => { const checked = e.target.checked; resetToggles(); setIsNotInterestedDone(checked); if (checked) setSelectedAction("notInterested"); };
-  const resetToggles = () => { setIsICCDone(false); setIsAppDone(false); setIsAdmissionDone(false); setIsEnrDone(false); setIsNotInterestedDone(false); };
-
+  const handleNotInterestedToggle = (e) => {
+    const checked = e.target.checked; resetToggles1(); setIsNotInterestedDone(checked); if (checked) {
+      setSelectedAction("");
+      // Reset the funnel2 value when Not Interested is selected
+      setLeadStatus(prev => ({ ...prev, funnel2: "" }));
+    }
+  };
+  const resetToggles = () => { setIsICCDone(false); setIsDisabledCheckState(!isDisabledCheckState); setIsAppDone(false); setIsAdmissionDone(false); setIsEnrDone(false); setIsNotInterestedDone(false); };
+  const resetToggles1 = () => { setIsICCDone(false); setIsAppDone(false); setIsAdmissionDone(false); setIsEnrDone(false); setIsNotInterestedDone(false); };
   const handleStepClick = (s) => {
     resetToggles();
     if (s === "Initial Counselling Completed") { setIsICCDone(true); handleLeadStatusChange(s); setSelectedAction("Connected"); }
@@ -248,10 +255,12 @@ const UnifiedCallModal = ({
   };
 
   const needsCourseSelection = () => {
-    // "to" and "to_l3" roles always see the education details section — no check required
-    if (isTO) return true;
+    if (isNotInterestedDone && coursecount <= 1) return false;
 
     const f = isEnrDone ? "Enrolled" : (isAdmissionDone ? "Admission" : (isAppDone ? "Application" : leadStatus.funnel1));
+    const isICC = f === "Initial Counselling Completed" || f.includes("Initial Counsel");
+    // if (isTO && !isICC) return true;
+
     if (isAppStepSelectedFromProgress || (isAdmissionDone && !existingCourseId)) return true;
 
     if (existingCourseId) {
@@ -263,16 +272,21 @@ const UnifiedCallModal = ({
 
   const isFormIncomplete = () => {
     if (isSubmitting || isUpdatingCreds || !selectedAction || !messageText?.trim()) return true;
+
+    if (isNotInterestedDone) {
+      if (!leadStatus.funnel2) return true;
+      return false; // Skip the rest of the checks if Not Interested
+    }
+
     if (selectedAction === "Connected") {
       if (!callbackDate || !callbackTime) return true;
       const f = isEnrDone ? "Enrolled" : (isAdmissionDone ? "Admission" : (isAppDone ? "Application" : leadStatus.funnel1));
-      if (f === "Admission" && (!feesAmount || Number(feesAmount) <= 0)) return true;
+      if (f === "Admission" && (isL3 || isSupervisor) && (!feesAmount || Number(feesAmount) <= 0)) return true;
       // "to" / "to_l3": course selection is optional — they can submit even without selecting one
       if (!isTO && needsCourseSelection() && (!selectedUniversity || !course_id)) return true;
       if (shouldShowCredentialFields() && !validateCredentialForm()) return true;
       if (isAppDone && !leadStatus.funnel2) return true;
     }
-    if (selectedAction === "notInterested" && !leadStatus.funnel2) return true;
     return false;
   };
 
@@ -290,9 +304,9 @@ const UnifiedCallModal = ({
         payload.selectedCourse = cid;
         payload.course_status = f;
       }
-      if (f === "Admission" && feesAmount) payload.feesAmount = Number(feesAmount);
+      if (f === "Admission" && feesAmount && (isL3 || isSupervisor)) payload.feesAmount = Number(feesAmount);
 
-      if (shouldShowCredentialFields() && validateCredentialForm()) {
+      if (shouldShowCredentialFields() && validateCredentialForm() && !isCredsFound) {
         setIsUpdatingCreds(true);
         await updateCollegeSentStatusCreds({ formID, couponCode, userName, password, studentId: selectedStudent.student_id, courseId: cid, collegeName: selectedUniversity, counsellorId: agent?.id, counsellorName: agent?.name });
       }
@@ -351,11 +365,10 @@ const UnifiedCallModal = ({
 
             <div className="space-y-3.5">
               {[
-                { id: "icc", label: "ICC Done", checked: isICCDone, handler: handleICCToggle, color: "blue", hidden: leadStatus.funnel1 !== "Pre Application" || (!isL2 && !isSupervisor) },
-                // "to" / "to_l3": App Done is always visible; they can manually push to Application anytime
-                { id: "app", label: "App Done", checked: isAppDone, handler: handleAppToggle, color: "indigo", hidden: isTO ? false : ((isL3 && !isSupervisor) || (leadStatus.funnel1 !== "Initial Counselling Completed" && !isSupervisor)) },
-                { id: "adm", label: "Admission Done", checked: isAdmissionDone, handler: handleAdmissionToggle, color: "emerald", hidden: leadStatus.funnel1 !== "Application" && !isSupervisor },
-                { id: "enr", label: "Enrolled", checked: isEnrDone, handler: handleEnrToggle, color: "violet", hidden: leadStatus.funnel1 !== "Admission" && !isSupervisor },
+                { id: "icc", label: "ICC Done", checked: isICCDone, handler: handleICCToggle, color: "blue", hidden: leadStatus.funnel1 !== "Pre Application" || (!isL2 && !isTO && !isSupervisor) },
+                { id: "app", label: "App Done", checked: isAppDone, handler: handleAppToggle, color: "indigo", hidden: agent.role === "to" ? false : (agent.role === "to_l3" || (leadStatus.funnel1 !== "Initial Counselling Completed" && !isSupervisor)) },
+                { id: "adm", label: "Admission Done", checked: isAdmissionDone, handler: handleAdmissionToggle, color: "emerald", hidden: (leadStatus.funnel1 !== "Application" && !isSupervisor) || (!isL3 && !isSupervisor) },
+                { id: "enr", label: "Enrolled", checked: isEnrDone, handler: handleEnrToggle, color: "violet", hidden: (leadStatus.funnel1 !== "Admission" && !isSupervisor) || (!isL3 && !isSupervisor) },
                 { id: "ni", label: "Not Interested", checked: isNotInterestedDone, handler: handleNotInterestedToggle, color: "rose", hidden: false },
               ].map(a => !a.hidden && (
                 <button
@@ -386,12 +399,14 @@ const UnifiedCallModal = ({
                   const currentStatusIndex = allSteps.indexOf(getEffectiveFunnel1());
                   const isCompleted = fullIndex < currentStatusIndex;
                   const isCurrent = fullIndex === currentStatusIndex;
+                  console.log(agent, "agent")
+                  const isClickable = step.funnel === "Application" && (agent.role !== "l3" && agent !== "to_l3");
 
                   return (
                     <div
                       key={step.id}
-                      onClick={() => handleStepClick(step.funnel)}
-                      className={`flex-1 h-12 flex items-center justify-center text-[11px] font-black uppercase tracking-wider transition-all duration-500 relative cursor-pointer
+                      onClick={isClickable ? () => handleStepClick(step.funnel) : undefined}
+                      className={`flex-1 h-12 flex items-center justify-center text-[11px] font-black uppercase tracking-wider transition-all duration-500 relative ${isClickable ? "cursor-pointer" : "cursor-default"}
                         ${isCurrent ? "bg-slate-800 text-white translate-y-[-2px]" : isCompleted ? "bg-emerald-500 text-white" : "bg-slate-50 text-slate-400 hover:bg-slate-100"}`}
                       style={{ clipPath: "polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%, 10% 50%)" }}
                     >
@@ -404,14 +419,12 @@ const UnifiedCallModal = ({
               {/* Form Content */}
               <div className="max-w-4xl mx-auto space-y-5 pb-12 px-2">
 
-                {/* Education Section */}
                 {needsCourseSelection() && (
                   <div className="p-7 bg-blue-50/40 rounded-3xl border border-blue-100/50 grid grid-cols-2 gap-8 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-[0.03] scale-[4]">
                       <FiPaperclip className="w-12 h-12" />
                     </div>
                     <div>
-                      {/* For "to"/"to_l3": label is optional (no asterisk) — selection is not mandatory */}
                       <Label required={!isTO}>Target University</Label>
                       <select
                         value={selectedUniversity || ""}
@@ -450,20 +463,20 @@ const UnifiedCallModal = ({
                     >
                       <option value="">Select Sub-Status</option>
                       {[
-                        "Form Filled_Degreefyd",
                         "Form Submitted – Portal Pending",
                         "Form Submitted – Completed",
-                        "Form Submitted – Offline",
-                        "Walkin marked",
-                        "Application Fee Pending",
-                        "Application Fee Paid",
+                        "Walkin Completed",
+                        "Exam/Interview Scheduled", 
+                        "Offer Letter/Results Pending",
+                        "Offer Letter/Results Released",
+                        "Ready For Admission"
                       ].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                 )}
 
                 {/* Admission Specifics */}
-                {isAdmissionDone && (
+                {isAdmissionDone && (isL3 || isSupervisor) && (
                   <div className="p-7 bg-emerald-50/40 rounded-3xl border border-emerald-100/50 grid grid-cols-2 gap-8">
                     <div>
                       <Label>Fee Category</Label>
@@ -473,7 +486,7 @@ const UnifiedCallModal = ({
                         className="w-full p-3.5 bg-white border border-emerald-100 rounded-xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-semibold text-slate-700"
                       >
                         <option value="">Select Status</option>
-                        {["Partially Paid", "Semester Paid", "Full Paid"].map(s => <option key={s} value={s}>{s}</option>)}
+                        {["Partially Paid", "Semester Paid", "Admission Blocked"].map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
                     <div>
@@ -524,10 +537,11 @@ const UnifiedCallModal = ({
                     </button>
                     <button
                       onClick={() => setSelectedAction("Not Connected")}
+                      disabled={isDisabledCheckState}
                       className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${selectedAction === "Not Connected"
                         ? "bg-slate-800 border-slate-800 text-white"
                         : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                        }`}
+                        } ${isDisabledCheckState ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       Not Connected
                     </button>
