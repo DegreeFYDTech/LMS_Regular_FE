@@ -180,26 +180,37 @@ const ShortlistedColleges = ({ setActiveTab }) => {
 
 
   const handleSendReq = async (e, collegeName) => {
-    setSendingToCollege(prev => ({ ...prev, [collegeName]: true }));
+  // Prevent if already sending
+  if (sendingToCollege[collegeName]) {
+    return;
+  }
+  
+  setSendingToCollege(prev => ({ ...prev, [collegeName]: true }));
 
-    try {
-      await axios.post(`${BASE_URL}/StudentCourseStatusLogs/sentStatustoCollege`, {
-        collegeName,
-        studentId: studentId
-      }, { withCredentials: true });
+  try {
+    await axios.post(`${BASE_URL}/StudentCourseStatusLogs/sentStatustoCollege`, {
+      collegeName,
+      studentId: studentId
+    }, { withCredentials: true });
 
-      await refreshStudentData();
-      setActiveTab("Tab3");
-      localStorage.setItem('activeTab', 'Tab3');
-      alert("Request sent to college successfully!");
-      window.location.reload();
-    } catch (error) {
-      console.error('Error sending request:', error);
-      alert('Failed to send request to college. Please try again.');
-    } finally {
+    await refreshStudentData();
+    setActiveTab("Tab3");
+    localStorage.setItem('activeTab', 'Tab3');
+    alert("Request sent to college successfully!");
+    
+    // Keep button disabled for 4 seconds even after success
+    // This prevents multiple clicks before page reload
+    setTimeout(() => {
       setSendingToCollege(prev => ({ ...prev, [collegeName]: false }));
-    }
-  };
+    }, 4000);
+    
+    window.location.reload();
+  } catch (error) {
+    console.error('Error sending request:', error);
+    alert('Failed to send request to college. Please try again.');
+    setSendingToCollege(prev => ({ ...prev, [collegeName]: false }));
+  }
+};
 
   const openStatusModal = (college) => {
     setSelectedCollege(college);
