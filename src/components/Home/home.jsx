@@ -81,7 +81,7 @@ const HomePage = memo(() => {
   }, []);
 
   useEffect(() => {
-    if (storedRole === "Supervisor" || storedRole === "to") {
+    if (storedRole === "Supervisor" || storedRole === "to" || storedRole === "to_l3") {
       fetchAgents();
     }
   }, [storedRole, fetchAgents]);

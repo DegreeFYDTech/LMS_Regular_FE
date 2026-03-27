@@ -43,7 +43,7 @@ const Sidebar = ({
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const isSupervisor = storedRole === "Supervisor";
-  const isTORole = storedRole === "to";
+  const isTORole = storedRole === "to" || storedRole === "to_l3";
   const isAnalyser = storedRole === "Analyser";
   const isSupervisorOrTO = isSupervisor || isTORole;
 

@@ -78,7 +78,7 @@ export const logoutAnalyser = async () => {
 
 export const getUserDetails = async (role) => {
   try {
-    const transformedRole = (role === 'l2' || role === 'l3' || role === 'to') ? 'counsellor' : role.toLowerCase();
+    const transformedRole = (role === 'l2' || role === 'l3' || role === 'to'|| role==='to_l3') ? 'counsellor' : role.toLowerCase();
     const response = await axios.get(
       `${BASE_URL}/${transformedRole}/getUserDetails`,
       { withCredentials: true }

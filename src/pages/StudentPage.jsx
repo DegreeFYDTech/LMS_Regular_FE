@@ -89,10 +89,10 @@ const StudentPage = () => {
     userRole === "Analyser"
       ? [{ key: "Tab1", label: "Profile", icon: User }]
       : [
-          { key: "Tab1", label: "Profile", icon: User },
-          { key: "Tab2", label: "Preferences", icon: Settings },
-          { key: "Tab3", label: "ShortList", icon: BookOpen },
-        ];
+        { key: "Tab1", label: "Profile", icon: User },
+        { key: "Tab2", label: "Preferences", icon: Settings },
+        { key: "Tab3", label: "ShortList", icon: BookOpen },
+      ];
   const [isAdmissionDone, setIsAdmissionDone] = useState(false);
 
   useEffect(() => {
@@ -268,7 +268,7 @@ const StudentPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-   
+
 
       <div className="mx-auto p-4">
         {isAdmissionDone && (
@@ -302,11 +302,10 @@ const StudentPage = () => {
                   <button
                     key={tab.key}
                     onClick={() => handleTabChange(tab.key)}
-                    className={`flex-1 flex items-center justify-center space-x-3 py-5 px-4 font-semibold transition-all duration-200 relative ${
-                      isActive
-                        ? "text-blue-600 bg-gradient-to-b from-blue-50 to-white"
-                        : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-                    }`}
+                    className={`flex-1 flex items-center justify-center space-x-3 py-5 px-4 font-semibold transition-all duration-200 relative ${isActive
+                      ? "text-blue-600 bg-gradient-to-b from-blue-50 to-white"
+                      : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+                      }`}
                   >
                     <Icon
                       className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-400"}`}
@@ -625,14 +624,7 @@ const FloatingActionButtons = ({
       action: onOpenConnectCall,
       tooltip: "Start Connected Call",
     },
-    {
-      id: "disconnect",
-      icon: PhoneOff,
-      label: "Disconnect",
-      color: "bg-red-500 hover:bg-red-600",
-      action: onOpenDisconnectCall,
-      tooltip: "Start Disconnected Call",
-    },
+
     {
       id: "wishlist",
       icon: isInWishlist ? HeartOff : Heart,
@@ -644,14 +636,7 @@ const FloatingActionButtons = ({
       tooltip: isInWishlist ? "Remove from Wishlist" : "Add to Wishlist",
       loading: wishlistLoading,
     },
-    {
-      id: "whatsapp",
-      icon: WhatsAppOutlined,
-      label: "WhatsApp",
-      color: "bg-green-500 hover:bg-green-600",
-      action: onOpenWhatsAppChat,
-      tooltip: "Open WhatsApp Chat",
-    },
+
   ];
 
   return (

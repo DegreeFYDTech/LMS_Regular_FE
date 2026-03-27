@@ -155,16 +155,18 @@ const TableContent = ({
         case "createdAt":
           const aDate =
             activeRole === "l2" ||
-            activeRole === "to" ||
-            activeRole === "Supervisor" ||
-            activeRole === "Analyser"
+              activeRole === "to" ||
+              activeRole === "to_l3" ||
+              activeRole === "Supervisor" ||
+              activeRole === "Analyser"
               ? a.created_at
               : a.assigned_l3_date;
           const bDate =
             activeRole === "l2" ||
-            activeRole === "to" ||
-            activeRole === "Supervisor" ||
-            activeRole === "Analyser"
+              activeRole === "to" ||
+              activeRole === "to_l3" ||
+              activeRole === "Supervisor" ||
+              activeRole === "Analyser"
               ? b.created_at
               : b.assigned_l3_date;
           aValue = new Date(aDate);
@@ -189,16 +191,18 @@ const TableContent = ({
         case "remarks":
           const aRemarks =
             activeRole === "l2" ||
-            activeRole === "to" ||
-            activeRole === "Supervisor" ||
-            activeRole === "Analyser"
+              activeRole === "to" ||
+              activeRole === "to_l3" ||
+              activeRole === "Supervisor" ||
+              activeRole === "Analyser"
               ? a.remark_count || a.remarks_count || 0
               : a.total_remarks_l3 || 0;
           const bRemarks =
             activeRole === "l2" ||
-            activeRole === "to" ||
-            activeRole === "Supervisor" ||
-            activeRole === "Analyser"
+              activeRole === "to" ||
+              activeRole === "to_l3" ||
+              activeRole === "Supervisor" ||
+              activeRole === "Analyser"
               ? b.remark_count || b.remarks_count || 0
               : b.total_remarks_l3 || 0;
           aValue = Number(aRemarks);
@@ -263,9 +267,9 @@ const TableContent = ({
   const rowSelection =
     userRole === "Supervisor" || userRole === "to"
       ? {
-          selectedRowKeys: selectedLeadIds,
-          onChange: (selectedRowKeys) => setSelectedLeadIds(selectedRowKeys),
-        }
+        selectedRowKeys: selectedLeadIds,
+        onChange: (selectedRowKeys) => setSelectedLeadIds(selectedRowKeys),
+      }
       : null;
 
   const selectedLeadObjects = useMemo(
@@ -312,22 +316,7 @@ const TableContent = ({
     }
     return (
       <div className="flex items-center space-x-1">
-        <Tooltip title="Call Lead">
-          <Button
-            type="text"
-            icon={<PhoneFilled style={{ color: "#16a34a", fontSize: 16 }} />}
-            onClick={() => handleConnect(lead)}
-            size="small"
-          />
-        </Tooltip>
-        <Tooltip title="Missed Call">
-          <Button
-            type="text"
-            icon={<PhoneOutlined style={{ color: "#dc2626", fontSize: 16 }} />}
-            onClick={() => handleDisconnect(lead)}
-            size="small"
-          />
-        </Tooltip>
+
 
         <Tooltip title="WhatsApp">
           <Button
@@ -381,7 +370,7 @@ const TableContent = ({
         title: "Created At",
         dataIndex: "createdAt",
         key: "createdAt",
-        field: "createdAt", 
+        field: "createdAt",
         sorter: true,
         sortOrder:
           sortConfig.key === "createdAt"
@@ -509,13 +498,12 @@ const TableContent = ({
           return (
             <div className="space-y-1 flex">
               <div
-                className={`flex items-center space-x-2 ${
-                  isOverdue
+                className={`flex items-center space-x-2 ${isOverdue
                     ? "text-red-600"
                     : isToday
                       ? "text-blue-600"
                       : "text-gray-700"
-                }`}
+                  }`}
               >
                 {isOverdue && (
                   <ExclamationCircleOutlined className="text-red-500" />
@@ -536,13 +524,12 @@ const TableContent = ({
               </div>
               {value?.time && (
                 <div
-                  className={`text-xs pl-5 ${
-                    isOverdue
+                  className={`text-xs pl-5 ${isOverdue
                       ? "text-red-500"
                       : isToday
                         ? "text-blue-500"
                         : "text-gray-500"
-                  }`}
+                    }`}
                 >
                   {value.time}
                 </div>
@@ -630,14 +617,14 @@ const TableContent = ({
       },
       ...(userRole !== "Analyser"
         ? [
-            {
-              title: "Actions",
-              key: "actions",
-              fixed: "right",
-              width: 140,
-              render: (_, record) => <ActionButtons lead={record} />,
-            },
-          ]
+          {
+            title: "Actions",
+            key: "actions",
+            fixed: "right",
+            width: 140,
+            render: (_, record) => <ActionButtons lead={record} />,
+          },
+        ]
         : []),
     ],
     [
@@ -650,7 +637,7 @@ const TableContent = ({
       showL3Column, // Added to dependencies
     ],
   );
-console.log(activeRole, "active role in table content");
+  console.log(activeRole, "active role in table content");
   const dataSource = useMemo(() => {
     if (!sortedLeads) return [];
     return sortedLeads.map((lead) => {
@@ -661,9 +648,10 @@ console.log(activeRole, "active role in table content");
         ...lead,
         createdAt:
           activeRole === "l2" ||
-          activeRole === "to" ||
-          activeRole === "Supervisor" ||
-          activeRole === "Analyser"
+            activeRole === "to" ||
+            activeRole === "to_l3" ||
+            activeRole === "Supervisor" ||
+            activeRole === "Analyser"
             ? lead.created_at
             : lead.assigned_l3_date,
         lastCall: lastRemark?.created_at || "",
@@ -674,6 +662,7 @@ console.log(activeRole, "active role in table content");
         remarks: Number(
           activeRole === "l2" ||
             activeRole === "to" ||
+            activeRole === "to_l3" ||
             activeRole === "Supervisor" ||
             activeRole === "Analyser"
             ? lead.remark_count || lead.remarks_count || 0
