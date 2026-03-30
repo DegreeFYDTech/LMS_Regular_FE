@@ -1259,6 +1259,8 @@ const UnifiedCallModal = ({
                             "Not Eligible",
                             "Duplicate_Same student exists",
                             "Only_Online course",
+                            "Only_Amity Regular course",
+                            "Only_CGC Regular course",
                             "Course Not Available",
                             "Reason Not Shared",
                             "Not Enquired",
