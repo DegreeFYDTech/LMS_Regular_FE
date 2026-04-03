@@ -206,7 +206,7 @@ const AppRoutes = () => {
               <Route
                 path="/bulkupload"
                 element={
-                  <RoleBasedRoute allowedRoles={["Supervisor"]}>
+                  <RoleBasedRoute allowedRoles={["Supervisor","to"]}>
                     <BulkUpload />
                   </RoleBasedRoute>
                 }
