@@ -63,7 +63,7 @@ const Header = memo(({
           </Button>
         )}
 
-        {(isSupervisor || isAnalyser) && (
+        {(isSupervisor || activeRole=="to") && (
           <Button
             type="primary"
             icon={isExporting ? <LoadingOutlined spin /> : <DownloadOutlined />}

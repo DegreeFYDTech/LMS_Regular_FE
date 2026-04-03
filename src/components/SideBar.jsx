@@ -272,6 +272,12 @@ const Sidebar = ({
               label: "Reports Portal",
               onClick: () => navigate("/analysisreport"),
             },
+            {
+              key: "bulk-upload",
+              icon: <UploadOutlined />,
+              label: "Bulk Upload",
+              onClick: () => navigate("/bulkupload"),
+            },
           ]
         : [];
 

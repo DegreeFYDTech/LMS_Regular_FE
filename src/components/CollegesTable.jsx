@@ -523,7 +523,7 @@ const CollegesTable = ({
                     headers: {
                       "Content-Type": "application/json",
                     },
-                    credentials: "include", 
+                    credentials: "include",
                     body: JSON.stringify({
                       student_id: studentData?.student_id,
                       course_id: selectedCourse?.course_id,
@@ -657,9 +657,10 @@ const CollegesTable = ({
 
                 <div className="flex items-center gap-3">
                   {(statusDisplay.status === "" ||
-                    statusDisplay.status ===
-                      "Failed due to Technical Issues") &&
-                  !university.universityName.includes("Amity University") ? (
+                    (statusDisplay.status === "Failed due to Technical Issues" &&
+                      !university.universityName.toLowerCase().includes("chandigarh university")
+                    )) &&
+                    !university.universityName.includes("Amity University") ? (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -707,7 +708,7 @@ const CollegesTable = ({
                       />
                       {statusDisplay.reason &&
                         statusDisplay.status !==
-                          "Failed due to Technical Issues" && (
+                        "Failed due to Technical Issues" && (
                           <div className="text-xs text-red-600 mt-1">
                             {statusDisplay.reason}
                           </div>
@@ -724,11 +725,10 @@ const CollegesTable = ({
                     {university.courseCount}
                   </span>
                   <ChevronDown
-                    className={`w-5 h-5 text-gray-400 transition-transform ${
-                      expandedUniversities[university.universityName]
-                        ? "rotate-180"
-                        : ""
-                    }`}
+                    className={`w-5 h-5 text-gray-400 transition-transform ${expandedUniversities[university.universityName]
+                      ? "rotate-180"
+                      : ""
+                      }`}
                   />
                 </div>
               </div>
@@ -838,13 +838,13 @@ const CollegesTable = ({
                                         </div>
                                         {contactStatus?.response_data
                                           ?.ExceptionMessage && (
-                                          <div className="text-xs text-gray-500 mt-2">
-                                            {
-                                              contactStatus.response_data
-                                                .ExceptionMessage
-                                            }
-                                          </div>
-                                        )}
+                                            <div className="text-xs text-gray-500 mt-2">
+                                              {
+                                                contactStatus.response_data
+                                                  .ExceptionMessage
+                                              }
+                                            </div>
+                                          )}
                                       </div>
                                     </div>
                                     {!isSuccessful && (
@@ -1139,14 +1139,13 @@ const CollegesTable = ({
                                   </div>
                                   {college.college_api_sent_status &&
                                     college.college_api_sent_status !==
-                                      "Proceed" && (
+                                    "Proceed" && (
                                       <div
-                                        className={`text-xs mt-2 flex items-center gap-1 ${
-                                          college.college_api_sent_status ===
+                                        className={`text-xs mt-2 flex items-center gap-1 ${college.college_api_sent_status ===
                                           "Failed due to Technical Issues"
-                                            ? "text-amber-600 cursor-pointer hover:text-amber-800"
-                                            : "text-amber-600"
-                                        }`}
+                                          ? "text-amber-600 cursor-pointer hover:text-amber-800"
+                                          : "text-amber-600"
+                                          }`}
                                         onClick={() => {
                                           if (
                                             college.college_api_sent_status ===
