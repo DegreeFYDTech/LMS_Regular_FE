@@ -17,6 +17,21 @@ import DashboardHeader from '../components/MainReport/DashboardHeader';
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
+// Status order for Y-axis display
+const STATUS_ORDER = [
+  'Form Submitted – Portal Pending',
+  'Form Submitted – Completed',
+  'Walkin Completed',
+  'Exam/Interview Scheduled',
+  'Offer Letter/Results Pending',
+  'Offer Letter/Results Released',
+  'Ready for Admission',
+  'Admission',
+  'Enrolled',
+  'NotInterested',
+  'Walkin Marked'
+];
+
 const CollegeStatusReports = () => {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
@@ -54,14 +69,27 @@ const CollegeStatusReports = () => {
 
       if (response.data.success) {
         const uniqueStatuses = [...new Set(response.data.data.statuses)];
+        // Sort statuses according to STATUS_ORDER
+        const sortedStatuses = [...uniqueStatuses].sort((a, b) => {
+          const indexA = STATUS_ORDER.indexOf(a);
+          const indexB = STATUS_ORDER.indexOf(b);
+          
+          // If status not found in ORDER, put it at the end
+          if (indexA === -1 && indexB === -1) return 0;
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          
+          return indexA - indexB;
+        });
+        
         const updatedData = {
           ...response.data,
           data: {
             ...response.data.data,
-            statuses: uniqueStatuses,
+            statuses: sortedStatuses,
             rows: response.data.data.rows.map(row => {
               const cleanedRow = { ...row };
-              uniqueStatuses.forEach(status => {
+              sortedStatuses.forEach(status => {
                 if (!cleanedRow.hasOwnProperty(status)) {
                   cleanedRow[status] = 0;
                 }
@@ -233,18 +261,20 @@ const CollegeStatusReports = () => {
         fixed: 'left',
         width: 200,
         render: (text) => (
-          <span className="font-semibold text-slate-800">{text}</span>
+          <div className="font-semibold text-slate-800 break-words whitespace-normal">
+            {text}
+          </div>
         )
       },
       ...statuses.map(status => ({
         title: (
-          <div className="whitespace-nowrap font-bold text-center px-2 truncate text-slate-700" title={status}>
+          <div className="font-bold text-center px-2 break-words whitespace-normal text-slate-700" title={status}>
             {status}
           </div>
         ),
         dataIndex: status,
         key: status,
-        width: 180,
+        width: 100,
         align: 'center',
         render: (count) => (
           <Tooltip title={`${status}: ${count} students`}>
@@ -276,7 +306,6 @@ const CollegeStatusReports = () => {
     ];
   };
 
-  // If you want to transpose the table (Statuses as rows, Colleges as columns), uncomment this function and comment the one above
   // Build transposed table columns with Colleges on X-axis and Statuses on Y-axis
   const getTransposedTableColumns = () => {
     if (!reportData?.data) return [];
@@ -284,7 +313,7 @@ const CollegeStatusReports = () => {
     const isCollegesView = filters.reportType === 'colleges';
     const rowKey = isCollegesView ? 'college' : 'counsellor';
     
-    // Create columns for each college/counsellor
+    // Create columns for each college/counsellor with fixed width of 100px
     const columns = [
       {
         title: 'Status',
@@ -293,18 +322,20 @@ const CollegeStatusReports = () => {
         fixed: 'left',
         width: 200,
         render: (text) => (
-          <span className="font-semibold text-slate-800">{text}</span>
+          <div className="font-semibold text-slate-800 break-words whitespace-normal">
+            {text}
+          </div>
         )
       },
       ...rows.map((row, index) => ({
         title: (
-          <div className="whitespace-nowrap font-bold text-center px-2 truncate text-slate-700" title={row[rowKey]}>
+          <div className="font-bold text-center px-2 break-words whitespace-normal text-slate-700" title={row[rowKey]}>
             {row[rowKey]}
           </div>
         ),
         dataIndex: `col_${index}`,
         key: `col_${index}`,
-        width: 120,
+        width: 100,
         align: 'center',
         render: (count) => (
           <Tooltip title={`${row[rowKey]}: ${count} students`}>
@@ -338,14 +369,26 @@ const CollegeStatusReports = () => {
     return columns;
   };
 
-  // Get transposed data source
+  // Get transposed data source with statuses in correct order
   const getTransposedDataSource = () => {
     if (!reportData?.data) return [];
     const { rows, statuses, totals } = reportData.data;
     const isCollegesView = filters.reportType === 'colleges';
     
-    // Create a row for each status
-    return statuses.map(status => {
+    // Statuses are already sorted from fetchReportData, but we'll ensure order
+    const sortedStatuses = [...statuses].sort((a, b) => {
+      const indexA = STATUS_ORDER.indexOf(a);
+      const indexB = STATUS_ORDER.indexOf(b);
+      
+      if (indexA === -1 && indexB === -1) return 0;
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      
+      return indexA - indexB;
+    });
+    
+    // Create a row for each status in the sorted order
+    const dataRows = sortedStatuses.map(status => {
       const row = { status, total: 0 };
       
       // Add count for each college/counsellor
@@ -356,16 +399,19 @@ const CollegeStatusReports = () => {
       });
       
       return row;
-    }).concat([
-      {
-        status: 'TOTAL',
-        ...rows.reduce((acc, item, index) => {
-          acc[`col_${index}`] = item.total;
-          return acc;
-        }, {}),
-        total: totals.grandTotal
-      }
-    ]);
+    });
+    
+    // Add total row at the end
+    dataRows.push({
+      status: 'TOTAL',
+      ...rows.reduce((acc, item, index) => {
+        acc[`col_${index}`] = item.total;
+        return acc;
+      }, {}),
+      total: totals.grandTotal
+    });
+    
+    return dataRows;
   };
 
   const getDataSource = () => {
@@ -567,7 +613,7 @@ const CollegeStatusReports = () => {
         )}
 
         {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <Spin spinning={loading} size="large">
             {reportData?.data?.rows ? (
               <div className="overflow-x-auto">
@@ -597,25 +643,41 @@ const CollegeStatusReports = () => {
 
       <style>{`
         .college-status-table .ant-table-thead > tr > th {
-          white-space: nowrap !important;
           background-color: #f8fafc !important;
           font-weight: 700 !important;
           color: #374151 !important;
           border-bottom: 2px solid #e2e8f0 !important;
           padding: 12px 8px !important;
           font-size: 12px !important;
-          text-transform: uppercase;
           letter-spacing: 0.05em;
+          vertical-align: top !important;
         }
+        
+        .college-status-table .ant-table-thead > tr > th .ant-table-column-title {
+          width: 100%;
+        }
+        
         .college-status-table .ant-table-tbody > tr > td {
           border-bottom: 1px solid #f1f5f9 !important;
           padding: 10px 8px !important;
+          vertical-align: middle !important;
         }
+        
         .college-status-table .ant-table-tbody > tr:hover > td {
           background-color: #f8fafc !important;
         }
+        
+        /* Allow text wrapping in cells */
         .college-status-table .ant-table-cell {
-          white-space: nowrap !important;
+          white-space: normal !important;
+          word-wrap: break-word !important;
+          word-break: break-word !important;
+        }
+        
+        /* Ensure fixed width columns */
+        .college-status-table .ant-table-fixed-left,
+        .college-status-table .ant-table-fixed-right {
+          box-shadow: none !important;
         }
         
         /* Custom Picker styles */
@@ -624,23 +686,28 @@ const CollegeStatusReports = () => {
           background: transparent !important;
           box-shadow: none !important;
         }
+        
         .ant-picker-range .ant-picker-input input,
         .ant-picker input {
           font-size: 13px !important;
           font-weight: 500 !important;
           color: #1e293b !important;
         }
+        
         .ant-picker-range .ant-picker-active-bar {
           background: #3b82f6 !important;
         }
+        
         .ant-picker-range:hover,
         .ant-picker:hover {
           background: transparent !important;
         }
+        
         .ant-picker-range-focused,
         .ant-picker-focused {
           box-shadow: none !important;
         }
+        
         .ant-picker-clear {
           background: transparent !important;
         }
@@ -651,6 +718,15 @@ const CollegeStatusReports = () => {
           padding: 0 12px;
           height: 28px;
           line-height: 26px;
+        }
+        
+        /* Ensure table has proper overflow handling */
+        .ant-table-wrapper {
+          overflow-x: auto;
+        }
+        
+        .ant-table {
+          min-width: 100%;
         }
       `}</style>
     </div>
