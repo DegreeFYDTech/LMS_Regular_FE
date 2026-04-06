@@ -216,7 +216,7 @@ const CollegeStatusReports = () => {
     slate: { bg: 'bg-slate-50', text: 'text-slate-600', icon: 'bg-slate-500' }
   };
 
-  // Build table columns
+  // Build table columns with Statuses on X-axis and Colleges on Y-axis
   const getTableColumns = () => {
     if (!reportData?.data) return [];
     const { statuses } = reportData.data;
@@ -224,6 +224,7 @@ const CollegeStatusReports = () => {
     const rowKey = isCollegesView ? 'college' : 'counsellor';
     const rowTitle = isCollegesView ? 'College' : 'Counsellor';
 
+    // This creates columns with each status as a column header
     return [
       {
         title: rowTitle,
@@ -275,6 +276,98 @@ const CollegeStatusReports = () => {
     ];
   };
 
+  // If you want to transpose the table (Statuses as rows, Colleges as columns), uncomment this function and comment the one above
+  // Build transposed table columns with Colleges on X-axis and Statuses on Y-axis
+  const getTransposedTableColumns = () => {
+    if (!reportData?.data) return [];
+    const { rows, statuses } = reportData.data;
+    const isCollegesView = filters.reportType === 'colleges';
+    const rowKey = isCollegesView ? 'college' : 'counsellor';
+    
+    // Create columns for each college/counsellor
+    const columns = [
+      {
+        title: 'Status',
+        dataIndex: 'status',
+        key: 'status',
+        fixed: 'left',
+        width: 200,
+        render: (text) => (
+          <span className="font-semibold text-slate-800">{text}</span>
+        )
+      },
+      ...rows.map((row, index) => ({
+        title: (
+          <div className="whitespace-nowrap font-bold text-center px-2 truncate text-slate-700" title={row[rowKey]}>
+            {row[rowKey]}
+          </div>
+        ),
+        dataIndex: `col_${index}`,
+        key: `col_${index}`,
+        width: 120,
+        align: 'center',
+        render: (count) => (
+          <Tooltip title={`${row[rowKey]}: ${count} students`}>
+            <div className="flex justify-center">
+              {count > 0 ? (
+                <span className="inline-flex items-center justify-center min-w-8 h-8 rounded-full text-slate-800 text-sm font-medium bg-slate-50">
+                  {count}
+                </span>
+              ) : (
+                <span className="text-slate-300">0</span>
+              )}
+            </div>
+          </Tooltip>
+        )
+      })),
+      {
+        title: 'Total',
+        dataIndex: 'total',
+        key: 'total',
+        fixed: 'right',
+        width: 100,
+        align: 'center',
+        render: (total) => (
+          <span className="inline-flex items-center justify-center min-w-10 h-8 text-blue-700 bg-blue-50 rounded-lg text-sm font-black px-3">
+            {total}
+          </span>
+        )
+      }
+    ];
+    
+    return columns;
+  };
+
+  // Get transposed data source
+  const getTransposedDataSource = () => {
+    if (!reportData?.data) return [];
+    const { rows, statuses, totals } = reportData.data;
+    const isCollegesView = filters.reportType === 'colleges';
+    
+    // Create a row for each status
+    return statuses.map(status => {
+      const row = { status, total: 0 };
+      
+      // Add count for each college/counsellor
+      rows.forEach((item, index) => {
+        const count = item[status] || 0;
+        row[`col_${index}`] = count;
+        row.total += count;
+      });
+      
+      return row;
+    }).concat([
+      {
+        status: 'TOTAL',
+        ...rows.reduce((acc, item, index) => {
+          acc[`col_${index}`] = item.total;
+          return acc;
+        }, {}),
+        total: totals.grandTotal
+      }
+    ]);
+  };
+
   const getDataSource = () => {
     if (!reportData?.data?.rows) return [];
     const { rows, statuses, totals } = reportData.data;
@@ -316,6 +409,9 @@ const CollegeStatusReports = () => {
   const isMainDateActive = dateFilterType === 'main';
   const isFirstTimeDateActive = dateFilterType === 'firstTime';
 
+  // Toggle between original and transposed view
+  const [isTransposed, setIsTransposed] = useState(true); // Set to true for transposed view (Statuses as rows)
+
   return (
     <div className="p-2 md:p-4 animate-in fade-in duration-500">
       <div className="mx-auto">
@@ -324,6 +420,13 @@ const CollegeStatusReports = () => {
           subtitle="Pivot table view showing status distribution"
           actions={
             <>
+              <button
+                onClick={() => setIsTransposed(!isTransposed)}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all font-bold text-xs shadow-sm shadow-slate-100 border bg-indigo-600 text-white border-slate-200 hover:bg-indigo-700"
+              >
+                <LayoutGrid size={14} />
+                {isTransposed ? 'SWITCH TO COLLEGES X STATUSES' : 'SWITCH TO STATUSES X COLLEGES'}
+              </button>
               <button
                 onClick={handleExport}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all font-bold text-xs shadow-sm shadow-slate-100 border bg-emerald-600 text-white border-slate-200 hover:bg-emerald-700"
@@ -469,9 +572,9 @@ const CollegeStatusReports = () => {
             {reportData?.data?.rows ? (
               <div className="overflow-x-auto">
                 <Table
-                  columns={getTableColumns()}
-                  dataSource={getDataSource()}
-                  rowKey={(record) => record[filters.reportType === 'colleges' ? 'college' : 'counsellor']}
+                  columns={isTransposed ? getTransposedTableColumns() : getTableColumns()}
+                  dataSource={isTransposed ? getTransposedDataSource() : getDataSource()}
+                  rowKey={(record, index) => isTransposed ? record.status : (record[filters.reportType === 'colleges' ? 'college' : 'counsellor'] || index)}
                   loading={loading}
                   pagination={false}
                   scroll={{ x: 'max-content' }}

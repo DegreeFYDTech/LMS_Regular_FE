@@ -60,7 +60,7 @@ const PaymentDashboard = () => {
             if (filters.role) params.role = filters.role;
             if (filters.user_id) params.user_id = filters.user_id;
 
-            const response = await axios.get(`${BASE_URL}/payment/reports`, {
+            const response = await axios.get(`${BASE_URL}/payment/cu/lpu-reports`, {
                 params,
                 withCredentials: true
             });
