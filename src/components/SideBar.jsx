@@ -45,61 +45,136 @@ const Sidebar = ({
   const isSupervisor = storedRole === "Supervisor";
   const isTORole = storedRole === "to" || storedRole === "to_l3";
   const isAnalyser = storedRole === "Analyser";
+  const isL2Role = storedRole === "l2";
+  const isL3Role = storedRole === "l3";
   const isSupervisorOrTO = isSupervisor || isTORole;
 
-  const mainNavItems =
-    isSupervisorOrTO || storedRole === "l2" || storedRole === "l3"
-      ? [
-          {
-            key: "dashboard",
-            icon: <DashboardOutlined className="text-lg" />,
-            label: "Dashboard",
-            onClick: () => handleTabChange("dashboard"),
-          },
-          {
-            key: "fresh",
-            icon: <InboxOutlined className="text-lg" />,
-            label: "Fresh Leads",
-            count: 12,
-            onClick: () => handleTabChange("fresh"),
-          },
-          {
-            key: "callback",
-            icon: <ClockCircleOutlined className="text-lg" />,
-            label: "Callback Leads",
-            count: 5,
-            onClick: () => handleTabChange("callback"),
-          },
-          {
-            key: "wishlist",
-            icon: <HeartOutlined className="text-lg" />,
-            label: "WishList",
-            onClick: () => handleTabChange("wishlist"),
-          },
-          {
-            key: "library",
-            icon: <BookOutlined className="text-lg" />,
-            label: "Library",
-            onClick: () => navigate("/college-brochure"),
-          },
-          {
-            key: "payment-reports",
-            icon: <DollarOutlined className="text-lg" />,
-            label: "Payment Reports",
-            onClick: () => navigate("/payment-reports"),
-          },
-          // Form Dashboard - Only for Supervisor
-          ...(isSupervisor ? [
-            {
-              key: "form-dashboard",
-              icon: <DashboardTwoTone className="text-lg" />,
-              label: "Form Dashboard",
-              onClick: () => navigate("/form-dashboard"),
-            }
-          ] : []),
-        ]
-      : [];
+  // ============================================
+  // L2 Role - Only Fresh and Callbacks tabs
+  // ============================================
+  const getL2NavItems = () => {
+    if (isL2Role) {
+      return [
+        {
+          key: "fresh",
+          icon: <InboxOutlined className="text-lg" />,
+          label: "Fresh Leads",
+          onClick: () => handleTabChange("fresh"),
+        },
+        {
+          key: "callback",
+          icon: <ClockCircleOutlined className="text-lg" />,
+          label: "Callback Leads",
+          onClick: () => handleTabChange("callback"),
+        },
+      ];
+    }
+    return [];
+  };
 
+  // ============================================
+  // L3 Role Navigation Items
+  // ============================================
+  const getL3NavItems = () => {
+    if (isL3Role) {
+      return [
+        {
+          key: "dashboard",
+          icon: <DashboardOutlined className="text-lg" />,
+          label: "Dashboard",
+          onClick: () => handleTabChange("dashboard"),
+        },
+        {
+          key: "fresh",
+          icon: <InboxOutlined className="text-lg" />,
+          label: "Fresh Leads",
+          onClick: () => handleTabChange("fresh"),
+        },
+        {
+          key: "callback",
+          icon: <ClockCircleOutlined className="text-lg" />,
+          label: "Callback Leads",
+          onClick: () => handleTabChange("callback"),
+        },
+        {
+          key: "wishlist",
+          icon: <HeartOutlined className="text-lg" />,
+          label: "WishList",
+          onClick: () => handleTabChange("wishlist"),
+        },
+        {
+          key: "library",
+          icon: <BookOutlined className="text-lg" />,
+          label: "Library",
+          onClick: () => navigate("/college-brochure"),
+        },
+      ];
+    }
+    return [];
+  };
+
+  // ============================================
+  // Supervisor/TO Navigation Items
+  // ============================================
+  const getSupervisorNavItems = () => {
+    if (isSupervisorOrTO) {
+      return [
+        {
+          key: "dashboard",
+          icon: <DashboardOutlined className="text-lg" />,
+          label: "Dashboard",
+          onClick: () => handleTabChange("dashboard"),
+        },
+        {
+          key: "fresh",
+          icon: <InboxOutlined className="text-lg" />,
+          label: "Fresh Leads",
+          count: 12,
+          onClick: () => handleTabChange("fresh"),
+        },
+        {
+          key: "callback",
+          icon: <ClockCircleOutlined className="text-lg" />,
+          label: "Callback Leads",
+          count: 5,
+          onClick: () => handleTabChange("callback"),
+        },
+        {
+          key: "wishlist",
+          icon: <HeartOutlined className="text-lg" />,
+          label: "WishList",
+          onClick: () => handleTabChange("wishlist"),
+        },
+        {
+          key: "library",
+          icon: <BookOutlined className="text-lg" />,
+          label: "Library",
+          onClick: () => navigate("/college-brochure"),
+        },
+        {
+          key: "payment-reports",
+          icon: <DollarOutlined className="text-lg" />,
+          label: "Payment Reports",
+          onClick: () => navigate("/payment-reports"),
+        },
+        ...(isSupervisor
+          ? [
+              {
+                key: "form-dashboard",
+                icon: <DashboardTwoTone className="text-lg" />,
+                label: "Form Dashboard",
+                onClick: () => navigate("/form-dashboard"),
+              },
+            ]
+          : []),
+      ];
+    }
+    return [];
+  };
+
+  // ============================================
+  // Analyser Navigation Items
+  // ============================================
   const analyserNavItems = isAnalyser
     ? [
         {
@@ -117,7 +192,30 @@ const Sidebar = ({
       ]
     : [];
 
+  // ============================================
+  // Determine which nav items to show based on role
+  // ============================================
+  let mainNavItems = [];
+  
+  if (isL2Role) {
+    mainNavItems = getL2NavItems();
+  } else if (isL3Role) {
+    mainNavItems = getL3NavItems();
+  } else if (isSupervisorOrTO) {
+    mainNavItems = getSupervisorNavItems();
+  } else if (isAnalyser) {
+    mainNavItems = analyserNavItems;
+  }
+
+  // ============================================
+  // Quick Access Items (based on role)
+  // ============================================
   const getQuickAccessItems = () => {
+    // L2 has no quick access
+    if (isL2Role) {
+      return [];
+    }
+
     const quickAccessDropdown = {
       key: "quick-access",
       icon: <TeamOutlined />,
@@ -150,27 +248,35 @@ const Sidebar = ({
             },
           ]
         : isTORole
-          ? [
-              {
-                key: "break-analysis",
-                icon: <CoffeeOutlined />,
-                label: "Break Analysis",
-                onClick: () => navigate("/counsellors-break-dashboard"),
-              },
-              {
-                key: "users",
-                icon: <TeamOutlined />,
-                label: "Users",
-                onClick: () => navigate("/counsellorslisting"),
-              },
-            ]
-          : [],
+        ? [
+            {
+              key: "break-analysis",
+              icon: <CoffeeOutlined />,
+              label: "Break Analysis",
+              onClick: () => navigate("/counsellors-break-dashboard"),
+            },
+            {
+              key: "users",
+              icon: <TeamOutlined />,
+              label: "Users",
+              onClick: () => navigate("/counsellorslisting"),
+            },
+          ]
+        : [],
     };
 
     return quickAccessDropdown;
   };
 
+  // ============================================
+  // Admin Actions Items (based on role)
+  // ============================================
   const getAdminActionsItems = () => {
+    // L2 has no admin actions
+    if (isL2Role) {
+      return [];
+    }
+
     const rulesetDropdown = {
       key: "ruleset",
       icon: <FilterOutlined />,
@@ -265,31 +371,32 @@ const Sidebar = ({
           },
         ]
       : isTORole
-        ? [
-            {
-              key: "reports",
-              icon: <SolutionOutlined />,
-              label: "Reports Portal",
-              onClick: () => navigate("/analysisreport"),
-            },
-            {
-              key: "bulk-upload",
-              icon: <UploadOutlined />,
-              label: "Bulk Upload",
-              onClick: () => navigate("/bulkupload"),
-            },
-          ]
-        : [];
+      ? [
+          {
+            key: "reports",
+            icon: <SolutionOutlined />,
+            label: "Reports Portal",
+            onClick: () => navigate("/analysisreport"),
+          },
+          {
+            key: "bulk-upload",
+            icon: <UploadOutlined />,
+            label: "Bulk Upload",
+            onClick: () => navigate("/bulkupload"),
+          },
+        ]
+      : [];
 
     return adminItems;
   };
 
-  const displayItems = isAnalyser ? analyserNavItems : mainNavItems;
-  const showAddLead =
-    isSupervisorOrTO || storedRole === "l2" || storedRole === "l3";
+  // ============================================
+  // UI Display Flags based on role
+  // ============================================
+  const showAddLead = isSupervisorOrTO || isL2Role || isL3Role;
   const showAgentsDropdown = isSupervisorOrTO;
-  const showQuickAccess = isSupervisor || isTORole;
-  const showAdminActions = isSupervisor || isTORole;
+  const showQuickAccess = (isSupervisor || isTORole) && !isL2Role && !isL3Role;
+  const showAdminActions = (isSupervisor || isTORole) && !isL2Role && !isL3Role;
 
   const quickAccessDropdown = getQuickAccessItems();
   const adminActionsItems = getAdminActionsItems();
@@ -401,9 +508,11 @@ const Sidebar = ({
             {!sidebarCollapsed && (
               <div className="ml-3">
                 <h2 className="font-semibold text-gray-800 text-base">
-                  Lead Manager
+                  {isL2Role ? "Dialer System" : "Lead Manager"}
                 </h2>
-                <p className="text-xs text-gray-500">Management System</p>
+                <p className="text-xs text-gray-500">
+                  {isL2Role ? "Call Management" : "Management System"}
+                </p>
               </div>
             )}
           </div>
@@ -417,9 +526,9 @@ const Sidebar = ({
         </div>
       </div>
 
-      <div className="flex-1 py-4 ">
+      <div className="flex-1 py-4">
         <div className="px-3 space-y-1">
-          {displayItems.map((item) => {
+          {mainNavItems.map((item) => {
             const isActive = activeTab === item.key;
             return (
               <button
@@ -441,7 +550,7 @@ const Sidebar = ({
             );
           })}
 
-          {showAddLead && (
+          {showAddLead && !isL2Role && (
             <button
               onClick={() => setIsAddLeadModalOpen(true)}
               className={`flex items-center justify-center w-full px-3 py-2 mt-4 rounded-lg border-2 border-dashed border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-all ${sidebarCollapsed ? "p-3" : ""}`}
@@ -454,7 +563,8 @@ const Sidebar = ({
           )}
         </div>
 
-        {showAgentsDropdown && !sidebarCollapsed && (
+        {/* Agents Dropdown - Only for Supervisor/TO, not for L2 */}
+        {showAgentsDropdown && !sidebarCollapsed && !isL2Role && (
           <div className="px-3 mt-6">
             <AgentsDropdown
               agents={agents}
@@ -465,6 +575,7 @@ const Sidebar = ({
           </div>
         )}
 
+        {/* Quick Access - Not for L2 */}
         {showQuickAccess && (
           <div className="mt-6">
             {!sidebarCollapsed && (
@@ -487,6 +598,7 @@ const Sidebar = ({
           </div>
         )}
 
+        {/* Admin Actions - Not for L2 */}
         {showAdminActions && (
           <div className="mt-6">
             {!sidebarCollapsed && (

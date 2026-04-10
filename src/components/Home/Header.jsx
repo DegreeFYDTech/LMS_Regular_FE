@@ -47,7 +47,7 @@ const Header = memo(({
       flexWrap: 'wrap',
       gap: token.marginMD
     }}>
-      <Title level={3} style={{ margin: 0 }}>
+      <Title level={3} style={{ margin: 10}}>
         {getTitle()}
       </Title>
 

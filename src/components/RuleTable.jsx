@@ -128,7 +128,7 @@ const RuleTable = ({
           const conditions = type === 'l3' ? record.course_conditions : record.conditions;
           return (
             <div style={{ padding: '8px 24px' }}>
-              <Typography.Title level={5} style={{ fontSize: '14px', marginBottom: '12px' }}>Detailed Conditions</Typography.Title>
+              <Typography.Title level={5} style={{ fontSize: '14px', marginBottom: '12px' }}>Detailed Conditions </Typography.Title>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
                 {type === 'l3' ? (
                   <>
