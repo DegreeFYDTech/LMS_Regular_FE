@@ -590,7 +590,29 @@ const Navbar = () => {
                 />
               </Link>
             </div>
-
+            {role === "l2" && (
+              <div className="ml-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100">
+                  <div
+                    className={`
+        w-1.5 h-1.5 rounded-full
+        ${localStorage.getItem("l2_active_tab") === "fresh" ? "bg-blue-500" : "bg-emerald-500"}
+      `}
+                  ></div>
+                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                    {localStorage.getItem("l2_active_tab") === "fresh"
+                      ? "Fresh Mode"
+                      : "Callback Mode"}
+                  </span>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span className="text-xs text-gray-500">
+                    {localStorage.getItem("l2_active_tab") === "fresh"
+                      ? "Getting new leads"
+                      : "Managing follow-ups"}
+                  </span>
+                </div>
+              </div>
+            )}
             <div className="hidden md:flex items-center space-x-4">
               {role !== "Supervisor" && role !== "Analyser" && (
                 <Tooltip title="Refresh Notifications">
@@ -609,7 +631,7 @@ const Navbar = () => {
                 role !== "to" && <BreakModel />}
 
               {/* Website Chat for Everyone including Supervisors */}
-              {(role !== "to") && (
+              {role !== "to" && (
                 <Tooltip title="Website Chat">
                   <Badge
                     count={chatUnreadCount}
