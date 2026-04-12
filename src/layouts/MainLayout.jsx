@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import AIFloatButton from "../components/AIFloatButton";
 
 const MainLayout = () => {
   return (
@@ -9,6 +10,7 @@ const MainLayout = () => {
         {<Navbar />}
         <Outlet />
       </main>
+      <AIFloatButton />
       <Footer />
     </div>
   );
