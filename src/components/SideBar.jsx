@@ -312,6 +312,12 @@ const Sidebar = ({
           label: "DB RuleSet",
           onClick: () => navigate("/rulesetdb"),
         },
+        {
+          key: "scorecard-ruleset",
+          icon: <FilterOutlined />,
+          label: "Scorecard RuleSet",
+          onClick: () => navigate("/scorecardruleset"),
+        },
       ],
     };
 
@@ -368,6 +374,12 @@ const Sidebar = ({
             icon: <DatabaseOutlined />,
             label: "Analyser Bucket",
             onClick: () => navigate("/analyserbucket"),
+          },
+          {
+            key: "Dialer-bucket",
+            icon: <DatabaseOutlined />,
+            label: "Dialer Bucket",
+            onClick: () => navigate("/dialerbucket"),
           },
         ]
       : isTORole

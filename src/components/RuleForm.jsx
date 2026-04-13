@@ -32,7 +32,6 @@ const RuleForm = ({
     onRuleChange(prev => ({
       ...prev,
       score_type: value,
-      // Reset score_value when type changes to avoid validation issues
       score_value: value === 'percentage' ? 0 : 0
     }));
   };
@@ -41,6 +40,20 @@ const RuleForm = ({
     onRuleChange(prev => ({
       ...prev,
       score_value: value
+    }));
+  };
+
+  const handleDailyIterationLimitChange = (value) => {
+    onRuleChange(prev => ({
+      ...prev,
+      daily_iteration_limit: value || 0
+    }));
+  };
+
+  const handleTotalIterationLimitChange = (value) => {
+    onRuleChange(prev => ({
+      ...prev,
+      total_iteration_limit: value || 0
     }));
   };
 
@@ -65,11 +78,9 @@ const RuleForm = ({
     { title: 'Others', fields: ['preferred_budget', 'current_profession'] }
   ];
 
-  // Get current score type and value with defaults
   const currentScoreType = rule?.score_type || 'numeric';
   const currentScoreValue = rule?.score_value !== undefined ? rule.score_value : 0;
 
-  // Validation rules for score value
   const getScoreValueProps = () => {
     if (currentScoreType === 'percentage') {
       return {
@@ -103,51 +114,46 @@ const RuleForm = ({
 
       <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Scoring Configuration</Divider>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-        <Form.Item label={<Text strong>Score Type</Text>} required>
-          <Radio.Group 
-            value={currentScoreType} 
-            onChange={(e) => handleScoreTypeChange(e.target.value)}
-            buttonStyle="solid"
-          >
-            <Radio.Button value="numeric">
-              Numeric Score
-            </Radio.Button>
-            <Radio.Button value="percentage">
-              Percentage Score
-            </Radio.Button>
-          </Radio.Group>
-          <div style={{ marginTop: '8px' }}>
-            {currentScoreType === 'percentage' ? (
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                Percentage scores are capped at 100% and work well for relative scoring
-              </Text>
-            ) : (
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                Numeric scores can be positive (boost) or negative (penalty) from -100 to 500
-              </Text>
-            )}
-          </div>
-        </Form.Item>
+   
 
-        <Form.Item label={<Text strong>Score Value</Text>} required>
+      <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Iteration Limits</Divider>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        <Form.Item 
+          label={<Text strong>Daily Iteration Limit</Text>} 
+          tooltip="Maximum number of times this rule can assign leads per day (0 = unlimited)"
+        >
           <InputNumber
             style={{ width: '100%' }}
             size="large"
-            value={currentScoreValue}
-            onChange={handleScoreValueChange}
-            {...scoreValueProps}
+            min={0}
+            value={rule?.daily_iteration_limit || 0}
+            onChange={handleDailyIterationLimitChange}
+            placeholder="Enter daily limit"
           />
           <div style={{ marginTop: '8px' }}>
-            {currentScoreType === 'percentage' ? (
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                Range: 0% to 100%
-              </Text>
-            ) : (
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                Range: -100 (penalty) to 500 (high priority)
-              </Text>
-            )}
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {rule?.daily_iteration_limit === 0 ? 'Unlimited' : `${rule?.daily_iteration_limit} assignments per day`}
+            </Text>
+          </div>
+        </Form.Item>
+
+        <Form.Item 
+          label={<Text strong>Total Iteration Limit</Text>} 
+          tooltip="Maximum total number of times this rule can assign leads overall (0 = unlimited)"
+        >
+          <InputNumber
+            style={{ width: '100%' }}
+            size="large"
+            min={0}
+            value={rule?.total_iteration_limit || 0}
+            onChange={handleTotalIterationLimitChange}
+            placeholder="Enter total limit"
+          />
+          <div style={{ marginTop: '8px' }}>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {rule?.total_iteration_limit === 0 ? 'Unlimited' : `${rule?.total_iteration_limit} total assignments`}
+            </Text>
           </div>
         </Form.Item>
       </div>

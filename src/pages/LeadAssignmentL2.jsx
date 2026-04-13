@@ -66,6 +66,8 @@ const LeadAssignmentRules = () => {
     assigned_counsellor_ids: [],
     is_active: true,
     custom_rule_name: "",
+    daily_iteration_limit: 0,
+    total_iteration_limit: 0,
   });
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -212,6 +214,8 @@ const LeadAssignmentRules = () => {
       ...rule,
       assigned_counsellor_ids: transformedCounsellors,
       conditions: processedConditions,
+      daily_iteration_limit: rule.daily_iteration_limit || 0,
+      total_iteration_limit: rule.total_iteration_limit || 0,
     };
 
     const allowedFields = [
@@ -332,6 +336,8 @@ const LeadAssignmentRules = () => {
         : [],
       is_active: true,
       custom_rule_name: rule.custom_rule_name + " (Copy)",
+      daily_iteration_limit: rule.daily_iteration_limit || 0,
+      total_iteration_limit: rule.total_iteration_limit || 0,
     };
     setNewRule(duplicatedRule);
     setEditingRule(null);
@@ -365,13 +371,15 @@ const LeadAssignmentRules = () => {
         preferred_degree: [],
         preferred_specialization: [],
         preferred_city: [],
-        score_type: "numeric", // NEW FIELD
-        score_value: 0, // NEW FIELD
+        score_type: "numeric",
+        score_value: 0,
         preferred_state: [],
       },
       assigned_counsellor_ids: [],
       is_active: true,
       custom_rule_name: "",
+      daily_iteration_limit: 0,
+      total_iteration_limit: 0,
     });
   };
 
