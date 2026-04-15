@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { Table, Tag, Space, Input, Button, Card, Avatar, Badge, message, Select, Modal, Drawer, DatePicker, Divider, Tooltip, Pagination, Spin, Empty, Slider } from 'antd'
-import { SearchOutlined, ReloadOutlined, UserOutlined, PauseCircleOutlined, PlayCircleOutlined, EditOutlined, FilterOutlined, CalendarOutlined, StarOutlined, TeamOutlined, PhoneOutlined, ClockCircleOutlined, CloseOutlined } from '@ant-design/icons'
+import { SearchOutlined, ReloadOutlined, UserOutlined, EditOutlined, FilterOutlined, CalendarOutlined, StarOutlined, TeamOutlined, CloseOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import axios from 'axios'
 import { BASE_URL } from '../config/api'
 import { useSearchParams } from 'react-router-dom'
 import { fetchLeadOptions } from "../network/leadassignmentl2"
 
 const { RangePicker } = DatePicker
+const { Option } = Select
 
 const DialerBucket = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const isLeadView = searchParams.get('isLeadView') === 'true'
-  
+
   const [searchText, setSearchText] = useState('')
   const [loading, setLoading] = useState(false)
   const [dialerData, setDialerData] = useState([])
@@ -31,28 +32,28 @@ const DialerBucket = () => {
   const [selectedCounsellor, setSelectedCounsellor] = useState(null)
   const [newStage, setNewStage] = useState('')
   const [filterDrawerVisible, setFilterDrawerVisible] = useState(false)
-  
+
   // Lead view states
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [totalLeads, setTotalLeads] = useState(0)
-  
-  // Filter states
+
+  // Filter states - Updated for multi-select
   const [filters, setFilters] = useState({
     dateRange: null,
-    source: null,
-    campaign: null,
+    sources: [],        // Changed from source to sources (array)
+    campaigns: [],      // Changed from campaign to campaigns (array)
     sourceUrl: null,
     remarkCount: null,
     churnCount: null,
-    scoreRange: [0, 100] // Added score range filter
+    scoreRange: [0, 100]
   })
-  
+
   const [options, setOptions] = useState({
     sources: [],
     campaigns: []
   })
-  
+
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0)
 
   // Fetch dialer data from API (Counsellor View)
@@ -64,7 +65,7 @@ const DialerBucket = () => {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       })
-      
+
       if (response.data.success) {
         setDialerData(response.data.data.dialerList)
         setStats(response.data.data.stats)
@@ -79,37 +80,46 @@ const DialerBucket = () => {
     }
   }
 
-  // Fetch leads data for lead view
+  // Fetch leads data for lead view - Updated to handle multi-select
   const fetchLeadsData = async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
       params.append('page', currentPage)
       params.append('limit', pageSize)
-      
+
       if (searchText) params.append('search', searchText)
       if (filters.dateRange && filters.dateRange.length === 2) {
         params.append('startDate', filters.dateRange[0].format('YYYY-MM-DD'))
         params.append('endDate', filters.dateRange[1].format('YYYY-MM-DD'))
       }
-      if (filters.source && filters.source !== 'Any') params.append('source', filters.source)
-      if (filters.campaign && filters.campaign !== 'Any') params.append('campaign', filters.campaign)
+
+      // Handle multi-select sources - send as comma-separated string
+      if (filters.sources && filters.sources.length > 0 && !filters.sources.includes('Any')) {
+        params.append('source', filters.sources.join(','))
+      }
+
+      // Handle multi-select campaigns - send as comma-separated string
+      if (filters.campaigns && filters.campaigns.length > 0 && !filters.campaigns.includes('Any')) {
+        params.append('campaign', filters.campaigns.join(','))
+      }
+
       if (filters.sourceUrl) params.append('sourceUrl', filters.sourceUrl)
       if (filters.remarkCount) params.append('remarkCount', filters.remarkCount)
       if (filters.churnCount) params.append('churnCount', filters.churnCount)
-      
+
       // Add score range filter
       if (filters.scoreRange && (filters.scoreRange[0] > 0 || filters.scoreRange[1] < 100)) {
         params.append('minScore', filters.scoreRange[0])
         params.append('maxScore', filters.scoreRange[1])
       }
-      
+
       const response = await axios.get(`${BASE_URL}/scorecard/get-leads-bucket?${params}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       })
-      
+
       if (response.data.success) {
         setLeadsData(response.data.data.leads)
         setTotalLeads(response.data.data.total)
@@ -154,13 +164,13 @@ const DialerBucket = () => {
   // Update stage for a counsellor
   const updateStage = async () => {
     if (!selectedCounsellor || !newStage) return
-    
+
     setLoading(true)
     try {
-      const response = await axios.put(`${BASE_URL}/dialer/update-stage`, 
-        { 
+      const response = await axios.put(`${BASE_URL}/dialer/update-stage`,
+        {
           counsellorId: selectedCounsellor._id,
-          stage: newStage 
+          stage: newStage
         },
         {
           headers: {
@@ -168,7 +178,7 @@ const DialerBucket = () => {
           }
         }
       )
-      
+
       if (response.data.success) {
         message.success('Stage updated successfully')
         setUpdateModalVisible(false)
@@ -186,31 +196,30 @@ const DialerBucket = () => {
     }
   }
 
-  // Apply filters
+  // Apply filters - Updated for multi-select
   const applyFilters = () => {
     let count = 0
     if (filters.dateRange) count++
-    if (filters.source && filters.source !== 'Any') count++
-    if (filters.campaign && filters.campaign !== 'Any') count++
+    if (filters.sources && filters.sources.length > 0 && !filters.sources.includes('Any')) count++
+    if (filters.campaigns && filters.campaigns.length > 0 && !filters.campaigns.includes('Any')) count++
     if (filters.sourceUrl) count++
     if (filters.remarkCount) count++
     if (filters.churnCount) count++
-    // Count score range if not default
     if (filters.scoreRange && (filters.scoreRange[0] > 0 || filters.scoreRange[1] < 100)) count++
     setAppliedFiltersCount(count)
-    
+
     setCurrentPage(1)
     fetchLeadsData()
     setFilterDrawerVisible(false)
     message.success('Filters applied successfully')
   }
 
-  // Reset filters
+  // Reset filters - Updated for multi-select
   const resetFilters = () => {
     setFilters({
       dateRange: null,
-      source: null,
-      campaign: null,
+      sources: [],
+      campaigns: [],
       sourceUrl: null,
       remarkCount: null,
       churnCount: null,
@@ -224,12 +233,22 @@ const DialerBucket = () => {
     }, 100)
   }
 
-  // Clear single filter
+  // Clear single filter - Updated for multi-select
   const clearFilter = (filterKey) => {
     if (filterKey === 'scoreRange') {
       setFilters(prev => ({
         ...prev,
         scoreRange: [0, 100]
+      }))
+    } else if (filterKey === 'sources') {
+      setFilters(prev => ({
+        ...prev,
+        sources: []
+      }))
+    } else if (filterKey === 'campaigns') {
+      setFilters(prev => ({
+        ...prev,
+        campaigns: []
       }))
     } else {
       setFilters(prev => ({
@@ -270,7 +289,7 @@ const DialerBucket = () => {
     return '#ef4444'
   }
 
-  // Dialer view columns (Counsellor View)
+  // Dialer view columns
   const dialerColumns = [
     {
       title: 'Counsellor Name',
@@ -391,10 +410,10 @@ const DialerBucket = () => {
       width: 70,
       align: 'center',
       render: (count) => (
-        <Badge 
-          count={count || 0} 
-          showZero 
-          style={{ backgroundColor: count > 0 ? '#ef4444' : '#10b981' }} 
+        <Badge
+          count={count || 0}
+          showZero
+          style={{ backgroundColor: count > 0 ? '#ef4444' : '#10b981' }}
         />
       )
     },
@@ -405,10 +424,10 @@ const DialerBucket = () => {
       width: 70,
       align: 'center',
       render: (count) => (
-        <Badge 
-          count={count || 0} 
-          showZero 
-          style={{ backgroundColor: count > 0 ? '#3b82f6' : '#9ca3af' }} 
+        <Badge
+          count={count || 0}
+          showZero
+          style={{ backgroundColor: count > 0 ? '#3b82f6' : '#9ca3af' }}
         />
       )
     },
@@ -462,8 +481,8 @@ const DialerBucket = () => {
     setSearchText('')
     setFilters({
       dateRange: null,
-      source: null,
-      campaign: null,
+      sources: [],
+      campaigns: [],
       sourceUrl: null,
       remarkCount: null,
       churnCount: null,
@@ -487,7 +506,7 @@ const DialerBucket = () => {
     fetchLeadsData()
   }
 
-  // Filter drawer content
+  // Filter drawer content - Updated with multi-select
   const filterDrawerContent = (
     <div>
       <div style={{ marginBottom: '24px' }}>
@@ -508,44 +527,54 @@ const DialerBucket = () => {
 
       <div style={{ marginBottom: '24px' }}>
         <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-          Source
+          Sources (Multi-Select)
         </label>
         <Select
+          mode="multiple"
           style={{ width: '100%' }}
-          placeholder="Select source"
-          value={filters.source}
-          onChange={(value) => setFilters({ ...filters, source: value })}
+          placeholder="Select one or more sources"
+          value={filters.sources}
+          onChange={(value) => setFilters({ ...filters, sources: value })}
           allowClear
           showSearch
           optionFilterProp="children"
+          maxTagCount="responsive"
         >
           {options.sources.map(source => (
-            <Select.Option key={source} value={source}>
+            <Option key={source} value={source}>
               {source}
-            </Select.Option>
+            </Option>
           ))}
         </Select>
+        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+          You can select multiple sources
+        </div>
       </div>
 
       <div style={{ marginBottom: '24px' }}>
         <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-          Campaign
+          Campaigns (Multi-Select)
         </label>
         <Select
+          mode="multiple"
           style={{ width: '100%' }}
-          placeholder="Select campaign"
-          value={filters.campaign}
-          onChange={(value) => setFilters({ ...filters, campaign: value })}
+          placeholder="Select one or more campaigns"
+          value={filters.campaigns}
+          onChange={(value) => setFilters({ ...filters, campaigns: value })}
           allowClear
           showSearch
           optionFilterProp="children"
+          maxTagCount="responsive"
         >
           {options.campaigns.map(campaign => (
-            <Select.Option key={campaign} value={campaign}>
+            <Option key={campaign} value={campaign}>
               {campaign}
-            </Select.Option>
+            </Option>
           ))}
         </Select>
+        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+          You can select multiple campaigns
+        </div>
       </div>
 
       <div style={{ marginBottom: '24px' }}>
@@ -608,10 +637,10 @@ const DialerBucket = () => {
           onChange={(value) => setFilters({ ...filters, remarkCount: value })}
           allowClear
         >
-          <Select.Option value="0">0 Remarks</Select.Option>
-          <Select.Option value="1-5">1-5 Remarks</Select.Option>
-          <Select.Option value="6-10">6-10 Remarks</Select.Option>
-          <Select.Option value="10+">10+ Remarks</Select.Option>
+          <Option value="0">0 Remarks</Option>
+          <Option value="1-5">1-5 Remarks</Option>
+          <Option value="6-10">6-10 Remarks</Option>
+          <Option value="10+">10+ Remarks</Option>
         </Select>
       </div>
 
@@ -626,10 +655,10 @@ const DialerBucket = () => {
           onChange={(value) => setFilters({ ...filters, churnCount: value })}
           allowClear
         >
-          <Select.Option value="0">0 Churns</Select.Option>
-          <Select.Option value="1-3">1-3 Churns</Select.Option>
-          <Select.Option value="4-7">4-7 Churns</Select.Option>
-          <Select.Option value="8+">8+ Churns</Select.Option>
+          <Option value="0">0 Churns</Option>
+          <Option value="1-3">1-3 Churns</Option>
+          <Option value="4-7">4-7 Churns</Option>
+          <Option value="8+">8+ Churns</Option>
         </Select>
       </div>
 
@@ -642,10 +671,10 @@ const DialerBucket = () => {
     </div>
   )
 
-  // Active filters display
+  // Active filters display - Updated for multi-select
   const ActiveFilters = () => {
     if (appliedFiltersCount === 0) return null
-    
+
     return (
       <div style={{ marginBottom: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
         {filters.dateRange && (
@@ -653,14 +682,14 @@ const DialerBucket = () => {
             Date: {filters.dateRange[0]?.format('YYYY-MM-DD')} → {filters.dateRange[1]?.format('YYYY-MM-DD')}
           </Tag>
         )}
-        {filters.source && filters.source !== 'Any' && (
-          <Tag closable onClose={() => clearFilter('source')} color="cyan">
-            Source: {filters.source}
+        {filters.sources && filters.sources.length > 0 && !filters.sources.includes('Any') && (
+          <Tag closable onClose={() => clearFilter('sources')} color="cyan">
+            Sources: {filters.sources.join(', ')}
           </Tag>
         )}
-        {filters.campaign && filters.campaign !== 'Any' && (
-          <Tag closable onClose={() => clearFilter('campaign')} color="purple">
-            Campaign: {filters.campaign}
+        {filters.campaigns && filters.campaigns.length > 0 && !filters.campaigns.includes('Any') && (
+          <Tag closable onClose={() => clearFilter('campaigns')} color="purple">
+            Campaigns: {filters.campaigns.join(', ')}
           </Tag>
         )}
         {filters.sourceUrl && (
@@ -697,12 +726,12 @@ const DialerBucket = () => {
               {isLeadView ? 'Leads Bucket' : 'Dialer Bucket'}
             </h2>
             <p style={{ color: '#6b7280', fontSize: '14px' }}>
-              {isLeadView 
-                ? 'Manage and track leads in queue with advanced filtering' 
+              {isLeadView
+                ? 'Manage and track leads in queue with advanced filtering'
                 : 'Manage and track counsellor call assignments'}
             </p>
           </div>
-          
+
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <Button
               type={!isLeadView ? "primary" : "default"}
@@ -711,7 +740,7 @@ const DialerBucket = () => {
             >
               {isLeadView ? 'Switch to Dialer View' : 'Switch to Leads Bucket'}
             </Button>
-            
+
             {isLeadView && (
               <Badge count={appliedFiltersCount} offset={[10, 0]}>
                 <Button
@@ -722,7 +751,7 @@ const DialerBucket = () => {
                 </Button>
               </Badge>
             )}
-            
+
             <Button
               icon={<ReloadOutlined />}
               onClick={handleRefresh}
@@ -753,7 +782,7 @@ const DialerBucket = () => {
         ) : (
           // Leads View Stats
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <Card 
+            <Card
               style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', textAlign: 'center', cursor: 'pointer' }}
               onClick={() => {
                 setFilters({ ...filters, remarkCount: '0' })
@@ -765,7 +794,7 @@ const DialerBucket = () => {
               <div style={{ fontSize: '14px', marginTop: '4px' }}>Fresh Leads</div>
               <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>No remarks, not assigned</div>
             </Card>
-            <Card 
+            <Card
               style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', textAlign: 'center', cursor: 'pointer' }}
               onClick={() => {
                 setFilters({ ...filters, remarkCount: '1-5' })
@@ -858,7 +887,7 @@ const DialerBucket = () => {
           </p>
           <p style={{ marginBottom: '16px' }}>
             <strong>Current Stage:</strong>{' '}
-            <Badge 
+            <Badge
               color={getStageConfig(selectedCounsellor?.currentStage).color}
               text={getStageConfig(selectedCounsellor?.currentStage).text}
             />
