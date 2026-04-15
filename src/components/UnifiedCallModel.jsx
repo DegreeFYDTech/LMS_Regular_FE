@@ -10,12 +10,10 @@ import StudentFormPopup from "../components/StudentFormPopup";
 import dayjs from "dayjs";
 import axios from "axios";
 import { BASE_URL } from "../config/api";
+
 import {
   FiCheckCircle,
   FiPaperclip,
-  FiChevronRight,
-  FiDollarSign,
-  FiUser,
   FiZap,
   FiAlertCircle,
 } from "react-icons/fi";
@@ -343,7 +341,7 @@ const UnifiedCallModal = ({
     isSupervisor
       ? false
       : currentStudentStatus === "NotInterested" ||
-          currentStudentStatus === "Fresh"
+        currentStudentStatus === "Fresh"
         ? false
         : isNotInterestedDone
           ? s !== "NotInterested"
@@ -910,11 +908,10 @@ const UnifiedCallModal = ({
                       onClick={() =>
                         a.handler({ target: { checked: !a.checked } })
                       }
-                      className={`w-full group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-300 font-semibold text-left ${
-                        a.checked
-                          ? `bg-white border-${a.color}-500 text-${a.color}-600  `
-                          : "bg-white border-white hover:border-slate-200 text-slate-500 hover:text-slate-600"
-                      }`}
+                      className={`w-full group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-300 font-semibold text-left ${a.checked
+                        ? `bg-white border-${a.color}-500 text-${a.color}-600  `
+                        : "bg-white border-white hover:border-slate-200 text-slate-500 hover:text-slate-600"
+                        }`}
                     >
                       <div
                         className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-transform duration-300 ${a.checked ? `bg-${a.color}-500 ` : "border-slate-200 "}`}
@@ -1149,21 +1146,19 @@ const UnifiedCallModal = ({
                   <div className="flex gap-4">
                     <button
                       onClick={() => setSelectedAction("Connected")}
-                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${
-                        selectedAction === "Connected"
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-700"
-                          : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                      }`}
+                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${selectedAction === "Connected"
+                        ? "bg-emerald-50 border-emerald-500 text-emerald-700"
+                        : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                        }`}
                     >
                       Connected
                     </button>
                     <button
                       onClick={() => setSelectedAction("Not Connected")}
-                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${
-                        selectedAction === "Not Connected"
-                          ? "bg-slate-800 border-slate-800 text-white"
-                          : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                      }`}
+                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${selectedAction === "Not Connected"
+                        ? "bg-slate-800 border-slate-800 text-white"
+                        : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                        }`}
                     >
                       Not Connected
                     </button>
@@ -1215,15 +1210,14 @@ const UnifiedCallModal = ({
                             setUserName(e.target.value);
                           }}
                           placeholder={getUsernamePlaceholder()}
-                          className={`w-full p-3 bg-white border rounded-xl outline-none font-medium transition-all ${
-                            userName &&
+                          className={`w-full p-3 bg-white border rounded-xl outline-none font-medium transition-all ${userName &&
                             !validateUsernameFormat(
                               userName,
                               getCollegeType(selectedUniversity),
                             )
-                              ? "border-red-500 bg-red-50 focus:border-red-600"
-                              : "border-black-100 focus:border-black-400"
-                          }`}
+                            ? "border-red-500 bg-red-50 focus:border-red-600"
+                            : "border-black-100 focus:border-black-400"
+                            }`}
                         />
                       </div>
                       <div>
@@ -1307,11 +1301,10 @@ const UnifiedCallModal = ({
                             value={callbackTime || ""}
                             onChange={(e) => setCallbackTime(e.target.value)}
                             disabled={!callbackDate}
-                            className={`w-full p-3.5 bg-white border-2 rounded-2xl outline-none transition-all font-semibold ${
-                              !callbackDate
-                                ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
-                                : "border-slate-100 focus:border-blue-400 text-slate-600"
-                            }`}
+                            className={`w-full p-3.5 bg-white border-2 rounded-2xl outline-none transition-all font-semibold ${!callbackDate
+                              ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
+                              : "border-slate-100 focus:border-blue-400 text-slate-600"
+                              }`}
                           >
                             <option value="">
                               {callbackDate
