@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
-import { debounce } from 'lodash';
+import React, { useState, useEffect, useCallback } from "react";
+import { useSelector } from "react-redux";
+import { debounce } from "lodash";
 
 // Ant Design imports
 import {
@@ -18,19 +18,19 @@ import {
   Typography,
   ConfigProvider,
   Checkbox,
-  Radio
-} from 'antd';
+  Radio,
+} from "antd";
 import {
   SearchOutlined,
   FilterOutlined,
   CloseOutlined,
   ClearOutlined,
   CheckOutlined,
-  CalendarOutlined
-} from '@ant-design/icons';
+  CalendarOutlined,
+} from "@ant-design/icons";
 
-import { fetchFilterOptions } from '../network/filterOptions';
-import { SlidersHorizontal, Trash } from 'lucide-react';
+import { fetchFilterOptions } from "../network/filterOptions";
+import { SlidersHorizontal, Trash } from "lucide-react";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -43,7 +43,7 @@ const StreamlinedFilters = ({
   onApplyFilters,
   onClearFilters,
   loading = false,
-  activeTab
+  activeTab,
 }) => {
   const [form] = Form.useForm();
   const authUser = useSelector((state) => state.auth.user);
@@ -56,15 +56,15 @@ const StreamlinedFilters = ({
     lead_status: [],
     calling_status: [],
     calling_sub_status: [],
-    campaign_name: []
+    campaign_name: [],
   });
 
   const roleToSend = (() => {
     try {
-      const agent = JSON.parse(localStorage.getItem("agent") || '{}');
+      const agent = JSON.parse(localStorage.getItem("agent") || "{}");
       return agent?.role || authUser?.role;
     } catch (error) {
-      console.error('Error parsing agent from localStorage:', error);
+      console.error("Error parsing agent from localStorage:", error);
       return authUser?.role;
     }
   })();
@@ -86,7 +86,7 @@ const StreamlinedFilters = ({
           lead_status: data.lead_status || [],
           calling_status: data.calling_status || [],
           calling_sub_status: data.calling_sub_status || [],
-          campaign_name: data.campaign_name || []
+          campaign_name: data.campaign_name || [],
         });
       } catch (error) {
         console.error("Error fetching filter options:", error);
@@ -100,7 +100,7 @@ const StreamlinedFilters = ({
     debounce((key, value, updatedFilters) => {
       onFilterChange(key, value, updatedFilters);
     }, 500),
-    []
+    [],
   );
 
   const handleLocalFilterChange = (key, value) => {
@@ -124,15 +124,18 @@ const StreamlinedFilters = ({
 
     // Always preserve these base filters
     if (localFilters.data) tabSpecificFilters.data = localFilters.data;
-    if (localFilters.selectedagent) tabSpecificFilters.selectedagent = localFilters.selectedagent;
+    if (localFilters.selectedagent)
+      tabSpecificFilters.selectedagent = localFilters.selectedagent;
 
     // Add tab-specific filters
     switch (activeTab) {
-      case 'callback':
-        if (localFilters.callback) tabSpecificFilters.callback = localFilters.callback;
+      case "callback":
+        if (localFilters.callback)
+          tabSpecificFilters.callback = localFilters.callback;
         break;
-      case 'wishlist':
-        if (localFilters.wishlist) tabSpecificFilters.wishlist = localFilters.wishlist;
+      case "wishlist":
+        if (localFilters.wishlist)
+          tabSpecificFilters.wishlist = localFilters.wishlist;
         break;
       default:
         break;
@@ -149,8 +152,8 @@ const StreamlinedFilters = ({
     // Create cleared filters with preserved tab-specific filters
     const clearedFilters = {
       ...tabSpecificFilters,
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortBy: "createdAt",
+      sortOrder: "desc",
     };
 
     setLocalFilters(clearedFilters);
@@ -160,18 +163,39 @@ const StreamlinedFilters = ({
 
   // Count active filters based on activeTab
   const getActiveFiltersCount = () => {
-    const tabSpecificKeys = ['data', 'selectedagent', 'freshLeads', 'callback', 'wishlist', 'sortBy', 'sortOrder'];
+    const tabSpecificKeys = [
+      "data",
+      "selectedagent",
+      "freshLeads",
+      "callback",
+      "wishlist",
+      "sortBy",
+      "sortOrder",
+    ];
 
-    if (activeTab === 'fresh') {
+    if (activeTab === "fresh") {
       // Only count user-applied filters for Fresh tab (exclude tab-specific filters)
-      const userAppliedFilters = ['createdAt_start', 'createdAt_end', 'source', 'searchTerm'];
-      return Object.entries(localFilters).filter(([key, value]) =>
-        userAppliedFilters.includes(key) && value && value !== '' && (Array.isArray(value) ? value.length > 0 : true)
+      const userAppliedFilters = [
+        "createdAt_start",
+        "createdAt_end",
+        "source",
+        "searchTerm",
+      ];
+      return Object.entries(localFilters).filter(
+        ([key, value]) =>
+          userAppliedFilters.includes(key) &&
+          value &&
+          value !== "" &&
+          (Array.isArray(value) ? value.length > 0 : true),
       ).length;
     } else {
       // Count all filters except tab-specific ones for Dashboard and Callback tabs
-      return Object.entries(localFilters).filter(([key, value]) =>
-        !tabSpecificKeys.includes(key) && value && value !== '' && (Array.isArray(value) ? value.length > 0 : true)
+      return Object.entries(localFilters).filter(
+        ([key, value]) =>
+          !tabSpecificKeys.includes(key) &&
+          value &&
+          value !== "" &&
+          (Array.isArray(value) ? value.length > 0 : true),
       ).length;
     }
   };
@@ -186,23 +210,23 @@ const StreamlinedFilters = ({
 
   // Render HTML date input component
   const renderDateInput = (key, placeholder) => {
-    const value = localFilters[key] || '';
-    
+    const value = localFilters[key] || "";
+
     return (
-      <div style={{ width: '100%' }}>
+      <div style={{ width: "100%" }}>
         <input
           type="date"
           placeholder={placeholder}
           value={value}
           onChange={(e) => handleDateInputChange(key, e)}
           style={{
-            width: '100%',
-            padding: '8px 12px',
-            border: '1px solid #d9d9d9',
-            borderRadius: '6px',
-            fontSize: '14px',
-            height: '32px',
-            boxSizing: 'border-box'
+            width: "100%",
+            padding: "8px 12px",
+            border: "1px solid #d9d9d9",
+            borderRadius: "6px",
+            fontSize: "14px",
+            height: "32px",
+            boxSizing: "border-box",
           }}
         />
       </div>
@@ -211,20 +235,22 @@ const StreamlinedFilters = ({
 
   // Render filters based on activeTab
   const renderFilters = () => {
-    if (activeTab === 'fresh') {
+    if (activeTab === "fresh") {
       return (
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <div style={{ marginBottom: '8px' }}>
+            <div style={{ marginBottom: "8px" }}>
               <Text strong>Added On Date Range</Text>
             </div>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+            <div
+              style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}
+            >
               <Form.Item style={{ flex: 1, marginBottom: 0 }}>
-                {renderDateInput('createdAt_start', 'Start Date')}
+                {renderDateInput("createdAt_start", "Start Date")}
               </Form.Item>
-              <div style={{ lineHeight: '32px', color: '#666' }}>to</div>
+              <div style={{ lineHeight: "32px", color: "#666" }}>to</div>
               <Form.Item style={{ flex: 1, marginBottom: 0 }}>
-                {renderDateInput('createdAt_end', 'End Date')}
+                {renderDateInput("createdAt_end", "End Date")}
               </Form.Item>
             </div>
           </Col>
@@ -235,11 +261,11 @@ const StreamlinedFilters = ({
                 mode="multiple"
                 placeholder="Select Source"
                 value={localFilters.source}
-                onChange={(value) => handleLocalFilterChange('source', value)}
+                onChange={(value) => handleLocalFilterChange("source", value)}
                 allowClear
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               >
-                {filterOptionsState.source.map(option => (
+                {filterOptionsState.source.map((option) => (
                   <Option key={option} value={option}>
                     {option}
                   </Option>
@@ -253,43 +279,59 @@ const StreamlinedFilters = ({
       return (
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <div style={{ marginBottom: '8px' }}>
+            <div style={{ marginBottom: "8px" }}>
               <Text strong>Added On Date Range</Text>
             </div>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+            <div
+              style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}
+            >
               <Form.Item style={{ flex: 1, marginBottom: 0 }}>
-                {renderDateInput('createdAt_start', 'Start Date')}
+                {renderDateInput("createdAt_start", "Start Date")}
               </Form.Item>
-              <div style={{ lineHeight: '32px', color: '#666' }}>to</div>
+              <div style={{ lineHeight: "32px", color: "#666" }}>to</div>
               <Form.Item style={{ flex: 1, marginBottom: 0 }}>
-                {renderDateInput('createdAt_end', 'End Date')}
+                {renderDateInput("createdAt_end", "End Date")}
               </Form.Item>
             </div>
           </Col>
 
           {activeTab === "callback" && (
             <Col span={24}>
-              <div style={{ marginBottom: '8px' }}>
-                <Text strong>{`Callback Date Range (${roleToSend === "l3" ? "L3" : "L2"})`}</Text>
+              <div style={{ marginBottom: "8px" }}>
+                <Text
+                  strong
+                >{`Callback Date Range (${roleToSend === "l3" ? "L3" : "L2"})`}</Text>
               </div>
               {roleToSend === "l3" ? (
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    alignItems: "flex-start",
+                  }}
+                >
                   <Form.Item style={{ flex: 1, marginBottom: 0 }}>
-                    {renderDateInput('nextCallDateL3_start', 'Start Date')}
+                    {renderDateInput("nextCallDateL3_start", "Start Date")}
                   </Form.Item>
-                  <div style={{ lineHeight: '32px', color: '#666' }}>to</div>
+                  <div style={{ lineHeight: "32px", color: "#666" }}>to</div>
                   <Form.Item style={{ flex: 1, marginBottom: 0 }}>
-                    {renderDateInput('nextCallDateL3_end', 'End Date')}
+                    {renderDateInput("nextCallDateL3_end", "End Date")}
                   </Form.Item>
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    alignItems: "flex-start",
+                  }}
+                >
                   <Form.Item style={{ flex: 1, marginBottom: 0 }}>
-                    {renderDateInput('nextCallDate_start', 'Start Date')}
+                    {renderDateInput("nextCallDate_start", "Start Date")}
                   </Form.Item>
-                  <div style={{ lineHeight: '32px', color: '#666' }}>to</div>
+                  <div style={{ lineHeight: "32px", color: "#666" }}>to</div>
                   <Form.Item style={{ flex: 1, marginBottom: 0 }}>
-                    {renderDateInput('nextCallDate_end', 'End Date')}
+                    {renderDateInput("nextCallDate_end", "End Date")}
                   </Form.Item>
                 </div>
               )}
@@ -302,11 +344,11 @@ const StreamlinedFilters = ({
                 mode="multiple"
                 placeholder="Select Source"
                 value={localFilters.source}
-                onChange={(value) => handleLocalFilterChange('source', value)}
+                onChange={(value) => handleLocalFilterChange("source", value)}
                 allowClear
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               >
-                {filterOptionsState.source.map(option => (
+                {filterOptionsState.source.map((option) => (
                   <Option key={option} value={option}>
                     {option}
                   </Option>
@@ -321,11 +363,13 @@ const StreamlinedFilters = ({
                 mode="multiple"
                 placeholder="Select Lead Status"
                 value={localFilters.lead_status}
-                onChange={(value) => handleLocalFilterChange('lead_status', value)}
+                onChange={(value) =>
+                  handleLocalFilterChange("lead_status", value)
+                }
                 allowClear
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               >
-                {filterOptionsState.lead_status.map(option => (
+                {filterOptionsState.lead_status.map((option) => (
                   <Option key={option} value={option}>
                     {option}
                   </Option>
@@ -340,11 +384,13 @@ const StreamlinedFilters = ({
                 mode="multiple"
                 placeholder="Select Lead Sub Status"
                 value={localFilters.sub_lead_status}
-                onChange={(value) => handleLocalFilterChange('sub_lead_status', value)}
+                onChange={(value) =>
+                  handleLocalFilterChange("sub_lead_status", value)
+                }
                 allowClear
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               >
-                {filterOptionsState.sub_lead_status.map(option => (
+                {filterOptionsState.sub_lead_status.map((option) => (
                   <Option key={option} value={option}>
                     {option}
                   </Option>
@@ -359,11 +405,13 @@ const StreamlinedFilters = ({
                 mode="multiple"
                 placeholder="Select Calling Status"
                 value={localFilters.calling_status}
-                onChange={(value) => handleLocalFilterChange('calling_status', value)}
+                onChange={(value) =>
+                  handleLocalFilterChange("calling_status", value)
+                }
                 allowClear
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               >
-                {filterOptionsState.calling_status.map(option => (
+                {filterOptionsState.calling_status.map((option) => (
                   <Option key={option} value={option}>
                     {option}
                   </Option>
@@ -378,11 +426,13 @@ const StreamlinedFilters = ({
                 mode="multiple"
                 placeholder="Select Sub Calling Status"
                 value={localFilters.calling_sub_status}
-                onChange={(value) => handleLocalFilterChange('calling_sub_status', value)}
+                onChange={(value) =>
+                  handleLocalFilterChange("calling_sub_status", value)
+                }
                 allowClear
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               >
-                {filterOptionsState.calling_sub_status.map(option => (
+                {filterOptionsState.calling_sub_status.map((option) => (
                   <Option key={option} value={option}>
                     {option}
                   </Option>
@@ -397,11 +447,13 @@ const StreamlinedFilters = ({
                 mode="multiple"
                 placeholder="Select Campaign Name"
                 value={localFilters.campaign_name}
-                onChange={(value) => handleLocalFilterChange('campaign_name', value)}
+                onChange={(value) =>
+                  handleLocalFilterChange("campaign_name", value)
+                }
                 allowClear
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               >
-                {filterOptionsState.campaign_name.map(option => (
+                {filterOptionsState.campaign_name.map((option) => (
                   <Option key={option} value={option}>
                     {option}
                   </Option>
@@ -414,7 +466,9 @@ const StreamlinedFilters = ({
             <Form.Item label="Lead Reactive">
               <RadioGroup
                 value={localFilters.lead_reactive}
-                onChange={(e) => handleLocalFilterChange('lead_reactive', e.target.value)}
+                onChange={(e) =>
+                  handleLocalFilterChange("lead_reactive", e.target.value)
+                }
               >
                 <Radio value="true">Yes</Radio>
                 <Radio value="false">No</Radio>
@@ -426,7 +480,9 @@ const StreamlinedFilters = ({
             <Form.Item label="Connection Status">
               <RadioGroup
                 value={localFilters.isconnectedyet}
-                onChange={(e) => handleLocalFilterChange('isconnectedyet', e.target.value)}
+                onChange={(e) =>
+                  handleLocalFilterChange("isconnectedyet", e.target.value)
+                }
               >
                 <Radio value="Connected">Connected</Radio>
                 <Radio value="Not Connected">Not Connected</Radio>
@@ -438,13 +494,33 @@ const StreamlinedFilters = ({
             <Form.Item label="Unread Messages">
               <RadioGroup
                 value={localFilters.number_of_unread_messages}
-                onChange={(e) => handleLocalFilterChange('number_of_unread_messages', e.target.value)}
+                onChange={(e) =>
+                  handleLocalFilterChange(
+                    "number_of_unread_messages",
+                    e.target.value,
+                  )
+                }
               >
                 <Radio value="true">Yes</Radio>
                 <Radio value="false">No</Radio>
               </RadioGroup>
             </Form.Item>
           </Col>
+          {
+            <Col span={24}>
+              <Form.Item label="Is Reassigned">
+                <RadioGroup
+                  value={localFilters.isReassignedYet}
+                  onChange={(e) =>
+                    handleLocalFilterChange("isReassignedYet", e.target.value)
+                  }
+                >
+                  <Radio value="true">Yes</Radio>
+                  <Radio value="false">No</Radio>
+                </RadioGroup>
+              </Form.Item>
+            </Col>
+          }
         </Row>
       );
     }
@@ -454,7 +530,7 @@ const StreamlinedFilters = ({
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: '#1890ff',
+          colorPrimary: "#1890ff",
           borderRadius: 6,
         },
       }}
@@ -467,8 +543,10 @@ const StreamlinedFilters = ({
               type="text"
               placeholder="Search by name, email, phone or lead ID..."
               className="w-full pl-5 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm text-gray-700 placeholder-gray-400"
-              value={localFilters.searchTerm || ''}
-              onChange={(e) => handleLocalFilterChange('searchTerm', e.target.value)}
+              value={localFilters.searchTerm || ""}
+              onChange={(e) =>
+                handleLocalFilterChange("searchTerm", e.target.value)
+              }
             />
           </div>
 
@@ -526,7 +604,7 @@ const StreamlinedFilters = ({
           />
         }
         footer={
-          <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+          <Space style={{ width: "100%", justifyContent: "space-between" }}>
             <Button
               icon={<ClearOutlined />}
               onClick={handleClearFilters}
