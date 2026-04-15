@@ -60,20 +60,31 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
     );
   };
 
-  // Helper function to parse student comments
+  const renderValue = (value) => {
+    if (value === null || value === undefined || value === "") return "N/A";
+    if (Array.isArray(value)) {
+      if (value.length === 0) return "N/A";
+      return value.map(v => (typeof v === 'object' ? JSON.stringify(v) : v)).join(", ");
+    }
+    if (typeof value === "object") {
+      try {
+        return JSON.stringify(value);
+      } catch (e) {
+        return "[Object]";
+      }
+    }
+    return value.toString();
+  };
+
   const parseStudentComments = (comments) => {
     if (!comments) return [];
 
     try {
-      // Check if it's already an array
       if (Array.isArray(comments)) return comments;
-
-      // Check if it's a JSON string
       if (typeof comments === "string") {
         const parsed = JSON.parse(comments);
         return Array.isArray(parsed) ? parsed : [];
       }
-
       return [];
     } catch (error) {
       console.error("Error parsing student comments:", error);
@@ -146,7 +157,7 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
                   )}
                 </div>
                 <div className="text-lg break-words whitespace-pre-wrap font-normal">
-                  {remark.remarks}
+                  {renderValue(remark.remarks)}
                 </div>
                 <AudioPlayer
                   audioUrl={remark.call_recording_url}
@@ -230,7 +241,7 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
                         {comment.question}
                       </div>
                       <div className="text-gray-600 break-words">
-                        {comment.answer?.trim() ? comment.answer : "N/A"}
+                        {renderValue(comment.answer)}
                       </div>
                     </div>
                   ))}
@@ -546,7 +557,7 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
                     )}
                   </div>
                   <div className="text-lg break-words whitespace-pre-wrap font-normal">
-                    {remark.remarks}
+                    {renderValue(remark.remarks)}
                   </div>
                   <AudioPlayer
                     audioUrl={remark.call_recording_url}
@@ -617,7 +628,7 @@ const ActivityRemarkstabs = ({ studentId, student }) => {
                           {comment.question}
                         </div>
                         <div className="text-gray-600 break-words">
-                          {comment.answer?.trim() ? comment.answer : "N/A"}
+                          {renderValue(comment.answer)}
                         </div>
                       </div>
                     ))}

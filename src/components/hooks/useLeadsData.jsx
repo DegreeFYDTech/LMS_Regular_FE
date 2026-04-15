@@ -112,7 +112,13 @@ export const useLeadsData = (selectedAgent = null) => {  // Change parameter nam
             Object.entries(paramsToSerialize).forEach(([key, value]) => {
               if (value !== null && value !== undefined) {
                 if (Array.isArray(value)) {
-                  searchParams.set(key, value.join(','));
+                  // Check if this is an array of objects (advancedFilters)
+                  const isArrayOfObjects = value.some(item => typeof item === 'object');
+                  if (isArrayOfObjects) {
+                    searchParams.set(key, JSON.stringify(value));
+                  } else {
+                    searchParams.set(key, value.join(','));
+                  }
                 } else {
                   searchParams.set(key, String(value));
                 }

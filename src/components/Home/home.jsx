@@ -14,6 +14,7 @@ import useURLSync from '../hooks/useURLSync';
 import Header from './Header';
 import LeadsTable from './LeadsTable';
 import ModalsContainer from './ModalsContainer';
+import AdvancedFilter from './AdvancedFilter';
 import { secureCache } from '../../utils/cache';
 import { cleanQueryParams } from '../../utils/cleanParams'
 const HomePage = memo(() => {
@@ -39,6 +40,8 @@ const HomePage = memo(() => {
   const [openChatModal, setOpenChatModel] = useState(false);
   const [isAssignedtoL2, setIsAssignedtoL2] = useState(false);
   const [isAssignedtoL3, setIsAssignedtoL3] = useState(false);
+  const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState([]);
 
   const roletosend = useSelector((state) => state.auth.user);
   const storedRole = useSelector((state) => state.auth.role);
@@ -56,8 +59,13 @@ const HomePage = memo(() => {
     const limitFromURL = urlFilters.limit || 10;
 
     updateFilters(urlFilters);
-    setCurrentPage(Number(pageFromURL)); // Ensure it's a number
-    setLeadsPerPage(Number(limitFromURL)); // Ensure it's a numbe
+    setCurrentPage(Number(pageFromURL)); 
+    setLeadsPerPage(Number(limitFromURL)); 
+    
+    // Sync advanced filters if present in URL
+    if (urlFilters.advancedFilters) {
+      setAdvancedFilters(urlFilters.advancedFilters);
+    }
 
     const autoFilters = getTabAutoFilters(activeTab);
     const combinedFilters = {
@@ -157,6 +165,32 @@ const HomePage = memo(() => {
     updateURL(filtersWithPagination, true);
     fetchLeads(filtersWithPagination, 1, true);
   }, [clearFilters, activeTab, leadsPerPage, updateURL, fetchLeads]);
+
+  const handleApplyAdvancedFilters = useCallback((filtersArray) => {
+    setAdvancedFilters(filtersArray);
+    const updatedFilters = {
+      ...filters,
+      advancedFilters: filtersArray,
+      page: 1
+    };
+    updateFilters(updatedFilters);
+    setCurrentPage(1);
+    updateURL(updatedFilters, true);
+    fetchLeads(updatedFilters, 1, true);
+  }, [filters, updateFilters, updateURL, fetchLeads]);
+
+  const handleClearAdvancedFilters = useCallback(() => {
+    setAdvancedFilters([]);
+    const updatedFilters = {
+      ...filters,
+      advancedFilters: [],
+      page: 1
+    };
+    updateFilters(updatedFilters);
+    setCurrentPage(1);
+    updateURL(updatedFilters, true);
+    fetchLeads(updatedFilters, 1, true);
+  }, [filters, updateFilters, updateURL, fetchLeads]);
 
   const handleAgentClick = useCallback((selectedAgent) => {
     try {
@@ -323,6 +357,7 @@ const HomePage = memo(() => {
             onAddLead={() => setIsAddLeadModalOpen(true)}
             onExport={handleExportLeads}
             onRoleSwitch={handleRoleSwitch}
+            onOpenAdvancedFilter={() => setIsAdvancedFilterOpen(true)}
           />
 
           {activeTab === "dashboard" && (
@@ -384,6 +419,14 @@ const HomePage = memo(() => {
             onCloseAssignedL2={() => setIsAssignedtoL2(false)}
             onCloseAssignedL3={() => setIsAssignedtoL3(false)}
             onCloseWhatsApp={() => setOpenChatModel(false)}
+          />
+
+          <AdvancedFilter 
+            isOpen={isAdvancedFilterOpen}
+            onClose={() => setIsAdvancedFilterOpen(false)}
+            onApply={handleApplyAdvancedFilters}
+            onClear={handleClearAdvancedFilters}
+            initialFilters={advancedFilters}
           />
         </main>
       </div>

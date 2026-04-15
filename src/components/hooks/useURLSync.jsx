@@ -79,7 +79,14 @@ const useURLSync = () => {
           item !== null && item !== undefined && item !== ''
         );
         if (cleanValues.length > 0) {
-          params.set(key, cleanValues.join(','));
+          // Check if this is an array of objects (like advancedFilters)
+          const isArrayOfObjects = cleanValues.some(item => typeof item === 'object');
+          
+          if (isArrayOfObjects) {
+            params.set(key, JSON.stringify(cleanValues));
+          } else {
+            params.set(key, cleanValues.join(','));
+          }
         }
       } 
       // Handle objects (convert to JSON string)
