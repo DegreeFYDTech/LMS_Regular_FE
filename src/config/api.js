@@ -1,6 +1,6 @@
-export const BASE_URL = "http://localhost:3006/v1"
+// export const BASE_URL = "https://cgc-test-api.degreefyd.com/v1"
 
-// export const BASE_URL = "http://localhost:3031/v1"
+export const BASE_URL = "http://localhost:3006/v1"
 
 
 // ---prod one---
