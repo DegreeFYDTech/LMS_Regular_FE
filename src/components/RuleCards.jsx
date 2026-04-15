@@ -98,6 +98,7 @@ const RuleCards = ({
                       <Space size="middle" style={{ marginTop: '4px' }}>
                         <Text type="secondary" style={{ fontSize: '11px' }}><TeamOutlined /> {agents.length} Agents</Text>
                         <Text type="secondary" style={{ fontSize: '11px' }}><CalendarOutlined /> {formatDate(rule.updated_at)}</Text>
+                        <Tag color="gold" style={{ fontSize: '10px' }}>Priority: {rule.priority || 0}</Tag>
                       </Space>
                     }
                   />
@@ -124,19 +125,21 @@ const RuleCards = ({
                           )}
                         </>
                       ) : (
-                        ['preferred_university', 'preferred_degree', 'preferred_specialization', 'preferred_stream'].map(field => {
+                        ['preferred_university', 'preferred_specialization', 'preferred_degree', 'preferred_stream', 'preferred_city', 'preferred_state'].map(field => {
                           const value = rule.conditions?.[field];
-                          if (!value || value.length === 0) return null;
+                          if (!value || (Array.isArray(value) && value.length === 0)) return null;
                           const labels = {
                             preferred_university: 'Univ',
-                            preferred_degree: 'Degree',
                             preferred_specialization: 'Spec',
-                            preferred_stream: 'Stream'
+                            preferred_degree: 'Deg',
+                            preferred_stream: 'Stream',
+                            preferred_city: 'City',
+                            preferred_state: 'State'
                           };
                           return (
                             <div key={field} style={{ display: 'flex', alignItems: 'start', fontSize: '12px' }}>
                               <Text type="secondary" style={{ width: '70px', flexShrink: 0 }}>{labels[field]}:</Text>
-                              <Text ellipsis>{value.join(', ')}</Text>
+                              <Text ellipsis>{Array.isArray(value) ? value.join(', ') : value}</Text>
                             </div>
                           );
                         })

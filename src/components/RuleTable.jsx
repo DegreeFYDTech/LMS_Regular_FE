@@ -55,6 +55,13 @@ const RuleTable = ({
       ),
     },
     {
+      title: 'Priority',
+      dataIndex: 'priority',
+      key: 'priority',
+      sorter: (a, b) => (a.priority || 0) - (b.priority || 0),
+      render: (val) => <Tag color="gold">{val || 0}</Tag>
+    },
+    {
       title: 'Conditions',
       key: 'conditions',
       ellipsis: true,
@@ -125,24 +132,30 @@ const RuleTable = ({
           const conditions = type === 'l3' ? record.course_conditions : record.conditions;
           return (
             <div style={{ padding: '8px 24px' }}>
-              <Typography.Title level={5} style={{ fontSize: '14px', marginBottom: '12px' }}>Detailed Conditions </Typography.Title>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <Typography.Title level={5} style={{ fontSize: '14px', margin: 0 }}>Detailed Conditions </Typography.Title>
+                <Tag color="gold" style={{ fontSize: '10px' }}>Priority: {record.priority || 0}</Tag>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
                 {type === 'l3' ? (
                   <>
-                    {record.university_name?.length > 0 && (
-                      <div>
-                        <Text type="secondary" block style={{ fontSize: '12px', textTransform: 'uppercase' }}>University</Text>
-                        <Space wrap>{record.university_name.map(v => <Tag key={v}>{v}</Tag>)}</Space>
-                      </div>
-                    )}
-                    {Object.entries(record.course_conditions || {}).map(([key, value]) => {
-                      if (!value || value.length === 0) return null;
+                    {['preferred_university', 'preferred_specialization', 'preferred_degree', 'preferred_stream', 'preferred_city', 'preferred_state'].map(field => {
+                      const value = record.conditions?.[field];
+                      if (!value || (Array.isArray(value) && value.length === 0)) return null;
+                      const labels = {
+                        preferred_university: 'Univ',
+                        preferred_specialization: 'Spec',
+                        preferred_degree: 'Deg',
+                        preferred_stream: 'Stream',
+                        preferred_city: 'City',
+                        preferred_state: 'State'
+                      };
                       return (
-                        <div key={key}>
-                          <Text type="secondary" block style={{ fontSize: '12px', textTransform: 'uppercase' }}>{key}</Text>
-                          <Space wrap>{value.map(v => <Tag key={v}>{v}</Tag>)}</Space>
+                        <div key={field} style={{ display: 'flex', alignItems: 'start', fontSize: '12px' }}>
+                          <Text type="secondary" style={{ width: '70px', flexShrink: 0 }}>{labels[field]}:</Text>
+                          <Text ellipsis>{Array.isArray(value) ? value.join(', ') : value}</Text>
                         </div>
-                      )
+                      );
                     })}
                   </>
                 ) : (
