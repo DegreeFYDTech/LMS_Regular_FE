@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Modal, message } from "antd";
 import { updateStudentStatus } from "../network/student";
 import { fetchShortlistedColleges1 } from "../network/colleges";
@@ -32,6 +33,7 @@ const UnifiedCallModal = ({
   initialStep = null,
   ...props
 }) => {
+  const navigate = useNavigate();
   const { leads, setLeads } = useContext(LeadsContext);
   const [universities, setUniversities] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -772,7 +774,12 @@ const UnifiedCallModal = ({
         if (selectedAction === "Connected") setShowCounselingFormPrompt(true);
         else {
           onClose();
-          window.location.reload();
+          const activeTab = localStorage.getItem("l2_active_tab") || "fresh";
+          if (activeTab === "fresh") {
+            navigate("/?page=1&limit=10&freshLeads=Fresh&data=l2");
+          } else {
+            navigate("/?page=1&limit=10&callback=combined&data=l2");
+          }
         }
       } else {
         message.error(res.message || "Failed to update status");
@@ -1351,7 +1358,12 @@ const UnifiedCallModal = ({
               key="y"
               onClick={() => {
                 onClose();
-                window.location.reload();
+                const activeTab = localStorage.getItem("l2_active_tab") || "fresh";
+                if (activeTab === "fresh") {
+                  navigate("/?page=1&limit=10&freshLeads=Fresh&data=l2");
+                } else {
+                  navigate("/?page=1&limit=10&callback=combined&data=l2");
+                }
               }}
               className="px-8 py-2 bg-emerald-600 text-white font-bold rounded-xl"
             >
@@ -1371,7 +1383,12 @@ const UnifiedCallModal = ({
           isOpen={isFormPopupOpen}
           onClose={() => {
             setIsFormPopupOpen(false);
-            window.location.reload();
+            const activeTab = localStorage.getItem("l2_active_tab") || "fresh";
+            if (activeTab === "fresh") {
+              navigate("/?page=1&limit=10&freshLeads=Fresh&data=l2");
+            } else {
+              navigate("/?page=1&limit=10&callback=combined&data=l2");
+            }
           }}
         />
       )}

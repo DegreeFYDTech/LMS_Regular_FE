@@ -62,7 +62,7 @@ const WatchDisplay = ({ elapsedSeconds }) => {
   const hours = Math.floor(elapsedSeconds / 3600);
   const minutes = Math.floor((elapsedSeconds % 3600) / 60);
   const seconds = elapsedSeconds % 60;
-  
+
   // Calculate angles for watch hands
   const hourAngle = (hours % 12) * 30 + minutes * 0.5; // 30 degrees per hour, 0.5 degrees per minute
   const minuteAngle = minutes * 6; // 6 degrees per minute
@@ -74,10 +74,10 @@ const WatchDisplay = ({ elapsedSeconds }) => {
       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 via-blue-500 to-blue-500 p-1">
         <div className="absolute inset-1 rounded-full bg-white" />
       </div>
-      
+
       {/* Watch face */}
       <div className="absolute inset-8 rounded-full bg-white shadow-inner" />
-      
+
       {/* Watch markers */}
       {Array.from({ length: 60 }).map((_, i) => {
         const angle = i * 6; // 6 degrees per marker
@@ -86,15 +86,14 @@ const WatchDisplay = ({ elapsedSeconds }) => {
         const x = 128 + radius * Math.cos(radian);
         const y = 128 + radius * Math.sin(radian);
         const isHourMarker = i % 5 === 0;
-        
+
         return (
           <div
             key={i}
-            className={`absolute transform -translate-x-1/2 -translate-y-1/2 ${
-              isHourMarker 
-                ? 'w-1.5 h-6 bg-gray-800' 
-                : 'w-0.5 h-3 bg-gray-400'
-            }`}
+            className={`absolute transform -translate-x-1/2 -translate-y-1/2 ${isHourMarker
+              ? 'w-1.5 h-6 bg-gray-800'
+              : 'w-0.5 h-3 bg-gray-400'
+              }`}
             style={{
               left: `${x}px`,
               top: `${y}px`,
@@ -103,18 +102,18 @@ const WatchDisplay = ({ elapsedSeconds }) => {
           />
         );
       })}
-      
-  
+
+
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-gray-900 rounded-full z-10" />
-      
-     
+
+
       <div
         className="absolute top-1/2 left-1/2 w-0.5 h-32 bg-red-500 rounded-full origin-bottom z-5"
         style={{
           transform: `translate(-50%, -100%) rotate(${secondAngle}deg)`,
         }}
       />
-      
+
       <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2">
         <div className="bg-gradient-to-r from-blue-600 to-blue-600 rounded-lg px-4 py-2 shadow-lg">
           <div className="text-white font-mono font-bold text-xl text-center">
@@ -133,10 +132,10 @@ const WatchDisplay = ({ elapsedSeconds }) => {
 const BreakTypeSelector = ({ selectedType, onSelect }) => {
   return (
     <div className="space-y-4">
-   
 
-      <Radio.Group 
-        value={selectedType?.id} 
+
+      <Radio.Group
+        value={selectedType?.id}
         onChange={(e) => {
           const type = BREAK_TYPES.find(t => t.id === e.target.value);
           onSelect(type);
@@ -151,11 +150,10 @@ const BreakTypeSelector = ({ selectedType, onSelect }) => {
               </Radio>
               <Card
                 hoverable
-                className={`border-2 cursor-pointer transition-all ${
-                  selectedType?.id === type.id 
-                    ? 'border-blue-500 bg-blue-50 shadow-md' 
-                    : 'border-gray-200 hover:border-blue-300'
-                }`}
+                className={`border-2 cursor-pointer transition-all ${selectedType?.id === type.id
+                  ? 'border-blue-500 bg-blue-50 shadow-md'
+                  : 'border-gray-200 hover:border-blue-300'
+                  }`}
                 onClick={() => onSelect(type)}
                 bodyStyle={{ padding: '20px' }}
               >
@@ -260,7 +258,7 @@ const BreakContextProvider = ({ children }) => {
 };
 
 // Main Break Component
-const BreakModel = () => {
+const BreakModel = ({ disabled = false }) => {
   const { break_start, break_end, break_type, break_notes, updateBreakStatus, counsellor_id } = useContext(BreakContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedType, setSelectedType] = useState(null);
@@ -295,7 +293,7 @@ const BreakModel = () => {
 
   // Open modal handler
   const showModal = () => {
-    if (!isOnBreak) {
+    if (!isOnBreak && !disabled) {
       setSelectedType(null);
       setNotes('');
       setIsModalOpen(true);
@@ -305,7 +303,7 @@ const BreakModel = () => {
   // Handle start break
   const handleStartBreak = async () => {
     if (!selectedType) return;
-    
+
     setLoading(true);
     try {
       const response = await fetch(`${BASE_URL}/counsellor/break/start`, {
@@ -402,12 +400,14 @@ const BreakModel = () => {
       <Button
         type="primary"
         onClick={showModal}
+        disabled={disabled && !isOnBreak}
         icon={isOnBreak ? <ClockCircleOutlined /> : <CoffeeOutlined />}
-        className={`flex items-center justify-center gap-2 px-6 py-3 h-auto rounded-lg font-medium ${
-          isOnBreak 
-            ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600' 
+        className={`flex items-center justify-center gap-2 px-6 py-3 h-auto rounded-lg font-medium ${isOnBreak
+          ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+          : disabled
+            ? 'bg-gray-300 cursor-not-allowed'
             : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
-        }`}
+          }`}
         size="large"
       >
         {isOnBreak ? (
@@ -466,7 +466,7 @@ const BreakModel = () => {
               <WatchDisplay elapsedSeconds={elapsedSeconds} />
             </div>
 
-            
+
 
             {/* End Break Button */}
             <div className="text-center">
@@ -486,7 +486,7 @@ const BreakModel = () => {
         ) : (
           <div className="space-y-6 py-4">
             {/* Break Type Selection */}
-            <BreakTypeSelector 
+            <BreakTypeSelector
               selectedType={selectedType}
               onSelect={setSelectedType}
             />
@@ -532,9 +532,9 @@ const BreakModel = () => {
 };
 
 // Main Export
-const BreakModelWithProvider = () => (
+const BreakModelWithProvider = (props) => (
   <BreakContextProvider>
-    <BreakModel />
+    <BreakModel {...props} />
   </BreakContextProvider>
 );
 

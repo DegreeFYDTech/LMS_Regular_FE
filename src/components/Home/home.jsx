@@ -69,6 +69,8 @@ const HomePage = memo(() => {
     }
   }, [activeTab, storedRole]);
 
+
+
   useEffect(() => {
     const urlFilters = parseFiltersFromURL();
     const pageFromURL = urlFilters.page || 1;
@@ -152,6 +154,14 @@ const HomePage = memo(() => {
     },
     [activeTab, getTabAutoFilters, updateFilters, fetchLeads, updateURL],
   );
+
+  useEffect(() => {
+    const handleL2TabChange = (e) => {
+      handleTabChange(e.detail);
+    };
+    window.addEventListener("l2TabChange", handleL2TabChange);
+    return () => window.removeEventListener("l2TabChange", handleL2TabChange);
+  }, [handleTabChange]);
 
   const handleFilterChange = useCallback(
     (key, value, previousFilters) => {
@@ -472,258 +482,6 @@ const HomePage = memo(() => {
         </main>
       </div>
 
-      {/* Beautiful Floating Button for L2 Role */}
-      {storedRole === "l2" && (
-        <>
-          <button
-            onClick={() => setIsViewModalOpen(true)}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            className="fixed bottom-8 right-8 group z-50 transition-all duration-300"
-          >
-            <div
-              className={`
-              relative flex items-center gap-3 px-5 py-3 rounded-full shadow-lg transition-all duration-300
-              ${
-                isHovered
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-xl scale-105"
-                  : "bg-gradient-to-r from-blue-500 to-indigo-500 shadow-md"
-              }
-            `}
-            >
-              {/* Pulse animation ring */}
-              <div
-                className={`
-                absolute inset-0 rounded-full transition-opacity duration-300
-                ${isHovered ? "animate-ping opacity-20" : "opacity-0"}
-              `}
-                style={{ backgroundColor: "rgba(59, 130, 246, 0.5)" }}
-              />
-
-              {/* Icon */}
-              <LayoutGrid size={20} className="text-white" />
-
-              {/* Text */}
-              <span className="text-white font-medium text-sm">
-                {activeTab === "fresh" ? "Fresh Leads" : "Callbacks"}
-              </span>
-
-              {/* Chevron indicator */}
-              <svg
-                className={`w-4 h-4 text-white transition-transform duration-300 ${isHovered ? "translate-x-1" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </div>
-          </button>
-
-          {isViewModalOpen && (
-            <>
-              <div
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-all duration-300 z-40"
-                onClick={() => setIsViewModalOpen(false)}
-              />
-              <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl shadow-2xl w-[30rem] max-w-full animate-in fade-in zoom-in duration-200">
-                  <div className="px-6 pt-6 pb-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h2 className="text-xl font-bold text-gray-900">
-                          Switch View
-                        </h2>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Choose what you want to work on
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setIsViewModalOpen(false)}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                      >
-                        <X size={20} className="text-gray-400" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Options */}
-                  <div className="px-6 pb-6 space-y-3">
-                    {/* Fresh Leads Option */}
-                    <button
-                      onClick={() => handleTabChange("fresh")}
-                      className={`group w-full p-4 rounded-xl border-2 transition-all duration-200 ${
-                        activeTab === "fresh"
-                          ? "border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50"
-                          : "border-gray-100 hover:border-blue-500 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-12 h-12 rounded-xl transition-colors duration-200 flex items-center justify-center ${
-                            activeTab === "fresh"
-                              ? "bg-blue-500"
-                              : "bg-blue-100 group-hover:bg-blue-500"
-                          }`}
-                        >
-                          <Phone
-                            size={22}
-                            className={`transition-colors duration-200 ${
-                              activeTab === "fresh"
-                                ? "text-white"
-                                : "text-blue-600 group-hover:text-white"
-                            }`}
-                          />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p
-                            className={`font-semibold ${
-                              activeTab === "fresh"
-                                ? "text-blue-700"
-                                : "text-gray-900 group-hover:text-blue-700"
-                            }`}
-                          >
-                            Fresh Leads
-                          </p>
-                          <p className="text-sm text-gray-500 mt-0.5">
-                            Get new leads from dialer pool
-                          </p>
-                        </div>
-                        {activeTab === "fresh" && (
-                          <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                            <svg
-                              className="w-3 h-3 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                        {activeTab !== "fresh" && (
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <svg
-                              className="w-5 h-5 text-blue-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                    </button>
-
-                    {/* Callbacks Option */}
-                    <button
-                      onClick={() => handleTabChange("callback")}
-                      className={`group w-full p-4 rounded-xl border-2 transition-all duration-200 ${
-                        activeTab === "callback"
-                          ? "border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50"
-                          : "border-gray-100 hover:border-emerald-500 bg-white hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-12 h-12 rounded-xl transition-colors duration-200 flex items-center justify-center ${
-                            activeTab === "callback"
-                              ? "bg-emerald-500"
-                              : "bg-emerald-100 group-hover:bg-emerald-500"
-                          }`}
-                        >
-                          <Clock
-                            size={22}
-                            className={`transition-colors duration-200 ${
-                              activeTab === "callback"
-                                ? "text-white"
-                                : "text-emerald-600 group-hover:text-white"
-                            }`}
-                          />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p
-                            className={`font-semibold ${
-                              activeTab === "callback"
-                                ? "text-emerald-700"
-                                : "text-gray-900 group-hover:text-emerald-700"
-                            }`}
-                          >
-                            My Callbacks
-                          </p>
-                          <p className="text-sm text-gray-500 mt-0.5">
-                            Your converted leads & follow-ups
-                          </p>
-                        </div>
-                        {activeTab === "callback" && (
-                          <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                            <svg
-                              className="w-3 h-3 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                        {activeTab !== "callback" && (
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <svg
-                              className="w-5 h-5 text-emerald-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="px-6 pb-6 pt-2 border-t border-gray-100">
-                    <p className="text-xs text-gray-400 text-center">
-                      Current view:{" "}
-                      <span className="font-medium text-gray-600">
-                        {activeTab === "fresh" ? "Fresh Leads" : "My Callbacks"}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </>
-      )}
     </div>
   );
 });
