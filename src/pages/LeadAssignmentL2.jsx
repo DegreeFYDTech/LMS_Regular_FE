@@ -49,23 +49,17 @@ const LeadAssignmentRules = () => {
   const [viewMode, setViewMode] = useState("table");
   const [newRule, setNewRule] = useState({
     conditions: {
-      utmCampaign: [],
-      first_source_url: "",
-      source: [],
-      mode: [],
-      preferred_budget: [],
-      current_profession: [],
-      preferred_level: [],
-      preferred_degree: [],
+      preferred_university: [],
       preferred_specialization: [],
+      preferred_degree: [],
+      preferred_stream: [],
       preferred_city: [],
       preferred_state: [],
-      score_type: "numeric",
-      score_value: 0,
     },
     assigned_counsellor_ids: [],
     is_active: true,
     custom_rule_name: "",
+    priority: 0,
     daily_iteration_limit: 0,
     total_iteration_limit: 0,
   });
@@ -74,37 +68,10 @@ const LeadAssignmentRules = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [options, setOptions] = useState({
-    utmCampaign: ["Any"],
-    first_source_url: ["Any"],
-    source: ["Any"],
-    mode: ["Any"],
-    preferred_budget: [
-      "Any",
-      "0-50000",
-      "50000-70000",
-      "70000-100000",
-      "100000-150000",
-      "150000-200000",
-      "200000-999999999",
-    ],
-    current_profession: [
-      "Any",
-      "Working Professional",
-      "Government Exam Prep",
-      "Looking for Job",
-      "Skill Course",
-      "Business Owner",
-      "Other",
-    ],
-    preferred_level: [
-      "Any",
-      "Diploma",
-      "Undergraduate",
-      "Postgraduate",
-      "Doctorate",
-    ],
+    preferred_university: ["Any"],
     preferred_degree: ["Any"],
     preferred_specialization: ["Any"],
+    preferred_stream: ["Any"],
     preferred_city: ["Any"],
     preferred_state: ["Any"],
     counsellors: [],
@@ -153,20 +120,7 @@ const LeadAssignmentRules = () => {
   };
 
   const loadLeadOptions = async () => {
-    try {
-      const data = await fetchLeadOptions();
-      setOptions((prev) => ({
-        ...prev,
-        mode: [...(data?.data.mode || []), "Any"],
-        source: [...(data?.data.source || []), "Any"],
-        utmCampaign: [
-          ...(data?.data.utm_campaign || data?.data?.campaign_name || []),
-          "Any",
-        ],
-      }));
-    } catch (error) {
-      console.error("Error loading lead options:", error);
-    }
+    // Lead options for source/mode are no longer needed
   };
 
   const loadFilterOptions = async () => {
@@ -174,11 +128,17 @@ const LeadAssignmentRules = () => {
       const data = await axios.get(`${BASE_URL}/universitycourse/dropdown`);
       const degrees = data.data.data.degrees || [];
       const specializations = data.data.data.specializations || [];
+      const universities = data.data.data.universities || [];
+      const streams = data.data.data.streams || [];
 
       setOptions((prev) => ({
         ...prev,
         preferred_degree: ["Any", ...degrees],
         preferred_specialization: ["Any", ...specializations],
+        preferred_university: ["Any", ...universities],
+        preferred_stream: ["Any", ...streams],
+        preferred_city: ["Any"],
+        preferred_state: ["Any"],
       }));
     } catch (error) {
       console.error("Error loading filter options:", error);
@@ -219,17 +179,10 @@ const LeadAssignmentRules = () => {
     };
 
     const allowedFields = [
-      "utmCampaign",
-      "first_source_url",
-      "source",
-      "mode",
-      "preferred_budget",
-      "current_profession",
-      "preferred_level",
+      "preferred_university",
       "preferred_degree",
       "preferred_specialization",
-      "preferred_city",
-      "preferred_state",
+      "preferred_stream",
     ];
 
     Object.keys(payload.conditions).forEach((key) => {
@@ -328,21 +281,7 @@ const LeadAssignmentRules = () => {
     }
   };
 
-  const handleDuplicateRule = (rule) => {
-    const duplicatedRule = {
-      conditions: { ...rule.conditions },
-      assigned_counsellor_ids: rule.assigned_counsellor_ids
-        ? [...rule.assigned_counsellor_ids]
-        : [],
-      is_active: true,
-      custom_rule_name: rule.custom_rule_name + " (Copy)",
-      daily_iteration_limit: rule.daily_iteration_limit || 0,
-      total_iteration_limit: rule.total_iteration_limit || 0,
-    };
-    setNewRule(duplicatedRule);
-    setEditingRule(null);
-    setShowFormModal(true);
-  };
+
 
   const handleEditRule = (rule) => {
     const editRule = {
@@ -361,23 +300,17 @@ const LeadAssignmentRules = () => {
   const resetNewRule = () => {
     setNewRule({
       conditions: {
-        utmCampaign: [],
-        first_source_url: "",
-        source: [],
-        mode: [],
-        preferred_budget: [],
-        current_profession: [],
-        preferred_level: [],
+        preferred_university: [],
         preferred_degree: [],
         preferred_specialization: [],
+        preferred_stream: [],
         preferred_city: [],
-        score_type: "numeric",
-        score_value: 0,
         preferred_state: [],
       },
       assigned_counsellor_ids: [],
       is_active: true,
       custom_rule_name: "",
+      priority: 0,
       daily_iteration_limit: 0,
       total_iteration_limit: 0,
     });
@@ -500,7 +433,6 @@ const LeadAssignmentRules = () => {
                 onEditRule={handleEditRule}
                 onDeleteRule={handleDeleteRule}
                 onToggleRule={handleToggleRule}
-                onDuplicateRule={handleDuplicateRule}
               />
             ) : (
               <RuleCards
@@ -508,7 +440,6 @@ const LeadAssignmentRules = () => {
                 onEditRule={handleEditRule}
                 onDeleteRule={handleDeleteRule}
                 onToggleRule={handleToggleRule}
-                onDuplicateRule={handleDuplicateRule}
               />
             )}
           </Card>

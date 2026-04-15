@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Card, Tag, Button, Space, Tooltip, Typography, Row, Col, Badge, Avatar } from 'antd';
 import {
   EditOutlined,
-  CopyOutlined,
   DeleteOutlined,
   PoweroffOutlined,
   TeamOutlined,
@@ -17,7 +16,6 @@ const RuleCards = ({
   onEditRule,
   onDeleteRule,
   onToggleRule,
-  onDuplicateRule,
   idKey = 'lead_assignment_rule_l2_id',
   type = 'l2'
 }) => {
@@ -84,14 +82,6 @@ const RuleCards = ({
                         style={{ color: '#1890ff' }}
                       />
                     </Tooltip>,
-                    <Tooltip title="Duplicate">
-                      <Button
-                        type="text"
-                        icon={<CopyOutlined />}
-                        onClick={() => onDuplicateRule(rule)}
-                        style={{ color: '#faad14' }}
-                      />
-                    </Tooltip>,
                     <Tooltip title="Delete">
                       <Button
                         type="text"
@@ -134,13 +124,14 @@ const RuleCards = ({
                           )}
                         </>
                       ) : (
-                        ['preferred_degree', 'preferred_specialization', 'preferred_budget'].map(field => {
+                        ['preferred_university', 'preferred_degree', 'preferred_specialization', 'preferred_stream'].map(field => {
                           const value = rule.conditions?.[field];
                           if (!value || value.length === 0) return null;
                           const labels = {
+                            preferred_university: 'Univ',
                             preferred_degree: 'Degree',
                             preferred_specialization: 'Spec',
-                            preferred_budget: 'Budget'
+                            preferred_stream: 'Stream'
                           };
                           return (
                             <div key={field} style={{ display: 'flex', alignItems: 'start', fontSize: '12px' }}>

@@ -58,24 +58,17 @@ const RuleForm = ({
   };
 
   const fieldDisplayNames = {
-    utmCampaign: 'UTM Campaign',
-    first_source_url: 'Domain URLs',
-    source: 'Source',
-    mode: 'Mode',
-    preferred_budget: 'Budget Range (₹)',
-    current_profession: 'Current Profession',
-    preferred_level: 'Preferred Level',
-    preferred_degree: 'Preferred Degree',
-    preferred_specialization: 'Preferred Specialization',
-    preferred_city: 'Preferred City',
-    preferred_state: 'Preferred State'
+    preferred_university: 'University',
+    preferred_degree: 'Degree',
+    preferred_specialization: 'Specialization',
+    preferred_stream: 'Stream',
+    preferred_city: 'City',
+    preferred_state: 'State'
   };
 
   const fieldGroups = [
-    { title: 'Source & Campaign', fields: ['first_source_url', 'utmCampaign', 'source', 'mode'] },
-    { title: 'Location Preferences', fields: ['preferred_state', 'preferred_city'] },
-    { title: 'Education Background', fields: ['preferred_degree', 'preferred_specialization', 'preferred_level'] },
-    { title: 'Others', fields: ['preferred_budget', 'current_profession'] }
+    { title: 'Academic Criteria', fields: ['preferred_university', 'preferred_degree', 'preferred_specialization', 'preferred_stream'] },
+    { title: 'Location Criteria', fields: ['preferred_city', 'preferred_state'] }
   ];
 
   const currentScoreType = rule?.score_type || 'numeric';
@@ -103,14 +96,25 @@ const RuleForm = ({
 
   return (
     <Form layout="vertical">
-      <Form.Item label={<Text strong>Rule Name</Text>} required>
-        <Input
-          size="large"
-          value={rule?.custom_rule_name || ''}
-          onChange={(e) => onRuleChange(prev => ({ ...prev, custom_rule_name: e.target.value }))}
-          placeholder="e.g., High Budget Bachelors"
-        />
-      </Form.Item>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+        <Form.Item label={<Text strong>Rule Name</Text>} required>
+          <Input
+            size="large"
+            value={rule?.custom_rule_name || ''}
+            onChange={(e) => onRuleChange(prev => ({ ...prev, custom_rule_name: e.target.value }))}
+            placeholder="e.g., High Budget Bachelors"
+          />
+        </Form.Item>
+        <Form.Item label={<Text strong>Priority</Text>} tooltip="Higher number means higher priority for lead assignment">
+          <InputNumber
+            size="large"
+            style={{ width: '100%' }}
+            min={0}
+            value={rule?.priority || 0}
+            onChange={(val) => onRuleChange(prev => ({ ...prev, priority: val || 0 }))}
+          />
+        </Form.Item>
+      </div>
 
       <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Scoring Configuration</Divider>
 

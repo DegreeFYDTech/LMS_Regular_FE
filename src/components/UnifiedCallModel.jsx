@@ -7,9 +7,6 @@ import { updateCollegeSentStatusCreds } from "../network/credential";
 import { useSelector } from "react-redux";
 import { LeadsContext } from "../context/LeadsContext";
 import StudentFormPopup from "../components/StudentFormPopup";
-import dayjs from "dayjs";
-import axios from "axios";
-import { BASE_URL } from "../config/api";
 
 import {
   FiCheckCircle,

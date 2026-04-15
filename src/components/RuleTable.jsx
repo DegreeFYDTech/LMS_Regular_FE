@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip, Typography, Layout } from 'antd';
 import {
   EditOutlined,
-  CopyOutlined,
   DeleteOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
@@ -15,7 +14,6 @@ const RuleTable = ({
   onEditRule,
   onDeleteRule,
   onToggleRule,
-  onDuplicateRule,
   idKey = 'lead_assignment_rule_l2_id',
   type = 'l2'
 }) => {
@@ -31,9 +29,11 @@ const RuleTable = ({
 
     const conditions = record.conditions || {};
     const displayFields = [
-      { key: 'preferred_degree', label: 'Degree' },
+      { key: 'preferred_university', label: 'Univ' },
+      { key: 'preferred_degree', label: 'Deg' },
       { key: 'preferred_specialization', label: 'Sp' },
-      { key: 'preferred_budget', label: 'Budget' },
+      { key: 'preferred_stream', label: 'Stream' },
+      { key: 'preferred_city', label: 'City' },
       { key: 'preferred_state', label: 'State' },
     ];
 
@@ -104,9 +104,6 @@ const RuleTable = ({
           </Tooltip>
           <Tooltip title="Edit">
             <Button type="text" icon={<EditOutlined />} onClick={() => onEditRule(record)} style={{ color: '#1890ff' }} />
-          </Tooltip>
-          <Tooltip title="Duplicate">
-            <Button type="text" icon={<CopyOutlined />} onClick={() => onDuplicateRule(record)} style={{ color: '#faad14' }} />
           </Tooltip>
           <Tooltip title="Delete">
             <Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDeleteRule(record[idKey])} />
