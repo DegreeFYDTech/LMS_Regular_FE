@@ -1,3 +1,4 @@
+// DialerBucket.jsx
 import React, { useState, useEffect } from 'react'
 import { Table, Tag, Space, Input, Button, Card, Avatar, Badge, message, Select, Modal, Drawer, DatePicker, Divider, Tooltip, Pagination, Spin, Empty, Slider } from 'antd'
 import { SearchOutlined, ReloadOutlined, UserOutlined, EditOutlined, FilterOutlined, CalendarOutlined, StarOutlined, TeamOutlined, CloseOutlined, ClockCircleOutlined } from '@ant-design/icons'
@@ -16,7 +17,7 @@ const DialerBucket = () => {
   const [searchText, setSearchText] = useState('')
   const [loading, setLoading] = useState(false)
   const [dialerData, setDialerData] = useState([])
-  const [leadsData, setLeadsData] = useState([])
+  const [clusterStatsData, setClusterStatsData] = useState([])
   const [stats, setStats] = useState({
     total: 0,
     fresh: 0,
@@ -25,24 +26,22 @@ const DialerBucket = () => {
   })
   const [leadsStats, setLeadsStats] = useState({
     fresh: 0,
-    attempted: 0,
-    inQueue: 0
+    attempted: 0
   })
+  const [clusterStats, setClusterStats] = useState({})
   const [updateModalVisible, setUpdateModalVisible] = useState(false)
   const [selectedCounsellor, setSelectedCounsellor] = useState(null)
   const [newStage, setNewStage] = useState('')
   const [filterDrawerVisible, setFilterDrawerVisible] = useState(false)
 
-  // Lead view states
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [totalLeads, setTotalLeads] = useState(0)
 
-  // Filter states - Updated for multi-select
   const [filters, setFilters] = useState({
     dateRange: null,
-    sources: [],        // Changed from source to sources (array)
-    campaigns: [],      // Changed from campaign to campaigns (array)
+    sources: [],
+    campaigns: [],
     sourceUrl: null,
     remarkCount: null,
     churnCount: null,
@@ -56,7 +55,6 @@ const DialerBucket = () => {
 
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0)
 
-  // Fetch dialer data from API (Counsellor View)
   const fetchDialerData = async () => {
     setLoading(true)
     try {
@@ -80,7 +78,6 @@ const DialerBucket = () => {
     }
   }
 
-  // Fetch leads data for lead view - Updated to handle multi-select
   const fetchLeadsData = async () => {
     setLoading(true)
     try {
@@ -94,12 +91,10 @@ const DialerBucket = () => {
         params.append('endDate', filters.dateRange[1].format('YYYY-MM-DD'))
       }
 
-      // Handle multi-select sources - send as comma-separated string
       if (filters.sources && filters.sources.length > 0 && !filters.sources.includes('Any')) {
         params.append('source', filters.sources.join(','))
       }
 
-      // Handle multi-select campaigns - send as comma-separated string
       if (filters.campaigns && filters.campaigns.length > 0 && !filters.campaigns.includes('Any')) {
         params.append('campaign', filters.campaigns.join(','))
       }
@@ -108,7 +103,6 @@ const DialerBucket = () => {
       if (filters.remarkCount) params.append('remarkCount', filters.remarkCount)
       if (filters.churnCount) params.append('churnCount', filters.churnCount)
 
-      // Add score range filter
       if (filters.scoreRange && (filters.scoreRange[0] > 0 || filters.scoreRange[1] < 100)) {
         params.append('minScore', filters.scoreRange[0])
         params.append('maxScore', filters.scoreRange[1])
@@ -121,9 +115,9 @@ const DialerBucket = () => {
       })
 
       if (response.data.success) {
-        setLeadsData(response.data.data.leads)
-        setTotalLeads(response.data.data.total)
         setLeadsStats(response.data.data.stats)
+        setClusterStats(response.data.data.clusterStats || {})
+        setTotalLeads(response.data.data.total)
       } else {
         message.error(response.data.message || 'Failed to fetch leads data')
       }
@@ -135,7 +129,22 @@ const DialerBucket = () => {
     }
   }
 
-  // Load filter options
+  // Convert clusterStats object to array for table
+  useEffect(() => {
+    if (clusterStats && Object.keys(clusterStats).length > 0) {
+      const tableData = Object.entries(clusterStats).map(([ruleName, stats]) => ({
+        key: ruleName,
+        ruleName: ruleName,
+        attempted: stats.attempted,
+        remarks1_4: stats.remarks1_4,
+        remarks5_7: stats.remarks5_7,
+        remarks7Plus: stats.remarks7Plus,
+        total: stats.total
+      }))
+      setClusterStatsData(tableData)
+    }
+  }, [clusterStats])
+
   const loadLeadOptions = async () => {
     try {
       const data = await fetchLeadOptions();
@@ -159,9 +168,8 @@ const DialerBucket = () => {
       fetchLeadsData()
       loadLeadOptions()
     }
-  }, [isLeadView, currentPage, pageSize])
+  }, [isLeadView, currentPage, pageSize, JSON.stringify(filters)])
 
-  // Update stage for a counsellor
   const updateStage = async () => {
     if (!selectedCounsellor || !newStage) return
 
@@ -196,7 +204,6 @@ const DialerBucket = () => {
     }
   }
 
-  // Apply filters - Updated for multi-select
   const applyFilters = () => {
     let count = 0
     if (filters.dateRange) count++
@@ -214,7 +221,6 @@ const DialerBucket = () => {
     message.success('Filters applied successfully')
   }
 
-  // Reset filters - Updated for multi-select
   const resetFilters = () => {
     setFilters({
       dateRange: null,
@@ -233,7 +239,6 @@ const DialerBucket = () => {
     }, 100)
   }
 
-  // Clear single filter - Updated for multi-select
   const clearFilter = (filterKey) => {
     if (filterKey === 'scoreRange') {
       setFilters(prev => ({
@@ -262,16 +267,6 @@ const DialerBucket = () => {
     }, 100)
   }
 
-  // Handle page change
-  const handlePageChange = (page, size) => {
-    setCurrentPage(page)
-    if (size !== pageSize) {
-      setPageSize(size)
-      setCurrentPage(1)
-    }
-  }
-
-  // Get stage color and icon
   const getStageConfig = (stage) => {
     const stageConfig = {
       'fresh': { color: 'green', text: 'Fresh' },
@@ -281,15 +276,6 @@ const DialerBucket = () => {
     return stageConfig[stage] || { color: 'default', text: stage }
   }
 
-  // Get lead score color
-  const getScoreColor = (score) => {
-    if (score >= 80) return '#10b981'
-    if (score >= 60) return '#3b82f6'
-    if (score >= 40) return '#f59e0b'
-    return '#ef4444'
-  }
-
-  // Dialer view columns
   const dialerColumns = [
     {
       title: 'Counsellor Name',
@@ -335,142 +321,80 @@ const DialerBucket = () => {
     }
   ]
 
-  // Lead view columns
-  const leadColumns = [
+  // Table columns for rule-wise breakdown
+  const ruleBreakdownColumns = [
     {
-      title: 'Student ID',
-      dataIndex: 'STUDENT_ID',
-      key: 'STUDENT_ID',
-      width: 130,
-      fixed: 'left',
-      render: (id) => (
-        <Tag color="geekblue" style={{ fontFamily: 'monospace', fontSize: '12px' }}>
-          {id}
+      title: 'Rule Name',
+      dataIndex: 'ruleName',
+      key: 'ruleName',
+      width: 200,
+      render: (text) => (
+        <Tag color={text === 'Unassigned' ? 'default' : 'purple'} style={{ fontWeight: 500, fontSize: '14px' }}>
+          {text}
         </Tag>
       )
     },
     {
-      title: 'Student Name',
-      dataIndex: 'studentName',
-      key: 'studentName',
-      width: 140,
-      ellipsis: true,
-      render: (text) => (
-        <Tooltip title={text}>
-          <span style={{ fontWeight: 500 }}>{text || 'N/A'}</span>
-        </Tooltip>
-      )
-    },
-    {
-      title: 'Source',
-      dataIndex: 'source',
-      key: 'source',
-      width: 110,
-      ellipsis: true,
-      render: (source) => (
-        <Tooltip title={source}>
-          <Tag color="cyan" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {source || 'N/A'}
-          </Tag>
-        </Tooltip>
-      )
-    },
-    {
-      title: 'Source URL',
-      dataIndex: 'sourceUrl',
-      key: 'sourceUrl',
-      width: 180,
-      ellipsis: true,
-      render: (url) => url ? (
-        <Tooltip title={url}>
-          <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', fontSize: '12px' }}>
-            {url.length > 35 ? `${url.substring(0, 35)}...` : url}
-          </a>
-        </Tooltip>
-      ) : 'N/A'
-    },
-    {
-      title: 'Campaign',
-      dataIndex: 'campaignName',
-      key: 'campaignName',
-      width: 150,
-      ellipsis: true,
-      render: (campaign) => (
-        <Tooltip title={campaign}>
-          <Tag color="purple" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {campaign || 'N/A'}
-          </Tag>
-        </Tooltip>
-      )
-    },
-    {
-      title: 'Churn',
-      dataIndex: 'churnCount',
-      key: 'churnCount',
-      width: 70,
+      title: 'Attempted',
+      dataIndex: 'attempted',
+      key: 'attempted',
+      width: 120,
       align: 'center',
+      sorter: (a, b) => a.attempted - b.attempted,
       render: (count) => (
         <Badge
-          count={count || 0}
+          count={count}
           showZero
-          style={{ backgroundColor: count > 0 ? '#ef4444' : '#10b981' }}
+          style={{ backgroundColor: count > 0 ? '#f59e0b' : '#9ca3af', fontSize: '14px' }}
         />
       )
     },
     {
-      title: 'Remarks',
-      dataIndex: 'remarksCount',
-      key: 'remarksCount',
-      width: 70,
+      title: '1-4 Remarks',
+      dataIndex: 'remarks1_4',
+      key: 'remarks1_4',
+      width: 120,
       align: 'center',
+      sorter: (a, b) => a.remarks1_4 - b.remarks1_4,
       render: (count) => (
-        <Badge
-          count={count || 0}
-          showZero
-          style={{ backgroundColor: count > 0 ? '#3b82f6' : '#9ca3af' }}
-        />
+        <span style={{ color: '#3b82f6', fontWeight: 600, fontSize: '14px' }}>{count}</span>
       )
     },
     {
-      title: 'Score',
-      dataIndex: 'score',
-      key: 'score',
-      width: 70,
+      title: '5-7 Remarks',
+      dataIndex: 'remarks5_7',
+      key: 'remarks5_7',
+      width: 120,
       align: 'center',
-      render: (score) => (
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2px 8px',
-          borderRadius: '20px',
-          backgroundColor: getScoreColor(score),
-          color: 'white',
-          fontWeight: 'bold',
-          fontSize: '12px'
-        }}>
-          <StarOutlined style={{ fontSize: '10px', marginRight: '4px' }} />
-          {score || 0}
-        </div>
+      sorter: (a, b) => a.remarks5_7 - b.remarks5_7,
+      render: (count) => (
+        <span style={{ color: '#f59e0b', fontWeight: 600, fontSize: '14px' }}>{count}</span>
       )
     },
     {
-      title: 'Temp',
-      dataIndex: 'temp_counsellor_id',
-      key: 'temp_counsellor_id',
+      title: '7+ Remarks',
+      dataIndex: 'remarks7Plus',
+      key: 'remarks7Plus',
+      width: 120,
+      align: 'center',
+      sorter: (a, b) => a.remarks7Plus - b.remarks7Plus,
+      render: (count) => (
+        <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '14px' }}>{count}</span>
+      )
+    },
+    {
+      title: 'Total',
+      dataIndex: 'total',
+      key: 'total',
       width: 100,
       align: 'center',
-      render: (tempId) => tempId ? (
-        <Tag color="orange" icon={<ClockCircleOutlined />} style={{ margin: 0 }}>
-          Assigned
-        </Tag>
-      ) : (
-        <Tag color="default" style={{ margin: 0 }}>Not Assigned</Tag>
+      sorter: (a, b) => a.total - b.total,
+      render: (count) => (
+        <Tag color="geekblue">{count}</Tag>
       )
     }
   ]
 
-  // Toggle view
   const toggleView = () => {
     if (isLeadView) {
       setSearchParams({})
@@ -491,7 +415,6 @@ const DialerBucket = () => {
     setAppliedFiltersCount(0)
   }
 
-  // Handle refresh
   const handleRefresh = () => {
     if (!isLeadView) {
       fetchDialerData()
@@ -500,13 +423,6 @@ const DialerBucket = () => {
     }
   }
 
-  // Handle search
-  const handleSearch = () => {
-    setCurrentPage(1)
-    fetchLeadsData()
-  }
-
-  // Filter drawer content - Updated with multi-select
   const filterDrawerContent = (
     <div>
       <div style={{ marginBottom: '24px' }}>
@@ -671,7 +587,6 @@ const DialerBucket = () => {
     </div>
   )
 
-  // Active filters display - Updated for multi-select
   const ActiveFilters = () => {
     if (appliedFiltersCount === 0) return null
 
@@ -719,7 +634,6 @@ const DialerBucket = () => {
   return (
     <div style={{ padding: '24px', minHeight: '100vh', backgroundColor: '#f9fafb' }}>
       <Card style={{ borderRadius: '12px' }}>
-        {/* Header Section */}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', gap: '16px' }}>
           <div>
             <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px' }}>
@@ -727,7 +641,7 @@ const DialerBucket = () => {
             </h2>
             <p style={{ color: '#6b7280', fontSize: '14px' }}>
               {isLeadView
-                ? 'Manage and track leads in queue with advanced filtering'
+                ? 'Rule-wise breakdown of leads based on assignment rules'
                 : 'Manage and track counsellor call assignments'}
             </p>
           </div>
@@ -762,114 +676,127 @@ const DialerBucket = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         {!isLeadView ? (
-          // Dialer View Stats
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <Card style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', textAlign: 'center' }}>
-              <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.fresh}</div>
-              <div style={{ fontSize: '14px', opacity: 0.9 }}>Fresh Calls</div>
-            </Card>
-            <Card style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', textAlign: 'center' }}>
-              <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.callbacks}</div>
-              <div style={{ fontSize: '14px', opacity: 0.9 }}>Callbacks</div>
-            </Card>
-            <Card style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', textAlign: 'center' }}>
-              <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.pause}</div>
-              <div style={{ fontSize: '14px', opacity: 0.9 }}>Paused</div>
-            </Card>
-          </div>
-        ) : (
-          // Leads View Stats
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <Card
-              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', textAlign: 'center', cursor: 'pointer' }}
-              onClick={() => {
-                setFilters({ ...filters, remarkCount: '0' })
-                setAppliedFiltersCount(prev => prev + 1)
-                setTimeout(() => fetchLeadsData(), 100)
-              }}
-            >
-              <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{leadsStats.fresh}</div>
-              <div style={{ fontSize: '14px', marginTop: '4px' }}>Fresh Leads</div>
-              <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>No remarks, not assigned</div>
-            </Card>
-            <Card
-              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', textAlign: 'center', cursor: 'pointer' }}
-              onClick={() => {
-                setFilters({ ...filters, remarkCount: '1-5' })
-                setAppliedFiltersCount(prev => prev + 1)
-                setTimeout(() => fetchLeadsData(), 100)
-              }}
-            >
-              <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{leadsStats.attempted}</div>
-              <div style={{ fontSize: '14px', marginTop: '4px' }}>Attempted</div>
-              <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>Has remarks, not assigned</div>
-            </Card>
-            <Card style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: 'white', textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{leadsStats.inQueue}</div>
-              <div style={{ fontSize: '14px', marginTop: '4px' }}>Leads in Queue</div>
-              <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>Total pending leads</div>
-            </Card>
-          </div>
-        )}
-
-        {/* Search Bar for Lead View */}
-        {isLeadView && (
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Input
-                placeholder="Search by Student ID, Name, Source, or Campaign..."
-                prefix={<SearchOutlined style={{ color: '#9ca3af' }} />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onPressEnter={handleSearch}
-                style={{ flex: 1 }}
-                size="large"
-                allowClear
-              />
-              <Button type="primary" onClick={handleSearch} size="large">
-                Search
-              </Button>
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <Card style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', textAlign: 'center' }}>
+                <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.fresh}</div>
+                <div style={{ fontSize: '14px', opacity: 0.9 }}>Fresh Calls</div>
+              </Card>
+              <Card style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', textAlign: 'center' }}>
+                <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.callbacks}</div>
+                <div style={{ fontSize: '14px', opacity: 0.9 }}>Callbacks</div>
+              </Card>
+              <Card style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', textAlign: 'center' }}>
+                <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.pause}</div>
+                <div style={{ fontSize: '14px', opacity: 0.9 }}>Paused</div>
+              </Card>
             </div>
-          </div>
-        )}
-
-        {/* Active Filters Display (Leads View only) */}
-        {isLeadView && <ActiveFilters />}
-
-        {/* Table Section */}
-        <Spin spinning={loading}>
-          <Table
-            columns={isLeadView ? leadColumns : dialerColumns}
-            dataSource={isLeadView ? leadsData : dialerData}
-            pagination={false}
-            rowKey={isLeadView ? "STUDENT_ID" : "_id"}
-            scroll={{ x: isLeadView ? 1100 : 550 }}
-            locale={{
-              emptyText: <Empty description={isLeadView ? "No leads found" : "No counsellors found"} />
-            }}
-          />
-        </Spin>
-
-        {/* Pagination for Lead View */}
-        {isLeadView && totalLeads > 0 && (
-          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-            <Pagination
-              current={currentPage}
-              pageSize={pageSize}
-              total={totalLeads}
-              onChange={handlePageChange}
-              showSizeChanger
-              showQuickJumper
-              showTotal={(total) => `Total ${total} leads`}
-              pageSizeOptions={['20', '50', '100', '200']}
+            <Table
+              columns={dialerColumns}
+              dataSource={dialerData}
+              rowKey="_id"
+              loading={loading}
+              pagination={{
+                current: currentPage,
+                pageSize: pageSize,
+                total: totalLeads,
+                onChange: (page, size) => {
+                  setCurrentPage(page)
+                  if (size !== pageSize) setPageSize(size)
+                },
+                showSizeChanger: true,
+                showTotal: (total) => `Total ${total} counsellors`
+              }}
+              locale={{
+                emptyText: <Empty description="No counsellor data found" />
+              }}
             />
           </div>
+
+        ) : (
+          <>
+            {/* Top Stats Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <Card
+                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', textAlign: 'center' }}
+              >
+                <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{leadsStats.fresh}</div>
+                <div style={{ fontSize: '14px', marginTop: '4px' }}>Fresh Leads</div>
+                <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>No remarks, not assigned</div>
+              </Card>
+              <Card
+                style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', textAlign: 'center' }}
+              >
+                <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{leadsStats.attempted}</div>
+                <div style={{ fontSize: '14px', marginTop: '4px' }}>Attempted Leads</div>
+                <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>Has remarks, not assigned</div>
+              </Card>
+            </div>
+
+            {/* Active Filters */}
+            <ActiveFilters />
+
+            {/* Rule-wise Breakdown Table */}
+            <Spin spinning={loading}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
+                  <TeamOutlined style={{ marginRight: '8px' }} />
+                  Rule-wise Breakdown
+                </h3>
+                <Table
+                  columns={ruleBreakdownColumns}
+                  dataSource={clusterStatsData}
+                  pagination={false}
+                  rowKey="ruleName"
+                  locale={{
+                    emptyText: <Empty description="No rules found" />
+                  }}
+                  summary={(pageData) => {
+                    let totalAttempted = 0
+                    let totalRemarks1_4 = 0
+                    let totalRemarks5_7 = 0
+                    let totalRemarks7Plus = 0
+                    let totalTotal = 0
+
+                    pageData.forEach(({ attempted, remarks1_4, remarks5_7, remarks7Plus, total }) => {
+                      totalAttempted += attempted
+                      totalRemarks1_4 += remarks1_4
+                      totalRemarks5_7 += remarks5_7
+                      totalRemarks7Plus += remarks7Plus
+                      totalTotal += total
+                    })
+
+                    return (
+                      <Table.Summary fixed>
+                        <Table.Summary.Row style={{ backgroundColor: '#f0f0f0', fontWeight: 'bold' }}>
+                          <Table.Summary.Cell index={0}>Total</Table.Summary.Cell>
+                          <Table.Summary.Cell index={1} align="center">
+                            <Badge count={totalAttempted} style={{ backgroundColor: '#f59e0b' }} />
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell index={2} align="center">
+                            <span style={{ color: '#3b82f6', fontWeight: 600 }}>{totalRemarks1_4}</span>
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell index={3} align="center">
+                            <span style={{ color: '#f59e0b', fontWeight: 600 }}>{totalRemarks5_7}</span>
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell index={4} align="center">
+                            <span style={{ color: '#ef4444', fontWeight: 600 }}>{totalRemarks7Plus}</span>
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell index={5} align="center">
+                            <Tag color="geekblue">{totalTotal}</Tag>
+                          </Table.Summary.Cell>
+                        </Table.Summary.Row>
+                      </Table.Summary>
+                    )
+                  }}
+                />
+              </div>
+            </Spin>
+          </>
         )}
       </Card>
 
-      {/* Update Stage Modal (Dialer View only) */}
       <Modal
         title="Update Stage"
         open={updateModalVisible}
@@ -910,7 +837,6 @@ const DialerBucket = () => {
         </div>
       </Modal>
 
-      {/* Filter Drawer for Lead View */}
       <Drawer
         title={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
