@@ -651,6 +651,7 @@ const Navbar = () => {
               )}
 
               {role !== "Supervisor" &&
+              !window.location.pathname.includes('student') &&
                 role !== "Analyser" &&
                 role !== "to" && (
                   <BreakModel 

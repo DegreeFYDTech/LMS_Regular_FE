@@ -1,7 +1,7 @@
 // DialerBucket.jsx
-import React, { useState, useEffect } from 'react'
-import { Table, Tag, Space, Input, Button, Card, Avatar, Badge, message, Select, Modal, Drawer, DatePicker, Divider, Tooltip, Pagination, Spin, Empty, Slider } from 'antd'
-import { SearchOutlined, ReloadOutlined, UserOutlined, EditOutlined, FilterOutlined, CalendarOutlined, StarOutlined, TeamOutlined, CloseOutlined, ClockCircleOutlined } from '@ant-design/icons'
+import React, { useState, useEffect, useRef } from 'react'
+import { Table, Tag, Space, Input, Button, Card, Avatar, Badge, message, Select, Modal, Drawer, DatePicker, Divider, Tooltip, Pagination, Spin, Empty, Slider, Tabs, Switch } from 'antd'
+import { SearchOutlined, ReloadOutlined, UserOutlined, EditOutlined, FilterOutlined, CalendarOutlined, StarOutlined, TeamOutlined, CloseOutlined, ClockCircleOutlined, RocketOutlined, PhoneOutlined, PauseCircleOutlined, PlayCircleOutlined } from '@ant-design/icons'
 import axios from 'axios'
 import { BASE_URL } from '../config/api'
 import { useSearchParams } from 'react-router-dom'
@@ -25,14 +25,23 @@ const DialerBucket = () => {
     pause: 0
   })
   const [leadsStats, setLeadsStats] = useState({
+    total: 0,
     fresh: 0,
-    attempted: 0
+    attempted: 0,
+    freshLeadsCount: 0,
+    withRulesCount: 0
   })
   const [clusterStats, setClusterStats] = useState({})
+  const [freshLeads, setFreshLeads] = useState([])
   const [updateModalVisible, setUpdateModalVisible] = useState(false)
   const [selectedCounsellor, setSelectedCounsellor] = useState(null)
   const [newStage, setNewStage] = useState('')
   const [filterDrawerVisible, setFilterDrawerVisible] = useState(false)
+  const [freshLeadsDrawerVisible, setFreshLeadsDrawerVisible] = useState(false)
+  
+  // Auto-refresh state
+  const [autoRefresh, setAutoRefresh] = useState(true)
+  const intervalRef = useRef(null)
 
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -108,16 +117,24 @@ const DialerBucket = () => {
         params.append('maxScore', filters.scoreRange[1])
       }
 
-      const response = await axios.get(`${BASE_URL}/scorecard/get-leads-bucket?${params}`, {
+      const response = await axios.get(`${BASE_URL}/scorecard/get-bucket-data?${params}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       })
 
       if (response.data.success) {
-        setLeadsStats(response.data.data.stats)
+        // Update stats with the new structure
+        setLeadsStats({
+          total: response.data.data.stats?.total || 0,
+          fresh: response.data.data.stats?.fresh || 0,
+          attempted: response.data.data.stats?.attempted || 0,
+          freshLeadsCount: response.data.data.stats?.freshLeadsCount || 0,
+          withRulesCount: response.data.data.stats?.withRulesCount || 0
+        })
         setClusterStats(response.data.data.clusterStats || {})
-        setTotalLeads(response.data.data.total)
+        setFreshLeads(response.data.data.freshLeads || [])
+        setTotalLeads(response.data.data.stats?.total || 0)
       } else {
         message.error(response.data.message || 'Failed to fetch leads data')
       }
@@ -129,17 +146,46 @@ const DialerBucket = () => {
     }
   }
 
+  // Auto-refresh setup
+  useEffect(() => {
+    // Only setup auto-refresh for dialer view (not lead view)
+    if (!isLeadView && autoRefresh) {
+      // Clear any existing interval
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+      
+      // Set up new interval
+      intervalRef.current = setInterval(() => {
+        console.log('Auto-refreshing dialer data...')
+        fetchDialerData()
+      }, 10000) // 10 seconds
+      
+      console.log('Auto-refresh enabled (every 10 seconds)')
+    }
+    
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+        console.log('Auto-refresh disabled')
+      }
+    }
+  }, [isLeadView, autoRefresh]) // Re-run when view changes or autoRefresh toggles
+
   // Convert clusterStats object to array for table
   useEffect(() => {
     if (clusterStats && Object.keys(clusterStats).length > 0) {
       const tableData = Object.entries(clusterStats).map(([ruleName, stats]) => ({
         key: ruleName,
         ruleName: ruleName,
-        attempted: stats.attempted,
-        remarks1_4: stats.remarks1_4,
-        remarks5_7: stats.remarks5_7,
-        remarks7Plus: stats.remarks7Plus,
-        total: stats.total
+        fresh: stats.fresh || 0,
+        attempted: stats.attempted || 0,
+        remarks1_4: stats.remarks1_4 || 0,
+        remarks5_7: stats.remarks5_7 || 0,
+        remarks7Plus: stats.remarks7Plus || 0,
+        total: stats.total || 0
       }))
       setClusterStatsData(tableData)
     }
@@ -177,7 +223,7 @@ const DialerBucket = () => {
     try {
       const response = await axios.put(`${BASE_URL}/dialer/update-stage`,
         {
-          counsellorId: selectedCounsellor._id,
+          counsellorId: selectedCounsellor.key,
           stage: newStage
         },
         {
@@ -302,22 +348,13 @@ const DialerBucket = () => {
       }
     },
     {
-      title: 'Actions',
-      key: 'actions',
-      width: 120,
-      render: (_, record) => (
-        <Button
-          type="link"
-          icon={<EditOutlined />}
-          onClick={() => {
-            setSelectedCounsellor(record)
-            setNewStage(record.currentStage)
-            setUpdateModalVisible(true)
-          }}
-        >
-          Update
-        </Button>
-      )
+      title: 'Time in Stage',
+      dataIndex: 'timeSinceLastRemarkFormatted',
+      key: 'timeSinceLastRemarkFormatted',
+      width: 150,
+      render: (time) => {
+        return <span>{time || 'N/A'}</span>
+      }
     }
   ]
 
@@ -329,18 +366,35 @@ const DialerBucket = () => {
       key: 'ruleName',
       width: 200,
       render: (text) => (
-        <Tag color={text === 'Unassigned' ? 'default' : 'purple'} style={{ fontWeight: 500, fontSize: '14px' }}>
+        <Tag 
+          color={text === 'Fresh Leads' ? 'green' : text === 'Unassigned' ? 'default' : 'purple'} 
+          style={{ fontWeight: 500, fontSize: '14px' }}
+          icon={text === 'Fresh Leads' ? <RocketOutlined /> : null}
+        >
           {text}
         </Tag>
+      )
+    },
+    {
+      title: 'Fresh Leads',
+      dataIndex: 'fresh',
+      key: 'fresh',
+      width: 120,
+      align: 'center',
+      render: (count) => (
+        <Badge
+          count={count}
+          showZero
+          style={{ backgroundColor: count > 0 ? '#10b981' : '#9ca3af', fontSize: '14px' }}
+        />
       )
     },
     {
       title: 'Attempted',
       dataIndex: 'attempted',
       key: 'attempted',
-      width: 120,
+      width: 100,
       align: 'center',
-      sorter: (a, b) => a.attempted - b.attempted,
       render: (count) => (
         <Badge
           count={count}
@@ -353,9 +407,8 @@ const DialerBucket = () => {
       title: '1-4 Remarks',
       dataIndex: 'remarks1_4',
       key: 'remarks1_4',
-      width: 120,
+      width: 100,
       align: 'center',
-      sorter: (a, b) => a.remarks1_4 - b.remarks1_4,
       render: (count) => (
         <span style={{ color: '#3b82f6', fontWeight: 600, fontSize: '14px' }}>{count}</span>
       )
@@ -364,9 +417,8 @@ const DialerBucket = () => {
       title: '5-7 Remarks',
       dataIndex: 'remarks5_7',
       key: 'remarks5_7',
-      width: 120,
+      width: 100,
       align: 'center',
-      sorter: (a, b) => a.remarks5_7 - b.remarks5_7,
       render: (count) => (
         <span style={{ color: '#f59e0b', fontWeight: 600, fontSize: '14px' }}>{count}</span>
       )
@@ -375,9 +427,8 @@ const DialerBucket = () => {
       title: '7+ Remarks',
       dataIndex: 'remarks7Plus',
       key: 'remarks7Plus',
-      width: 120,
+      width: 100,
       align: 'center',
-      sorter: (a, b) => a.remarks7Plus - b.remarks7Plus,
       render: (count) => (
         <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '14px' }}>{count}</span>
       )
@@ -388,9 +439,72 @@ const DialerBucket = () => {
       key: 'total',
       width: 100,
       align: 'center',
-      sorter: (a, b) => a.total - b.total,
       render: (count) => (
         <Tag color="geekblue">{count}</Tag>
+      )
+    }
+  ]
+
+  // Fresh Leads Table Columns
+  const freshLeadsColumns = [
+    {
+      title: 'Student ID',
+      dataIndex: 'student_id',
+      key: 'student_id',
+      width: 150,
+      render: (text) => <span style={{ fontFamily: 'monospace' }}>{text}</span>
+    },
+    {
+      title: 'Student Name',
+      dataIndex: 'student_name',
+      key: 'student_name',
+      width: 200,
+      render: (text) => (
+        <Space>
+          <Avatar size="small" icon={<UserOutlined />} style={{ backgroundColor: '#10b981' }} />
+          <span>{text || 'N/A'}</span>
+        </Space>
+      )
+    },
+    {
+      title: 'Lead Score',
+      dataIndex: 'lead_score',
+      key: 'lead_score',
+      width: 100,
+      align: 'center',
+      render: (score) => (
+        <Tag color={score >= 70 ? 'green' : score >= 40 ? 'orange' : 'red'}>
+          {score || 0}
+        </Tag>
+      )
+    },
+    {
+      title: 'Source',
+      dataIndex: 'source',
+      key: 'source',
+      width: 120,
+      render: (source) => <Tag color="cyan">{source || 'N/A'}</Tag>
+    },
+    {
+      title: 'Created At',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 180,
+      render: (date) => new Date(date).toLocaleDateString()
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 100,
+      render: (_, record) => (
+        <Button 
+          type="link" 
+          size="small"
+          icon={<PhoneOutlined />}
+          onClick={() => message.info(`Call ${record.student_name || record.student_id}`)}
+        >
+          Call
+        </Button>
       )
     }
   ]
@@ -641,12 +755,29 @@ const DialerBucket = () => {
             </h2>
             <p style={{ color: '#6b7280', fontSize: '14px' }}>
               {isLeadView
-                ? 'Rule-wise breakdown of leads based on assignment rules'
+                ? `Rule-wise breakdown of leads (${leadsStats.total} total leads)`
                 : 'Manage and track counsellor call assignments'}
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {!isLeadView && (
+              <Tooltip title={autoRefresh ? "Auto-refresh is ON (every 10s)" : "Auto-refresh is OFF"}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }}>
+                  <Switch
+                    checked={autoRefresh}
+                    onChange={setAutoRefresh}
+                    checkedChildren={<PlayCircleOutlined />}
+                    unCheckedChildren={<PauseCircleOutlined />}
+                    style={{ backgroundColor: autoRefresh ? '#10b981' : '#9ca3af' }}
+                  />
+                  <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                    {autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh OFF'}
+                  </span>
+                </div>
+              </Tooltip>
+            )}
+            
             <Button
               type={!isLeadView ? "primary" : "default"}
               onClick={toggleView}
@@ -671,7 +802,7 @@ const DialerBucket = () => {
               onClick={handleRefresh}
               loading={loading}
             >
-              Refresh
+              Refresh {!isLeadView && autoRefresh && <span style={{ fontSize: '11px' }}>(Auto)</span>}
             </Button>
           </div>
         </div>
@@ -691,16 +822,30 @@ const DialerBucket = () => {
                 <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.pause}</div>
                 <div style={{ fontSize: '14px', opacity: 0.9 }}>Paused</div>
               </Card>
+              <Card style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', textAlign: 'center' }}>
+                <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.total}</div>
+                <div style={{ fontSize: '14px', opacity: 0.9 }}>Total Counsellors</div>
+              </Card>
             </div>
+            
+            {autoRefresh && (
+              <div style={{ marginBottom: '16px', padding: '8px 12px', backgroundColor: '#ecfdf5', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ClockCircleOutlined style={{ color: '#10b981' }} />
+                <span style={{ fontSize: '13px', color: '#065f46' }}>
+                  Auto-refreshing every 10 seconds
+                </span>
+              </div>
+            )}
+            
             <Table
               columns={dialerColumns}
               dataSource={dialerData}
-              rowKey="_id"
+              rowKey="key"
               loading={loading}
               pagination={{
                 current: currentPage,
                 pageSize: pageSize,
-                total: totalLeads,
+                total: dialerData.length,
                 onChange: (page, size) => {
                   setCurrentPage(page)
                   if (size !== pageSize) setPageSize(size)
@@ -719,11 +864,13 @@ const DialerBucket = () => {
             {/* Top Stats Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               <Card
-                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', textAlign: 'center' }}
+                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', textAlign: 'center', cursor: 'pointer' }}
+                onClick={() => leadsStats.freshLeadsCount > 0 && setFreshLeadsDrawerVisible(true)}
+                hoverable
               >
-                <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{leadsStats.fresh}</div>
+                <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{leadsStats.freshLeadsCount}</div>
                 <div style={{ fontSize: '14px', marginTop: '4px' }}>Fresh Leads</div>
-                <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>No remarks, not assigned</div>
+                <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>No remarks, no rule assignment</div>
               </Card>
               <Card
                 style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', textAlign: 'center' }}
@@ -732,6 +879,13 @@ const DialerBucket = () => {
                 <div style={{ fontSize: '14px', marginTop: '4px' }}>Attempted Leads</div>
                 <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>Has remarks, not assigned</div>
               </Card>
+              <Card
+                style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', textAlign: 'center' }}
+              >
+                <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{leadsStats.withRulesCount}</div>
+                <div style={{ fontSize: '14px', marginTop: '4px' }}>Rules Active</div>
+                <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '8px' }}>Distinct rules in use</div>
+              </Card>
             </div>
 
             {/* Active Filters */}
@@ -739,7 +893,7 @@ const DialerBucket = () => {
 
             {/* Rule-wise Breakdown Table */}
             <Spin spinning={loading}>
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '24px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
                   <TeamOutlined style={{ marginRight: '8px' }} />
                   Rule-wise Breakdown
@@ -753,18 +907,20 @@ const DialerBucket = () => {
                     emptyText: <Empty description="No rules found" />
                   }}
                   summary={(pageData) => {
+                    let totalFresh = 0
                     let totalAttempted = 0
                     let totalRemarks1_4 = 0
                     let totalRemarks5_7 = 0
                     let totalRemarks7Plus = 0
                     let totalTotal = 0
 
-                    pageData.forEach(({ attempted, remarks1_4, remarks5_7, remarks7Plus, total }) => {
-                      totalAttempted += attempted
-                      totalRemarks1_4 += remarks1_4
-                      totalRemarks5_7 += remarks5_7
-                      totalRemarks7Plus += remarks7Plus
-                      totalTotal += total
+                    pageData.forEach(({ fresh, attempted, remarks1_4, remarks5_7, remarks7Plus, total }) => {
+                      totalFresh += fresh || 0
+                      totalAttempted += attempted || 0
+                      totalRemarks1_4 += remarks1_4 || 0
+                      totalRemarks5_7 += remarks5_7 || 0
+                      totalRemarks7Plus += remarks7Plus || 0
+                      totalTotal += total || 0
                     })
 
                     return (
@@ -772,18 +928,21 @@ const DialerBucket = () => {
                         <Table.Summary.Row style={{ backgroundColor: '#f0f0f0', fontWeight: 'bold' }}>
                           <Table.Summary.Cell index={0}>Total</Table.Summary.Cell>
                           <Table.Summary.Cell index={1} align="center">
-                            <Badge count={totalAttempted} style={{ backgroundColor: '#f59e0b' }} />
+                            <Badge count={totalFresh} style={{ backgroundColor: '#10b981' }} />
                           </Table.Summary.Cell>
                           <Table.Summary.Cell index={2} align="center">
-                            <span style={{ color: '#3b82f6', fontWeight: 600 }}>{totalRemarks1_4}</span>
+                            <Badge count={totalAttempted} style={{ backgroundColor: '#f59e0b' }} />
                           </Table.Summary.Cell>
                           <Table.Summary.Cell index={3} align="center">
-                            <span style={{ color: '#f59e0b', fontWeight: 600 }}>{totalRemarks5_7}</span>
+                            <span style={{ color: '#3b82f6', fontWeight: 600 }}>{totalRemarks1_4}</span>
                           </Table.Summary.Cell>
                           <Table.Summary.Cell index={4} align="center">
-                            <span style={{ color: '#ef4444', fontWeight: 600 }}>{totalRemarks7Plus}</span>
+                            <span style={{ color: '#f59e0b', fontWeight: 600 }}>{totalRemarks5_7}</span>
                           </Table.Summary.Cell>
                           <Table.Summary.Cell index={5} align="center">
+                            <span style={{ color: '#ef4444', fontWeight: 600 }}>{totalRemarks7Plus}</span>
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell index={6} align="center">
                             <Tag color="geekblue">{totalTotal}</Tag>
                           </Table.Summary.Cell>
                         </Table.Summary.Row>
@@ -852,6 +1011,34 @@ const DialerBucket = () => {
         open={filterDrawerVisible}
       >
         {filterDrawerContent}
+      </Drawer>
+
+      {/* Fresh Leads Drawer */}
+      <Drawer
+        title={
+          <div>
+            <RocketOutlined style={{ marginRight: '8px', color: '#10b981' }} />
+            Fresh Leads Details
+            <Badge count={freshLeads.length} style={{ marginLeft: '12px', backgroundColor: '#10b981' }} />
+          </div>
+        }
+        placement="right"
+        width={800}
+        onClose={() => setFreshLeadsDrawerVisible(false)}
+        open={freshLeadsDrawerVisible}
+      >
+        <Table
+          columns={freshLeadsColumns}
+          dataSource={freshLeads}
+          rowKey="student_id"
+          pagination={{
+            pageSize: 10,
+            showTotal: (total) => `Total ${total} fresh leads`
+          }}
+          locale={{
+            emptyText: <Empty description="No fresh leads found" />
+          }}
+        />
       </Drawer>
     </div>
   )
