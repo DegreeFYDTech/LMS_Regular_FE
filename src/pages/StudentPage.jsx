@@ -59,7 +59,23 @@ const StudentPage = () => {
   const [openChatModal, setOpenChatModal] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  // After your existing CSL processing code (around line 50-60)
+  const preferredColleges = student?.lead_activities
+    .filter((activity) => activity.lead_type === "csl")
+    .flatMap((activity) => activity.preferred_college_cll || [])
+    .filter(Boolean);
 
+  const isCSL = student?.lead_activities?.some(
+    (activity) => activity.lead_type === "csl",
+  );
+
+  // Add this - create a display message
+  const collegeSpecificMessage =
+    isCSL && preferredColleges.length > 0
+      ? `This is College Specific Lead for ${preferredColleges.join(", ")}`
+      : isCSL
+        ? "This is College Specific Lead"
+        : null;
   const navigate = useNavigate();
 
   const updateStudentWindowStatus = async () => {
@@ -89,10 +105,10 @@ const StudentPage = () => {
     userRole === "Analyser"
       ? [{ key: "Tab1", label: "Profile", icon: User }]
       : [
-        { key: "Tab1", label: "Profile", icon: User },
-        { key: "Tab2", label: "Preferences", icon: Settings },
-        { key: "Tab3", label: "ShortList", icon: BookOpen },
-      ];
+          { key: "Tab1", label: "Profile", icon: User },
+          { key: "Tab2", label: "Preferences", icon: Settings },
+          { key: "Tab3", label: "ShortList", icon: BookOpen },
+        ];
   const [isAdmissionDone, setIsAdmissionDone] = useState(false);
 
   useEffect(() => {
@@ -268,8 +284,6 @@ const StudentPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-
       <div className="mx-auto p-4">
         {isAdmissionDone && (
           <div className="bg-gradient-to-r from-blue-600 to-blue-600 text-white px-6 py-3 rounded-lg  mb-4 flex items-center justify-between">
@@ -302,10 +316,11 @@ const StudentPage = () => {
                   <button
                     key={tab.key}
                     onClick={() => handleTabChange(tab.key)}
-                    className={`flex-1 flex items-center justify-center space-x-3 py-5 px-4 font-semibold transition-all duration-200 relative ${isActive
-                      ? "text-blue-600 bg-gradient-to-b from-blue-50 to-white"
-                      : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-                      }`}
+                    className={`flex-1 flex items-center justify-center space-x-3 py-5 px-4 font-semibold transition-all duration-200 relative ${
+                      isActive
+                        ? "text-blue-600 bg-gradient-to-b from-blue-50 to-white"
+                        : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+                    }`}
                   >
                     <Icon
                       className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-400"}`}
@@ -320,7 +335,22 @@ const StudentPage = () => {
             </nav>
           </div>
         )}
-
+{collegeSpecificMessage && (
+  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+    <div className="flex items-center justify-center">
+      <div className="flex-shrink-0">
+        <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+        </svg>
+      </div>
+      <div className="ml-3">
+        <p className="text-sm text-blue-700 text-center">
+          {collegeSpecificMessage}
+        </p>
+      </div>
+    </div>
+  </div>
+)}
         <div className="space-y-6">
           {activeTab === "Tab1" && (
             <div className="space-y-6">
@@ -636,7 +666,6 @@ const FloatingActionButtons = ({
       tooltip: isInWishlist ? "Remove from Wishlist" : "Add to Wishlist",
       loading: wishlistLoading,
     },
-
   ];
 
   return (
