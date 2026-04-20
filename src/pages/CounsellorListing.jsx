@@ -87,10 +87,10 @@ const UserListing = () => {
         // Add supervisor_name to each counsellor
         const formattedCounsellors = counsellors.map(counsellor => ({
           ...counsellor,
-          supervisor_name: counsellor.assigned_to ? supervisorMap[counsellor.assigned_to] || null : null
+          supervisor_name: counsellor.supervisor_name ? supervisorMap[counsellor.supervisor_name] || null : null
         }));
 
-        setUsers(formattedCounsellors);
+        setUsers(counsellors);
         setSupervisors(supervisorsList);
         setError(null);
       } catch (error) {
@@ -526,25 +526,17 @@ const confirmChangeSupervisor = async (supervisorId) => {
                           {displayStatus(user)}
                         </span>
                       </td>
-
+{console.log(user)}
                       {/* Supervisor */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {user.role === 'to' ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Supervisor
-                          </span>
-                        ) : user.supervisor_name ? (
+                    
                           <div className="flex items-center">
                             <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-2">
                               <UserCog className="h-4 w-4" />
                             </div>
-                            <span className="text-sm text-gray-900">{user.supervisor_name}</span>
+                            <span className="text-sm text-gray-900">{user.supervisor_name || 'Not Assigned'}</span>
                           </div>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            Not Assigned
-                          </span>
-                        )}
+                       
                       </td>
 
                       {/* Mode */}
