@@ -339,7 +339,7 @@ const UnifiedCallModal = ({
     isSupervisor
       ? false
       : currentStudentStatus === "NotInterested" ||
-        currentStudentStatus === "Fresh"
+          currentStudentStatus === "Fresh"
         ? false
         : isNotInterestedDone
           ? s !== "NotInterested"
@@ -457,6 +457,11 @@ const UnifiedCallModal = ({
   ]);
 
   const getEffectiveFunnel1 = () => {
+    // Prioritize toggle states over leadStatus.funnel1
+    if (isEnrDone) return "Enrolled";
+    if (isAdmissionDone) return "Admission";
+    if (isAppDone) return "Application";
+    if (isICCDone) return "Initial Counselling Completed";
     return leadStatus.funnel1;
   };
 
@@ -631,20 +636,28 @@ const UnifiedCallModal = ({
     }
 
     if (selectedAction === "Connected") {
-      if (!callbackDate || !callbackTime) return true;
-      const f = isEnrDone
-        ? "Enrolled"
-        : isAdmissionDone
-          ? "Admission"
-          : isAppDone
-            ? "Application"
-            : leadStatus.funnel1;
+      // Get effective status considering toggles
+      let effectiveStatus = leadStatus.funnel1;
+      if (isEnrDone) effectiveStatus = "Enrolled";
+      else if (isAdmissionDone) effectiveStatus = "Admission";
+      else if (isAppDone) effectiveStatus = "Application";
+      else if (isICCDone) effectiveStatus = "Initial Counselling Completed";
+
+      // Only require callback date/time if status is NOT Pre Application/Fresh
+      const isPreAppOrFresh =
+        effectiveStatus === "Pre Application" || effectiveStatus === "Fresh";
+
+      if (!isPreAppOrFresh && (!callbackDate || !callbackTime)) return true;
+
+      const f = effectiveStatus;
+
       if (
         f === "Admission" &&
         (isL3 || isSupervisor) &&
         (!feesAmount || Number(feesAmount) <= 0)
       )
         return true;
+
       if (
         !isTO &&
         needsCourseSelection() &&
@@ -652,7 +665,6 @@ const UnifiedCallModal = ({
       )
         return true;
 
-      // Fixed: Call validateCredentialForm without setState
       if (shouldShowCredentialFields() && !validateCredentialForm())
         return true;
       if (isAppDone && !leadStatus.funnel2) return true;
@@ -906,10 +918,11 @@ const UnifiedCallModal = ({
                       onClick={() =>
                         a.handler({ target: { checked: !a.checked } })
                       }
-                      className={`w-full group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-300 font-semibold text-left ${a.checked
-                        ? `bg-white border-${a.color}-500 text-${a.color}-600  `
-                        : "bg-white border-white hover:border-slate-200 text-slate-500 hover:text-slate-600"
-                        }`}
+                      className={`w-full group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-300 font-semibold text-left ${
+                        a.checked
+                          ? `bg-white border-${a.color}-500 text-${a.color}-600  `
+                          : "bg-white border-white hover:border-slate-200 text-slate-500 hover:text-slate-600"
+                      }`}
                     >
                       <div
                         className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-transform duration-300 ${a.checked ? `bg-${a.color}-500 ` : "border-slate-200 "}`}
@@ -1144,19 +1157,21 @@ const UnifiedCallModal = ({
                   <div className="flex gap-4">
                     <button
                       onClick={() => setSelectedAction("Connected")}
-                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${selectedAction === "Connected"
-                        ? "bg-emerald-50 border-emerald-500 text-emerald-700"
-                        : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                        }`}
+                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${
+                        selectedAction === "Connected"
+                          ? "bg-emerald-50 border-emerald-500 text-emerald-700"
+                          : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                      }`}
                     >
                       Connected
                     </button>
                     <button
                       onClick={() => setSelectedAction("Not Connected")}
-                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${selectedAction === "Not Connected"
-                        ? "bg-slate-800 border-slate-800 text-white"
-                        : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                        }`}
+                      className={`flex-1 group flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 font-bold ${
+                        selectedAction === "Not Connected"
+                          ? "bg-slate-800 border-slate-800 text-white"
+                          : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                      }`}
                     >
                       Not Connected
                     </button>
@@ -1208,14 +1223,15 @@ const UnifiedCallModal = ({
                             setUserName(e.target.value);
                           }}
                           placeholder={getUsernamePlaceholder()}
-                          className={`w-full p-3 bg-white border rounded-xl outline-none font-medium transition-all ${userName &&
+                          className={`w-full p-3 bg-white border rounded-xl outline-none font-medium transition-all ${
+                            userName &&
                             !validateUsernameFormat(
                               userName,
                               getCollegeType(selectedUniversity),
                             )
-                            ? "border-red-500 bg-red-50 focus:border-red-600"
-                            : "border-black-100 focus:border-black-400"
-                            }`}
+                              ? "border-red-500 bg-red-50 focus:border-red-600"
+                              : "border-black-100 focus:border-black-400"
+                          }`}
                         />
                       </div>
                       <div>
@@ -1274,50 +1290,73 @@ const UnifiedCallModal = ({
                         </select>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-8">
-                        <div>
-                          <Label required>Next Follow-up Date</Label>
-                          <input
-                            type="date"
-                            value={
-                              callbackDate
-                                ? callbackDate.format("YYYY-MM-DD")
-                                : ""
-                            }
-                            onChange={(e) =>
-                              setCallbackDate(
-                                e.target.value ? dayjs(e.target.value) : null,
-                              )
-                            }
-                            min={dayjs().format("YYYY-MM-DD")}
-                            className="w-full p-3.5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-400 transition-all font-semibold text-slate-600"
-                          />
-                        </div>
-                        <div>
-                          <Label required>Preferred Time Slot</Label>
-                          <select
-                            value={callbackTime || ""}
-                            onChange={(e) => setCallbackTime(e.target.value)}
-                            disabled={!callbackDate}
-                            className={`w-full p-3.5 bg-white border-2 rounded-2xl outline-none transition-all font-semibold ${!callbackDate
-                              ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
-                              : "border-slate-100 focus:border-blue-400 text-slate-600"
-                              }`}
-                          >
-                            <option value="">
-                              {callbackDate
-                                ? "Select Time Slot"
-                                : "Please select date first"}
-                            </option>
-                            {callbackDate &&
-                              generateTimeSlots().map((s) => (
-                                <option key={s.value} value={s.value}>
-                                  {s.display}
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-                      </div>
+                      // Get effective status considering toggles
+                      (() => {
+                        let effectiveStatus = leadStatus.funnel1;
+                        if (isEnrDone) effectiveStatus = "Enrolled";
+                        else if (isAdmissionDone) effectiveStatus = "Admission";
+                        else if (isAppDone) effectiveStatus = "Application";
+                        else if (isICCDone)
+                          effectiveStatus = "Initial Counselling Completed";
+
+                        const isPreAppOrFresh =
+                          effectiveStatus === "Pre Application" ||
+                          effectiveStatus === "Fresh";
+
+                        return (
+                          !isPreAppOrFresh && (
+                            <div className="grid grid-cols-2 gap-8">
+                              <div>
+                                <Label required>Next Follow-up Date</Label>
+                                <input
+                                  type="date"
+                                  value={
+                                    callbackDate
+                                      ? callbackDate.format("YYYY-MM-DD")
+                                      : ""
+                                  }
+                                  onChange={(e) =>
+                                    setCallbackDate(
+                                      e.target.value
+                                        ? dayjs(e.target.value)
+                                        : null,
+                                    )
+                                  }
+                                  min={dayjs().format("YYYY-MM-DD")}
+                                  className="w-full p-3.5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-400 transition-all font-semibold text-slate-600"
+                                />
+                              </div>
+                              <div>
+                                <Label required>Preferred Time Slot</Label>
+                                <select
+                                  value={callbackTime || ""}
+                                  onChange={(e) =>
+                                    setCallbackTime(e.target.value)
+                                  }
+                                  disabled={!callbackDate}
+                                  className={`w-full p-3.5 bg-white border-2 rounded-2xl outline-none transition-all font-semibold ${
+                                    !callbackDate
+                                      ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
+                                      : "border-slate-100 focus:border-blue-400 text-slate-600"
+                                  }`}
+                                >
+                                  <option value="">
+                                    {callbackDate
+                                      ? "Select Time Slot"
+                                      : "Please select date first"}
+                                  </option>
+                                  {callbackDate &&
+                                    generateTimeSlots().map((s) => (
+                                      <option key={s.value} value={s.value}>
+                                        {s.display}
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
+                            </div>
+                          )
+                        );
+                      })()
                     )}
                   </div>
                 )}
@@ -1349,7 +1388,8 @@ const UnifiedCallModal = ({
               key="y"
               onClick={() => {
                 onClose();
-                const activeTab = localStorage.getItem("l2_active_tab") || "fresh";
+                const activeTab =
+                  localStorage.getItem("l2_active_tab") || "fresh";
                 if (activeTab === "fresh") {
                   navigate("/?page=1&limit=10&freshLeads=Fresh&data=l2");
                 } else {

@@ -63,12 +63,15 @@ const RuleForm = ({
     preferred_specialization: 'Specialization',
     preferred_stream: 'Stream',
     preferred_city: 'City',
-    preferred_state: 'State'
+    preferred_state: 'State',
+    source: 'Source',
+    campaign_name: 'Campaign Name'
   };
 
   const fieldGroups = [
     { title: 'Academic Criteria', fields: ['preferred_university', 'preferred_degree', 'preferred_specialization', 'preferred_stream'] },
-    { title: 'Location Criteria', fields: ['preferred_city', 'preferred_state'] }
+    { title: 'Location Criteria', fields: ['preferred_city', 'preferred_state'] },
+    { title: 'Marketing Criteria', fields: ['source', 'campaign_name'] }
   ];
 
   const currentScoreType = rule?.score_type || 'numeric';
@@ -118,7 +121,27 @@ const RuleForm = ({
 
       <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Scoring Configuration</Divider>
 
-   
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        <Form.Item label={<Text strong>Score Type</Text>}>
+          <Radio.Group
+            value={rule?.score_type || 'numeric'}
+            onChange={(e) => handleScoreTypeChange(e.target.value)}
+          >
+            <Radio value="numeric">Numeric Score</Radio>
+            <Radio value="percentage">Percentage</Radio>
+          </Radio.Group>
+        </Form.Item>
+
+        <Form.Item label={<Text strong>Score Value</Text>}>
+          <InputNumber
+            style={{ width: '100%' }}
+            size="large"
+            {...scoreValueProps}
+            value={currentScoreValue}
+            onChange={handleScoreValueChange}
+          />
+        </Form.Item>
+      </div>
 
       <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Iteration Limits</Divider>
 

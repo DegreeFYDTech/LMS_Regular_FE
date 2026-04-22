@@ -55,6 +55,8 @@ const LeadAssignmentRules = () => {
       preferred_stream: [],
       preferred_city: [],
       preferred_state: [],
+      source: [],        // Added source
+      campaign_name: [], // Added campaign_name
     },
     assigned_counsellor_ids: [],
     is_active: true,
@@ -74,6 +76,8 @@ const LeadAssignmentRules = () => {
     preferred_stream: ["Any"],
     preferred_city: ["Any"],
     preferred_state: ["Any"],
+    source: ["Any"],        // Added source
+    campaign_name: ["Any"], // Added campaign_name
     counsellors: [],
   });
 
@@ -120,7 +124,48 @@ const LeadAssignmentRules = () => {
   };
 
   const loadLeadOptions = async () => {
-    // Lead options for source/mode are no longer needed
+    try {
+      const leadDegree = await fetchLeadOptions();
+      console.log("Full response:", leadDegree);
+      console.log("Source data:", leadDegree.data?.source);
+      console.log("Campaign name data:", leadDegree.data?.campaign_name);
+      
+      // Process sources
+      let sources = ["Any"];
+      if (leadDegree.data?.source && Array.isArray(leadDegree.data.source)) {
+        sources = ["Any", ...leadDegree.data.source];
+      } else if (leadDegree.data?.sources && Array.isArray(leadDegree.data.sources)) {
+        sources = ["Any", ...leadDegree.data.sources];
+      }
+      
+      // Process campaign names
+      let campaignNames = ["Any"];
+      if (leadDegree.data?.campaign_name && Array.isArray(leadDegree.data.campaign_name)) {
+        campaignNames = ["Any", ...leadDegree.data.campaign_name];
+      } else if (leadDegree.data?.utm_campaign && Array.isArray(leadDegree.data.utm_campaign)) {
+        campaignNames = ["Any", ...leadDegree.data.utm_campaign];
+      } else if (leadDegree.data?.campaigns && Array.isArray(leadDegree.data.campaigns)) {
+        campaignNames = ["Any", ...leadDegree.data.campaigns];
+      }
+      
+      setOptions((prev) => ({
+        ...prev,
+        source: sources,
+        campaign_name: campaignNames,
+      }));
+      
+      console.log("Updated options sources:", sources);
+      console.log("Updated options campaign names:", campaignNames);
+      
+    } catch (error) {
+      console.error("Error loading lead options:", error);
+      // Fallback options
+      setOptions((prev) => ({
+        ...prev,
+        source: ["Any", "Google", "Facebook", "Instagram", "LinkedIn", "Twitter", "Direct", "Referral"],
+        campaign_name: ["Any", "Summer Campaign", "Winter Campaign", "Festival Campaign", "Weekend Campaign"],
+      }));
+    }
   };
 
   const loadFilterOptions = async () => {
@@ -183,6 +228,8 @@ const LeadAssignmentRules = () => {
       "preferred_degree",
       "preferred_specialization",
       "preferred_stream",
+      "source",     
+      "campaign_name",   
     ];
 
     Object.keys(payload.conditions).forEach((key) => {
@@ -281,8 +328,6 @@ const LeadAssignmentRules = () => {
     }
   };
 
-
-
   const handleEditRule = (rule) => {
     const editRule = {
       ...rule,
@@ -306,6 +351,8 @@ const LeadAssignmentRules = () => {
         preferred_stream: [],
         preferred_city: [],
         preferred_state: [],
+        source: [],        // Added source
+        campaign_name: [], // Added campaign_name
       },
       assigned_counsellor_ids: [],
       is_active: true,
