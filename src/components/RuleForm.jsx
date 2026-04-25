@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Input, Select, Divider, Typography, Space, InputNumber, Radio } from 'antd';
+import { Form, Input, Select, Divider, Typography, Space } from 'antd';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -28,162 +28,37 @@ const RuleForm = ({
     }));
   };
 
-  const handleScoreTypeChange = (value) => {
-    onRuleChange(prev => ({
-      ...prev,
-      score_type: value,
-      score_value: value === 'percentage' ? 0 : 0
-    }));
-  };
-
-  const handleScoreValueChange = (value) => {
-    onRuleChange(prev => ({
-      ...prev,
-      score_value: value
-    }));
-  };
-
-  const handleDailyIterationLimitChange = (value) => {
-    onRuleChange(prev => ({
-      ...prev,
-      daily_iteration_limit: value || 0
-    }));
-  };
-
-  const handleTotalIterationLimitChange = (value) => {
-    onRuleChange(prev => ({
-      ...prev,
-      total_iteration_limit: value || 0
-    }));
-  };
-
   const fieldDisplayNames = {
-    preferred_university: 'University',
-    preferred_degree: 'Degree',
-    preferred_specialization: 'Specialization',
-    preferred_stream: 'Stream',
-    preferred_city: 'City',
-    preferred_state: 'State',
+    utmCampaign: 'UTM Campaign',
+    first_source_url: 'Domain URLs',
     source: 'Source',
-    campaign_name: 'Campaign Name'
+    mode: 'Mode',
+    preferred_budget: 'Budget Range (₹)',
+    current_profession: 'Current Profession',
+    preferred_level: 'Preferred Level',
+    preferred_degree: 'Preferred Degree',
+    preferred_specialization: 'Preferred Specialization',
+    preferred_city: 'Preferred City',
+    preferred_state: 'Preferred State'
   };
 
   const fieldGroups = [
-    { title: 'Academic Criteria', fields: ['preferred_university', 'preferred_degree', 'preferred_specialization', 'preferred_stream'] },
-    { title: 'Location Criteria', fields: ['preferred_city', 'preferred_state'] },
-    { title: 'Marketing Criteria', fields: ['source', 'campaign_name'] }
+    { title: 'Source & Campaign', fields: ['first_source_url', 'utmCampaign', 'source', 'mode'] },
+    { title: 'Location Preferences', fields: ['preferred_state', 'preferred_city'] },
+    { title: 'Education Background', fields: ['preferred_degree', 'preferred_specialization', 'preferred_level'] },
+    { title: 'Others', fields: ['preferred_budget', 'current_profession'] }
   ];
-
-  const currentScoreType = rule?.score_type || 'numeric';
-  const currentScoreValue = rule?.score_value !== undefined ? rule.score_value : 0;
-
-  const getScoreValueProps = () => {
-    if (currentScoreType === 'percentage') {
-      return {
-        min: 0,
-        max: 100,
-        placeholder: 'Enter percentage (0-100)',
-        formatter: (value) => `${value}%`,
-        parser: (value) => value.replace('%', ''),
-      };
-    } else {
-      return {
-        min: -100,
-        max: 500,
-        placeholder: 'Enter score (-100 to 500)',
-      };
-    }
-  };
-
-  const scoreValueProps = getScoreValueProps();
 
   return (
     <Form layout="vertical">
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
-        <Form.Item label={<Text strong>Rule Name</Text>} required>
-          <Input
-            size="large"
-            value={rule?.custom_rule_name || ''}
-            onChange={(e) => onRuleChange(prev => ({ ...prev, custom_rule_name: e.target.value }))}
-            placeholder="e.g., High Budget Bachelors"
-          />
-        </Form.Item>
-        <Form.Item label={<Text strong>Priority</Text>} tooltip="Higher number means higher priority for lead assignment">
-          <InputNumber
-            size="large"
-            style={{ width: '100%' }}
-            min={0}
-            value={rule?.priority || 0}
-            onChange={(val) => onRuleChange(prev => ({ ...prev, priority: val || 0 }))}
-          />
-        </Form.Item>
-      </div>
-
-      <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Scoring Configuration</Divider>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-        <Form.Item label={<Text strong>Score Type</Text>}>
-          <Radio.Group
-            value={rule?.score_type || 'numeric'}
-            onChange={(e) => handleScoreTypeChange(e.target.value)}
-          >
-            <Radio value="numeric">Numeric Score</Radio>
-            <Radio value="percentage">Percentage</Radio>
-          </Radio.Group>
-        </Form.Item>
-
-        <Form.Item label={<Text strong>Score Value</Text>}>
-          <InputNumber
-            style={{ width: '100%' }}
-            size="large"
-            {...scoreValueProps}
-            value={currentScoreValue}
-            onChange={handleScoreValueChange}
-          />
-        </Form.Item>
-      </div>
-
-      <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Iteration Limits</Divider>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-        <Form.Item 
-          label={<Text strong>Daily Iteration Limit</Text>} 
-          tooltip="Maximum number of times this rule can assign leads per day (0 = unlimited)"
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            size="large"
-            min={0}
-            value={rule?.daily_iteration_limit || 0}
-            onChange={handleDailyIterationLimitChange}
-            placeholder="Enter daily limit"
-          />
-          <div style={{ marginTop: '8px' }}>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              {rule?.daily_iteration_limit === 0 ? 'Unlimited' : `${rule?.daily_iteration_limit} assignments per day`}
-            </Text>
-          </div>
-        </Form.Item>
-
-        <Form.Item 
-          label={<Text strong>Total Iteration Limit</Text>} 
-          tooltip="Maximum total number of times this rule can assign leads overall (0 = unlimited)"
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            size="large"
-            min={0}
-            value={rule?.total_iteration_limit || 0}
-            onChange={handleTotalIterationLimitChange}
-            placeholder="Enter total limit"
-          />
-          <div style={{ marginTop: '8px' }}>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              {rule?.total_iteration_limit === 0 ? 'Unlimited' : `${rule?.total_iteration_limit} total assignments`}
-            </Text>
-          </div>
-        </Form.Item>
-      </div>
+      <Form.Item label={<Text strong>Rule Name</Text>} required>
+        <Input
+          size="large"
+          value={rule?.custom_rule_name || ''}
+          onChange={(e) => onRuleChange(prev => ({ ...prev, custom_rule_name: e.target.value }))}
+          placeholder="e.g., High Budget Bachelors"
+        />
+      </Form.Item>
 
       <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Filter Conditions</Divider>
 

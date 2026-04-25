@@ -66,7 +66,6 @@ const Navbar = () => {
   // WhatsApp chat modal states
   const [openChatModal, setOpenChatModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [l2ActiveTab, setL2ActiveTab] = useState(localStorage.getItem("l2_active_tab") || "fresh");
 
   const { user, role } = useSelector((state) => state.auth);
   const storedRole = localStorage.getItem("role");
@@ -270,14 +269,6 @@ const Navbar = () => {
       };
     }
   }, [user, role, api]);
-
-  useEffect(() => {
-    const handleL2TabChange = (e) => {
-      setL2ActiveTab(e.detail);
-    };
-    window.addEventListener("l2TabChange", handleL2TabChange);
-    return () => window.removeEventListener("l2TabChange", handleL2TabChange);
-  }, []);
 
   useEffect(() => {
     const checkRemarkTime = () => {
@@ -599,44 +590,7 @@ const Navbar = () => {
                 />
               </Link>
             </div>
-            {role === "l2" && (
-              <div className="ml-6 flex items-center">
-                <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200 shadow-inner gap-1">
-                  <button
-                    onClick={() => {
-                      localStorage.setItem("l2_active_tab", "fresh");
-                      setL2ActiveTab("fresh");
-                      window.dispatchEvent(new CustomEvent("l2TabChange", { detail: "fresh" }));
-                    }}
-                    className={`
-                      flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all duration-300
-                      ${l2ActiveTab === "fresh"
-                        ? "bg-white text-blue-600 shadow-md ring-1 ring-blue-100 scale-105"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}
-                    `}
-                  >
-                    <PhoneOutlined className={l2ActiveTab === "fresh" ? "text-blue-500" : ""} />
-                    Fresh Leads
-                  </button>
-                  <button
-                    onClick={() => {
-                      localStorage.setItem("l2_active_tab", "callback");
-                      setL2ActiveTab("callback");
-                      window.dispatchEvent(new CustomEvent("l2TabChange", { detail: "callback" }));
-                    }}
-                    className={`
-                      flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all duration-300
-                      ${l2ActiveTab === "callback"
-                        ? "bg-white text-emerald-600 shadow-md ring-1 ring-emerald-100 scale-105"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}
-                    `}
-                  >
-                    <ClockCircleOutlined className={l2ActiveTab === "callback" ? "text-emerald-500" : ""} />
-                    Callbacks
-                  </button>
-                </div>
-              </div>
-            )}
+
             <div className="hidden md:flex items-center space-x-4">
               {role !== "Supervisor" && role !== "Analyser" && (
                 <Tooltip title="Refresh Notifications">
@@ -651,16 +605,11 @@ const Navbar = () => {
               )}
 
               {role !== "Supervisor" &&
-              !window.location.pathname.includes('student') &&
                 role !== "Analyser" &&
-                role !== "to" && (
-                  <BreakModel 
-                    disabled={l2ActiveTab === "fresh" && role === "l2"} 
-                  />
-                )}
+                role !== "to" && <BreakModel />}
 
               {/* Website Chat for Everyone including Supervisors */}
-              {role !== "to" && (
+              {(role !== "to") && (
                 <Tooltip title="Website Chat">
                   <Badge
                     count={chatUnreadCount}

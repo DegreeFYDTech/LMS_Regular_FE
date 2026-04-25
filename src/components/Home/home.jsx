@@ -1,31 +1,28 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { BASE_URL } from "../../config/api";
-import Sidebar from "../SideBar";
-import { useSelector } from "react-redux";
-import { fetchAllCounsellors } from "../../network/counsellor";
-import StatsComponent from "../StatsComponent";
-import StreamlinedFilters from "../AdvanceFilters";
-import { useLeadsData } from "../hooks/useLeadsData";
-import { useFilters } from "../hooks/useFilters";
-import useURLSync from "../hooks/useURLSync";
-import Header from "./Header";
-import LeadsTable from "./LeadsTable";
-import ModalsContainer from "./ModalsContainer";
-import { secureCache } from "../../utils/cache";
-import { cleanQueryParams } from "../../utils/cleanParams";
-import { Phone, Clock, X, RefreshCw, LayoutGrid } from "lucide-react";
 
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { BASE_URL } from '../../config/api';
+import Sidebar from '../SideBar';
+import { useSelector } from 'react-redux';
+import { fetchAllCounsellors } from '../../network/counsellor';
+import StatsComponent from '../StatsComponent';
+import StreamlinedFilters from '../AdvanceFilters';
+import { useLeadsData } from '../hooks/useLeadsData';
+import { useFilters } from '../hooks/useFilters';
+import useURLSync from '../hooks/useURLSync';
+import Header from './Header';
+import LeadsTable from './LeadsTable';
+import ModalsContainer from './ModalsContainer';
+import AdvancedFilter from './AdvancedFilter';
+import { secureCache } from '../../utils/cache';
+import { cleanQueryParams } from '../../utils/cleanParams'
 const HomePage = memo(() => {
   const { searchParams, parseFiltersFromURL, updateURL } = useURLSync();
   const navigate = useNavigate();
-  const [callbackType, setCallbackType] = useState("");
+  const [callbackType, setCallbackType] = useState("")
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState(() => {
-    const savedTab = localStorage.getItem("l2_active_tab");
-    return savedTab || "fresh";
-  });
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [currentPage, setCurrentPage] = useState(1);
   const [agents, setAgents] = useState([]);
   const [agent, setAgent] = useState(() => {
@@ -43,49 +40,39 @@ const HomePage = memo(() => {
   const [openChatModal, setOpenChatModel] = useState(false);
   const [isAssignedtoL2, setIsAssignedtoL2] = useState(false);
   const [isAssignedtoL3, setIsAssignedtoL3] = useState(false);
-
-  // L2 specific state
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState([]);
 
   const roletosend = useSelector((state) => state.auth.user);
   const storedRole = useSelector((state) => state.auth.role);
 
   const activeRole = useMemo(() => {
-    return (
-      agent?.role || (storedRole !== "Supervisor" ? storedRole : null) || "l2"
-    );
+    return agent?.role || (storedRole !== "Supervisor" ? storedRole : null) || "l2";
   }, [agent?.role, storedRole]);
-  const [leadsPerPage, setLeadsPerPage] = useState(10);
+  const [leadsPerPage, setLeadsPerPage] = useState(10); // Default to 10
 
-  const { leads, loading, totalLeads, totalPages, overallStats, fetchLeads } =
-    useLeadsData(roletosend);
-  const { filters, getTabAutoFilters, updateFilters, clearFilters } =
-    useFilters(activeRole, roletosend, agent);
-
-  useEffect(() => {
-    if (storedRole === "l2") {
-      localStorage.setItem("l2_active_tab", activeTab);
-    }
-  }, [activeTab, storedRole]);
-
-
-
+  const { leads, loading, totalLeads, totalPages, overallStats, fetchLeads } = useLeadsData(roletosend);
+  const { filters, getTabAutoFilters, updateFilters, clearFilters } = useFilters(activeRole, roletosend, agent);
   useEffect(() => {
     const urlFilters = parseFiltersFromURL();
     const pageFromURL = urlFilters.page || 1;
     const limitFromURL = urlFilters.limit || 10;
 
     updateFilters(urlFilters);
-    setCurrentPage(Number(pageFromURL));
-    setLeadsPerPage(Number(limitFromURL));
+    setCurrentPage(Number(pageFromURL)); 
+    setLeadsPerPage(Number(limitFromURL)); 
+    
+    // Sync advanced filters if present in URL
+    if (urlFilters.advancedFilters) {
+      setAdvancedFilters(urlFilters.advancedFilters);
+    }
 
     const autoFilters = getTabAutoFilters(activeTab);
     const combinedFilters = {
       ...autoFilters,
       ...urlFilters,
-      page: Number(pageFromURL),
-      limit: Number(limitFromURL),
+      page: Number(pageFromURL), // Convert to number
+      limit: Number(limitFromURL) // Convert to number
     };
 
     fetchLeads(combinedFilters, pageFromURL, true);
@@ -101,111 +88,69 @@ const HomePage = memo(() => {
     }
   }, []);
 
-  const toggleStats = useCallback(async () => {
-    try {
-      console.log("Toggling stats for tab:", activeTab);
-
-      const response = await axios.post(
-        `${BASE_URL}/counsellor/updatedialerStatus`,
-        { stage: activeTab },
-        { withCredentials: true },
-      );
-
-      if (response.data.success) {
-        message.success(`Successfully updated to ${activeTab} stage`);
-      }
-    } catch (error) {
-      console.error("Error updating dialer status:", error);
-      message.error(error.response?.data?.message || "Failed to update stage");
-    }
-  }, [activeTab]);
-
   useEffect(() => {
-    if (
-      storedRole === "Supervisor" ||
-      storedRole === "to" ||
-      storedRole === "l2" ||
-      storedRole === "to_l3"
-    ) {
+    if (storedRole === "Supervisor" || storedRole === "to" || storedRole === "to_l3") {
       fetchAgents();
-      toggleStats();
     }
-  }, [storedRole, fetchAgents,activeTab]);
+  }, [storedRole, fetchAgents]);
 
-  const handleTabChange = useCallback(
-    (tab) => {
-      if (tab === activeTab) return;
-      setActiveTab(tab);
-      setCurrentPage(1);
-      setLeadsPerPage(10);
+  const handleTabChange = useCallback((tab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    setCurrentPage(1);
+    setLeadsPerPage(10); // Reset to default limit
 
-      const autoFilters = getTabAutoFilters(tab);
-      const filtersWithPagination = {
-        ...autoFilters,
-        selectedagent: filters.selectedagent || autoFilters.selectedagent,
-        page: 1,
-        limit: 10,
-      };
-      updateFilters(filtersWithPagination);
-      fetchLeads(filtersWithPagination, 1, true);
-      updateURL(filtersWithPagination, true);
+    // If you added setCurrentTab to useFilters, call it here
+    // setCurrentTab(tab); // Uncomment if you want to track tab in useFilters
 
-      setIsViewModalOpen(false);
-    },
-    [activeTab, getTabAutoFilters, updateFilters, fetchLeads, updateURL],
-  );
-
-  useEffect(() => {
-    const handleL2TabChange = (e) => {
-      handleTabChange(e.detail);
+    const autoFilters = getTabAutoFilters(tab);
+    const filtersWithPagination = {
+      ...autoFilters,
+      selectedagent: filters.selectedagent || autoFilters.selectedagent,
+      page: 1,
+      limit: 10 // Default limit
     };
-    window.addEventListener("l2TabChange", handleL2TabChange);
-    return () => window.removeEventListener("l2TabChange", handleL2TabChange);
-  }, [handleTabChange]);
+    updateFilters(filtersWithPagination);
+    fetchLeads(filtersWithPagination, 1, true);
+    updateURL(filtersWithPagination, true);
+  }, [activeTab, getTabAutoFilters, updateFilters, fetchLeads, updateURL]);
 
-  const handleFilterChange = useCallback(
-    (key, value, previousFilters) => {
-      const newFilters =
-        key === "bulk"
-          ? {
-              ...value,
-              data: value.data || filters.data || activeRole,
-              selectedagent: value.selectedagent || filters.selectedagent,
-              page: 1,
-              limit: leadsPerPage,
-            }
-          : {
-              ...previousFilters,
-              [key]: value,
-              data: filters.data || activeRole,
-              page: 1,
-              limit: leadsPerPage,
-            };
-
-      updateFilters(newFilters);
-      setCurrentPage(1);
-      updateURL(newFilters);
-      fetchLeads(newFilters, 1, true);
-    },
-    [filters, activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads],
-  );
-
-  const handleApplyFilters = useCallback(
-    (newFilters) => {
-      const filtersWithDataAndPagination = {
-        ...newFilters,
-        data: newFilters.data || filters.data || activeRole,
+  const handleFilterChange = useCallback((key, value, previousFilters) => {
+    const newFilters = key === 'bulk' ?
+      {
+        ...value,
+        data: value.data || filters.data || activeRole,
+        selectedagent: value.selectedagent || filters.selectedagent,
         page: 1,
-        limit: leadsPerPage,
+        limit: leadsPerPage
+      } :
+      {
+        ...previousFilters,
+        [key]: value,
+        data: filters.data || activeRole,
+        page: 1, // Reset to page 1 on filter change
+        limit: leadsPerPage // Keep current limit
       };
 
-      updateFilters(filtersWithDataAndPagination);
-      setCurrentPage(1);
-      updateURL(filtersWithDataAndPagination, true);
-      fetchLeads(filtersWithDataAndPagination, 1, true);
-    },
-    [filters, activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads],
-  );
+    updateFilters(newFilters);
+    setCurrentPage(1);
+    updateURL(newFilters);
+    fetchLeads(newFilters, 1, true);
+  }, [filters, activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads]);
+
+  const handleApplyFilters = useCallback((newFilters) => {
+    const filtersWithDataAndPagination = {
+      ...newFilters,
+      data: newFilters.data || filters.data || activeRole,
+      page: 1, // Reset to page 1 when applying filters
+      limit: leadsPerPage // Keep current limit
+    };
+
+    updateFilters(filtersWithDataAndPagination);
+    setCurrentPage(1);
+    updateURL(filtersWithDataAndPagination, true);
+    fetchLeads(filtersWithDataAndPagination, 1, true);
+  }, [filters, activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads]);
 
   const handleClearFilters = useCallback(() => {
     const clearedFilters = clearFilters(activeTab);
@@ -213,7 +158,7 @@ const HomePage = memo(() => {
       ...clearedFilters,
       selectedagent: filters.selectedagent,
       page: 1,
-      limit: leadsPerPage,
+      limit: leadsPerPage // Keep current limit
     };
 
     setCurrentPage(1);
@@ -221,32 +166,55 @@ const HomePage = memo(() => {
     fetchLeads(filtersWithPagination, 1, true);
   }, [clearFilters, activeTab, leadsPerPage, updateURL, fetchLeads]);
 
-  const handleAgentClick = useCallback(
-    (selectedAgent) => {
-      try {
-        localStorage.setItem("agent", JSON.stringify(selectedAgent));
-        setAgent(selectedAgent);
+  const handleApplyAdvancedFilters = useCallback((filtersArray) => {
+    setAdvancedFilters(filtersArray);
+    const updatedFilters = {
+      ...filters,
+      advancedFilters: filtersArray,
+      page: 1
+    };
+    updateFilters(updatedFilters);
+    setCurrentPage(1);
+    updateURL(updatedFilters, true);
+    fetchLeads(updatedFilters, 1, true);
+  }, [filters, updateFilters, updateURL, fetchLeads]);
 
-        const updatedFilters = {
-          ...filters,
-          selectedagent: selectedAgent.counsellor_id,
-          data: selectedAgent.role || activeRole,
-          page: 1,
-          limit: leadsPerPage,
-        };
+  const handleClearAdvancedFilters = useCallback(() => {
+    setAdvancedFilters([]);
+    const updatedFilters = {
+      ...filters,
+      advancedFilters: [],
+      page: 1
+    };
+    updateFilters(updatedFilters);
+    setCurrentPage(1);
+    updateURL(updatedFilters, true);
+    fetchLeads(updatedFilters, 1, true);
+  }, [filters, updateFilters, updateURL, fetchLeads]);
 
-        updateFilters(updatedFilters);
-        setCurrentPage(1);
-        updateURL(updatedFilters, true);
-        fetchLeads(updatedFilters, 1, true);
+  const handleAgentClick = useCallback((selectedAgent) => {
+    try {
+      localStorage.setItem("agent", JSON.stringify(selectedAgent));
+      setAgent(selectedAgent);
 
-        secureCache.clear();
-      } catch (error) {
-        console.error("Error updating agent:", error);
-      }
-    },
-    [activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads, filters],
-  );
+      const updatedFilters = {
+        ...filters,
+        selectedagent: selectedAgent.counsellor_id,
+        data: selectedAgent.role || activeRole,
+        page: 1, // Reset to page 1
+        limit: leadsPerPage // Keep current limit
+      };
+
+      updateFilters(updatedFilters);
+      setCurrentPage(1);
+      updateURL(updatedFilters, true);
+      fetchLeads(updatedFilters, 1, true);
+
+      secureCache.clear();
+    } catch (error) {
+      console.error("Error updating agent:", error);
+    }
+  }, [activeRole, leadsPerPage, updateFilters, updateURL, fetchLeads, filters]);
 
   const handleRoleSwitch = useCallback(() => {
     const newRole = activeRole === "l3" ? "l2" : "l3";
@@ -259,13 +227,9 @@ const HomePage = memo(() => {
       const updatedFilters = {
         ...filters,
         data: newRole,
-        selectedagent:
-          updatedAgent.counsellor_id ||
-          agent.counsellor_id ||
-          roletosend?.counsellor_id ||
-          agent?.id,
-        page: 1,
-        limit: leadsPerPage,
+        selectedagent: updatedAgent.counsellor_id || agent.counsellor_id || roletosend?.counsellor_id || agent?.id,
+        page: 1, // Reset to page 1
+        limit: leadsPerPage // Keep current limit
       };
 
       updateFilters(updatedFilters);
@@ -277,47 +241,31 @@ const HomePage = memo(() => {
     } catch (error) {
       console.error("Error switching roles:", error);
     }
-  }, [
-    activeRole,
-    agent,
-    filters,
-    leadsPerPage,
-    roletosend,
-    updateFilters,
-    updateURL,
-    fetchLeads,
-  ]);
+  }, [activeRole, agent, filters, leadsPerPage, roletosend, updateFilters, updateURL, fetchLeads]);
+  const handlePageChange = useCallback((newPage) => {
+    if (newPage === currentPage) return;
 
-  const handlePageChange = useCallback(
-    (newPage) => {
-      if (newPage === currentPage) return;
+    setCurrentPage(newPage);
+    const updatedFilters = {
+      ...filters,
+      page: newPage,
+      limit: leadsPerPage
+    };
+    updateURL(updatedFilters);
+    fetchLeads(updatedFilters, newPage, true);
+  }, [currentPage, filters, leadsPerPage, updateURL, fetchLeads]);
 
-      setCurrentPage(newPage);
-      const updatedFilters = {
-        ...filters,
-        page: newPage,
-        limit: leadsPerPage,
-      };
-      updateURL(updatedFilters);
-      fetchLeads(updatedFilters, newPage, true);
-    },
-    [currentPage, filters, leadsPerPage, updateURL, fetchLeads],
-  );
-
-  const handleLimitChange = useCallback(
-    (newLimit) => {
-      setCurrentPage(1);
-      setLeadsPerPage(newLimit);
-      const updatedFilters = {
-        ...filters,
-        limit: newLimit,
-        page: 1,
-      };
-      updateURL(updatedFilters, true);
-      fetchLeads(updatedFilters, 1, true);
-    },
-    [filters, updateURL, fetchLeads],
-  );
+  const handleLimitChange = useCallback((newLimit) => {
+    setCurrentPage(1);
+    setLeadsPerPage(newLimit);
+    const updatedFilters = {
+      ...filters,
+      limit: newLimit,
+      page: 1
+    };
+    updateURL(updatedFilters, true);
+    fetchLeads(updatedFilters, 1, true);
+  }, [filters, updateURL, fetchLeads]);
 
   const handleExportLeads = useCallback(async () => {
     try {
@@ -325,33 +273,30 @@ const HomePage = memo(() => {
       const allFilters = {
         ...autoFilters,
         ...filters,
-        data: filters.data || autoFilters.data || activeRole,
+        data: filters.data || autoFilters.data || activeRole
       };
 
       let lastLogged = 0;
       const response = await axios.get(`${BASE_URL}/student/export`, {
         params: { ...allFilters, export: true },
-        responseType: "blob",
+        responseType: 'blob',
         paramsSerializer: cleanQueryParams,
         withCredentials: true,
         onDownloadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / (progressEvent.total || 1),
+            (progressEvent.loaded * 100) / (progressEvent.total || 1)
           );
 
           if (percentCompleted !== lastLogged) {
             lastLogged = percentCompleted;
           }
-        },
+        }
       });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.setAttribute(
-        "download",
-        `leads_${new Date().toISOString().split("T")[0]}.csv`,
-      );
+      link.setAttribute('download', `leads_${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -361,53 +306,47 @@ const HomePage = memo(() => {
     }
   }, [activeTab, filters, activeRole, getTabAutoFilters]);
 
-  const modalHandlers = useMemo(
-    () => ({
-      handleConnect: (student) => {
-        setIsConnectedPopupOpen(true);
-        setSelectedStudent(student);
-      },
-      handleDisconnect: (student) => {
-        setIsDisconnectPopupOpen(true);
-        setSelectedStudent(student);
-      },
-      handleAssignedtoL2: (student) => {
-        setSelectedStudent(student);
-        setIsAssignedtoL2(true);
-      },
-      handleAssignedtoL3: (student) => {
-        setSelectedStudent(student);
-        setIsAssignedtoL3(true);
-      },
-      handleWhatsApp: (leadData) => {
-        setSelectedStudent(leadData);
-        setOpenChatModel(true);
-      },
-      handleAddLeadSuccess: () => {
-        setIsAddLeadModalOpen(false);
-        fetchLeads(filters, currentPage, true);
-      },
-    }),
-    [filters, currentPage, fetchLeads],
-  );
-
-  const showSidebar = storedRole !== "l2";
+  // Modal handlers
+  const modalHandlers = useMemo(() => ({
+    handleConnect: (student) => {
+      setIsConnectedPopupOpen(true);
+      setSelectedStudent(student);
+    },
+    handleDisconnect: (student) => {
+      setIsDisconnectPopupOpen(true);
+      setSelectedStudent(student);
+    },
+    handleAssignedtoL2: (student) => {
+      setSelectedStudent(student);
+      setIsAssignedtoL2(true);
+    },
+    handleAssignedtoL3: (student) => {
+      setSelectedStudent(student);
+      setIsAssignedtoL3(true);
+    },
+    handleWhatsApp: (leadData) => {
+      setSelectedStudent(leadData);
+      setOpenChatModel(true);
+    },
+    handleAddLeadSuccess: () => {
+      setIsAddLeadModalOpen(false);
+      fetchLeads(filters, currentPage, true);
+    }
+  }), [filters, currentPage, fetchLeads]);
 
   return (
     <div className="flex bg-gray-50">
-      {showSidebar && (
-        <Sidebar
-          setSidebarCollapsed={setSidebarCollapsed}
-          sidebarCollapsed={sidebarCollapsed}
-          activeTab={activeTab}
-          handleTabChange={handleTabChange}
-          agents={agents}
-          selectedAgent={agent}
-          handleAgentClick={handleAgentClick}
-          navigate={navigate}
-          setIsAddLeadModalOpen={setIsAddLeadModalOpen}
-        />
-      )}
+      <Sidebar
+        setSidebarCollapsed={setSidebarCollapsed}
+        sidebarCollapsed={sidebarCollapsed}
+        activeTab={activeTab}
+        handleTabChange={handleTabChange}
+        agents={agents}
+        selectedAgent={agent}
+        handleAgentClick={handleAgentClick}
+        navigate={navigate}
+        setIsAddLeadModalOpen={setIsAddLeadModalOpen}
+      />
 
       <div className="flex-1 flex flex-col overflow-x-hidden">
         <main className="p-6 bg-white">
@@ -418,6 +357,7 @@ const HomePage = memo(() => {
             onAddLead={() => setIsAddLeadModalOpen(true)}
             onExport={handleExportLeads}
             onRoleSwitch={handleRoleSwitch}
+            onOpenAdvancedFilter={() => setIsAdvancedFilterOpen(true)}
           />
 
           {activeTab === "dashboard" && (
@@ -459,7 +399,8 @@ const HomePage = memo(() => {
             handleFilterChange={handleFilterChange}
             setCallbackType={setCallbackType}
             callbackType={callbackType}
-            onLimitChange={handleLimitChange}
+            onLimitChange={handleLimitChange} // Add this line
+
           />
 
           <ModalsContainer
@@ -479,11 +420,19 @@ const HomePage = memo(() => {
             onCloseAssignedL3={() => setIsAssignedtoL3(false)}
             onCloseWhatsApp={() => setOpenChatModel(false)}
           />
+
+          <AdvancedFilter 
+            isOpen={isAdvancedFilterOpen}
+            onClose={() => setIsAdvancedFilterOpen(false)}
+            onApply={handleApplyAdvancedFilters}
+            onClear={handleClearAdvancedFilters}
+            initialFilters={advancedFilters}
+          />
         </main>
       </div>
-
     </div>
   );
 });
+
 
 export default HomePage;

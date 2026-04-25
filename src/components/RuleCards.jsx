@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Tag, Button, Space, Tooltip, Typography, Row, Col, Badge, Avatar } from 'antd';
 import {
   EditOutlined,
+  CopyOutlined,
   DeleteOutlined,
   PoweroffOutlined,
   TeamOutlined,
@@ -16,6 +17,7 @@ const RuleCards = ({
   onEditRule,
   onDeleteRule,
   onToggleRule,
+  onDuplicateRule,
   idKey = 'lead_assignment_rule_l2_id',
   type = 'l2'
 }) => {
@@ -82,6 +84,14 @@ const RuleCards = ({
                         style={{ color: '#1890ff' }}
                       />
                     </Tooltip>,
+                    <Tooltip title="Duplicate">
+                      <Button
+                        type="text"
+                        icon={<CopyOutlined />}
+                        onClick={() => onDuplicateRule(rule)}
+                        style={{ color: '#faad14' }}
+                      />
+                    </Tooltip>,
                     <Tooltip title="Delete">
                       <Button
                         type="text"
@@ -98,7 +108,6 @@ const RuleCards = ({
                       <Space size="middle" style={{ marginTop: '4px' }}>
                         <Text type="secondary" style={{ fontSize: '11px' }}><TeamOutlined /> {agents.length} Agents</Text>
                         <Text type="secondary" style={{ fontSize: '11px' }}><CalendarOutlined /> {formatDate(rule.updated_at)}</Text>
-                        <Tag color="gold" style={{ fontSize: '10px' }}>Priority: {rule.priority || 0}</Tag>
                       </Space>
                     }
                   />
@@ -125,21 +134,18 @@ const RuleCards = ({
                           )}
                         </>
                       ) : (
-                        ['preferred_university', 'preferred_specialization', 'preferred_degree', 'preferred_stream', 'preferred_city', 'preferred_state'].map(field => {
+                        ['preferred_degree', 'preferred_specialization', 'preferred_budget'].map(field => {
                           const value = rule.conditions?.[field];
-                          if (!value || (Array.isArray(value) && value.length === 0)) return null;
+                          if (!value || value.length === 0) return null;
                           const labels = {
-                            preferred_university: 'Univ',
+                            preferred_degree: 'Degree',
                             preferred_specialization: 'Spec',
-                            preferred_degree: 'Deg',
-                            preferred_stream: 'Stream',
-                            preferred_city: 'City',
-                            preferred_state: 'State'
+                            preferred_budget: 'Budget'
                           };
                           return (
                             <div key={field} style={{ display: 'flex', alignItems: 'start', fontSize: '12px' }}>
                               <Text type="secondary" style={{ width: '70px', flexShrink: 0 }}>{labels[field]}:</Text>
-                              <Text ellipsis>{Array.isArray(value) ? value.join(', ') : value}</Text>
+                              <Text ellipsis>{value.join(', ')}</Text>
                             </div>
                           );
                         })

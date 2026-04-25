@@ -11,8 +11,6 @@ import CollegeStatusReports from "../pages/CollegeStatusReports";
 import CounsellorStatsDashboard from "../pages/CounsellorReport";
 import FormToAdmissionsReport from "../pages/FormAdmission";
 import FormDashboard from "../pages/FormDashboard";
-import ScorecardRuleset from "../pages/ScorecardRuleset";
-import DialerBucket from "../pages/DialerBucket";
 
 const Loader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -146,22 +144,6 @@ const AppRoutes = () => {
                 element={
                   <RoleBasedRoute allowedRoles={["Supervisor", "to","to_l3"]}>
                     <CounsellorBreakDashboard />
-                  </RoleBasedRoute>
-                }
-              />
-              <Route
-                path="/scorecardruleset"
-                element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "to","to_l3"]}>
-                    <ScorecardRuleset />
-                  </RoleBasedRoute>
-                }
-              />
-              <Route
-                path="/dialerbucket"
-                element={
-                  <RoleBasedRoute allowedRoles={["Supervisor", "to","to_l3"]}>
-                    <DialerBucket />
                   </RoleBasedRoute>
                 }
               />

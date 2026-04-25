@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip, Typography, Layout } from 'antd';
 import {
   EditOutlined,
+  CopyOutlined,
   DeleteOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
@@ -14,6 +15,7 @@ const RuleTable = ({
   onEditRule,
   onDeleteRule,
   onToggleRule,
+  onDuplicateRule,
   idKey = 'lead_assignment_rule_l2_id',
   type = 'l2'
 }) => {
@@ -29,11 +31,9 @@ const RuleTable = ({
 
     const conditions = record.conditions || {};
     const displayFields = [
-      { key: 'preferred_university', label: 'Univ' },
-      { key: 'preferred_degree', label: 'Deg' },
+      { key: 'preferred_degree', label: 'Degree' },
       { key: 'preferred_specialization', label: 'Sp' },
-      { key: 'preferred_stream', label: 'Stream' },
-      { key: 'preferred_city', label: 'City' },
+      { key: 'preferred_budget', label: 'Budget' },
       { key: 'preferred_state', label: 'State' },
     ];
 
@@ -53,13 +53,6 @@ const RuleTable = ({
           <Text type="secondary" style={{ fontSize: '11px' }}>ID: {record[idKey]}</Text>
         </Space>
       ),
-    },
-    {
-      title: 'Priority',
-      dataIndex: 'priority',
-      key: 'priority',
-      sorter: (a, b) => (a.priority || 0) - (b.priority || 0),
-      render: (val) => <Tag color="gold">{val || 0}</Tag>
     },
     {
       title: 'Conditions',
@@ -112,6 +105,9 @@ const RuleTable = ({
           <Tooltip title="Edit">
             <Button type="text" icon={<EditOutlined />} onClick={() => onEditRule(record)} style={{ color: '#1890ff' }} />
           </Tooltip>
+          <Tooltip title="Duplicate">
+            <Button type="text" icon={<CopyOutlined />} onClick={() => onDuplicateRule(record)} style={{ color: '#faad14' }} />
+          </Tooltip>
           <Tooltip title="Delete">
             <Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDeleteRule(record[idKey])} />
           </Tooltip>
@@ -132,30 +128,24 @@ const RuleTable = ({
           const conditions = type === 'l3' ? record.course_conditions : record.conditions;
           return (
             <div style={{ padding: '8px 24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <Typography.Title level={5} style={{ fontSize: '14px', margin: 0 }}>Detailed Conditions </Typography.Title>
-                <Tag color="gold" style={{ fontSize: '10px' }}>Priority: {record.priority || 0}</Tag>
-              </div>
+              <Typography.Title level={5} style={{ fontSize: '14px', marginBottom: '12px' }}>Detailed Conditions</Typography.Title>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
                 {type === 'l3' ? (
                   <>
-                    {['preferred_university', 'preferred_specialization', 'preferred_degree', 'preferred_stream', 'preferred_city', 'preferred_state'].map(field => {
-                      const value = record.conditions?.[field];
-                      if (!value || (Array.isArray(value) && value.length === 0)) return null;
-                      const labels = {
-                        preferred_university: 'Univ',
-                        preferred_specialization: 'Spec',
-                        preferred_degree: 'Deg',
-                        preferred_stream: 'Stream',
-                        preferred_city: 'City',
-                        preferred_state: 'State'
-                      };
+                    {record.university_name?.length > 0 && (
+                      <div>
+                        <Text type="secondary" block style={{ fontSize: '12px', textTransform: 'uppercase' }}>University</Text>
+                        <Space wrap>{record.university_name.map(v => <Tag key={v}>{v}</Tag>)}</Space>
+                      </div>
+                    )}
+                    {Object.entries(record.course_conditions || {}).map(([key, value]) => {
+                      if (!value || value.length === 0) return null;
                       return (
-                        <div key={field} style={{ display: 'flex', alignItems: 'start', fontSize: '12px' }}>
-                          <Text type="secondary" style={{ width: '70px', flexShrink: 0 }}>{labels[field]}:</Text>
-                          <Text ellipsis>{Array.isArray(value) ? value.join(', ') : value}</Text>
+                        <div key={key}>
+                          <Text type="secondary" block style={{ fontSize: '12px', textTransform: 'uppercase' }}>{key}</Text>
+                          <Space wrap>{value.map(v => <Tag key={v}>{v}</Tag>)}</Space>
                         </div>
-                      );
+                      )
                     })}
                   </>
                 ) : (

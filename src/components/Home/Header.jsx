@@ -3,7 +3,8 @@ import {
   PlusOutlined, 
   DownloadOutlined, 
   SwapOutlined, 
-  LoadingOutlined 
+  LoadingOutlined,
+  FilterOutlined 
 } from '@ant-design/icons';
 import { Button, Space, Typography, theme } from 'antd';
 
@@ -17,6 +18,7 @@ const Header = memo(({
   onAddLead,
   onExport,
   onRoleSwitch,
+  onOpenAdvancedFilter,
   isExporting = false
 }) => {
   const { token } = useToken();
@@ -47,21 +49,21 @@ const Header = memo(({
       flexWrap: 'wrap',
       gap: token.marginMD
     }}>
-      <Title level={3} style={{ margin: 10}}>
+      <Title level={3} style={{ margin: 0 }}>
         {getTitle()}
       </Title>
 
       <Space wrap size="middle">
-        {isSupervisor && (
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={onAddLead}
-            size="large"
-          >
-            Add Lead
-          </Button>
-        )}
+          
+
+        <Button
+          icon={<FilterOutlined />}
+          onClick={onOpenAdvancedFilter}
+          size="large"
+          className="flex items-center"
+        >
+          Advanced Filter
+        </Button>
 
         {(isSupervisor || activeRole=="to") && (
           <Button
