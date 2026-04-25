@@ -4,6 +4,7 @@ import { loginCounsellor, supervisorLogin, analyserLogin } from "../network/auth
 import { login as loginAction } from "../features/auth/authSlice";
 import { useDispatch } from "react-redux";
 import { showToast } from "../utils/toast";
+import { Modal } from "antd";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,46 +59,59 @@ function Login() {
     return () => clearTimeout(timer);
   }, [showSuccessPopup, countdown]);
 
-// Just the updated handleLogin function
+const doLogin = async (forceLogout = false) => {
+  let result;
+  switch (selectedRole) {
+    case "counsellor":
+      result = await loginCounsellor(email, password, forceLogout);
+      dispatch(loginAction({ user: result.counsellor }));
+      showToast("Counsellor login successful", "success");
+      setShowSuccessPopup(true);
+      break;
+    case "supervisor":
+      result = await supervisorLogin(email, password);
+      dispatch(loginAction({ user: result.supervisor }));
+      showToast("Supervisor login successful", "success");
+      setShowSuccessPopup(true);
+      break;
+    case "analyser":
+      result = await analyserLogin(email, password);
+      dispatch(loginAction({ user: result.analyser }));
+      showToast("Analyser login successful", "success");
+      setShowSuccessPopup(true);
+      break;
+    default:
+      showToast("Please select a valid role", "warning");
+  }
+};
+
 const handleLogin = async (e) => {
   e.preventDefault();
   setLoading(true);
 
   try {
-    let result;
-
-    switch (selectedRole) {
-      case "counsellor":
-        result = await loginCounsellor(email, password);
-        dispatch(loginAction({ user: result.counsellor }));
-        showToast("Counsellor login successful", "success");
-        setShowSuccessPopup(true);
-        break;
-
-      case "supervisor":
-        result = await supervisorLogin(email, password);
-        dispatch(loginAction({ user: result.supervisor }));
-        showToast("Supervisor login successful", "success");
-        setShowSuccessPopup(true);
-        break;
-
-      case "analyser":
-        result = await analyserLogin(email, password);
-        dispatch(loginAction({ user: result.analyser }));
-        showToast("Analyser login successful", "success");
-        setShowSuccessPopup(true);
-        break;
-
-      default:
-        showToast("Please select a valid role", "warning");
-    }
+    await doLogin(false);
   } catch (error) {
-    // Debug: Log the full error structure
-  
-    
-    // Extract the exact error message from backend
-    const errorMessage = error?.response?.data?.message || "Login failed";
-    showToast(errorMessage, "error");
+    if (error?.response?.status === 409 && error?.response?.data?.requires_force_logout) {
+      setLoading(false);
+      Modal.confirm({
+        title: "Already Logged In!",
+        content: error.response.data.message || "You are already logged in on another device. Force logout?",
+        okText: "Yes, force login!",
+        cancelText: "Cancel",
+        okButtonProps: { danger: true },
+        onOk: async () => {
+          setLoading(true);
+          try {
+            await doLogin(true);
+          } finally {
+            setLoading(false);
+          }
+        },
+      });
+      return;
+    }
+    showToast(error?.response?.data?.message || "Login failed", "error");
   }
 
   setLoading(false);

@@ -26,9 +26,11 @@ function AddCounsellor() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [teamOwners, setTeamOwners] = useState([]);
+  const [teamOwners, setTeamOwners] = useState([]);
   const [loadingTeamOwners, setLoadingTeamOwners] = useState(false);
 
   useEffect(() => {
+    if (isTO) return;
     const loadTeamOwners = async () => {
       // Only load if user is NOT a team owner
       if (!isTeamOwner) {

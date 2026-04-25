@@ -2,6 +2,47 @@ import axios from "axios";
 import { BASE_URL } from "../config/api";
 import { handleError } from "../utils/handleError";
 
+export const getCounsellorAccessSettings = async (id) => {
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/counsellor/access-settings/${id}`,
+      { withCredentials: true },
+    );
+    return res.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const updateCounsellorAccessSettings = async (id, settings) => {
+  try {
+    const res = await axios.put(
+      `${BASE_URL}/counsellor/access-settings/${id}`,
+      settings,
+      { withCredentials: true },
+    );
+    return res.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const bulkUpdateCounsellorAccessSettings = async (ids, settings) => {
+  try {
+    const res = await axios.put(
+      `${BASE_URL}/counsellor/access-settings/bulk`,
+      { ids, ...settings },
+      { withCredentials: true },
+    );
+    return res.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
 // Get all counsellors
 export const getAllCounsellors = async (role = null) => {
   try {
@@ -20,10 +61,13 @@ export const getAllCounsellors = async (role = null) => {
 // Get detailed journey information for students including college and course names
 export const getStudentJourneyDetails = async (data) => {
   try {
-    const response = await axios.post(`${BASE_URL}/StudentCourseStatusLogs/student-journey-details`, data);
+    const response = await axios.post(
+      `${BASE_URL}/StudentCourseStatusLogs/student-journey-details`,
+      data,
+    );
     return response.data;
   } catch (error) {
-    console.error('Error fetching student journey details:', error);
+    console.error("Error fetching student journey details:", error);
     throw error;
   }
 };
@@ -31,10 +75,13 @@ export const getStudentJourneyDetails = async (data) => {
 // Replace L3 counsellor for a specific journey entry (student + course)
 export const replaceL3CounsellorForSpecificJourney = async (data) => {
   try {
-    const response = await axios.post(`${BASE_URL}/StudentCourseStatusLogs/replace-l3-specific-journey`, data);
+    const response = await axios.post(
+      `${BASE_URL}/StudentCourseStatusLogs/replace-l3-specific-journey`,
+      data,
+    );
     return response.data;
   } catch (error) {
-    console.error('Error replacing L3 counsellor for specific journey:', error);
+    console.error("Error replacing L3 counsellor for specific journey:", error);
     throw error;
   }
 };
@@ -113,6 +160,20 @@ export const updateCounsellorStatus = async (id, status) => {
   }
 };
 
+export const toggleBlockCounsellor = async (id) => {
+  try {
+    const res = await axios.put(
+      `${BASE_URL}/counsellor/toggleBlock/${id}`,
+      {},
+      { withCredentials: true },
+    );
+    return res.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
 export const makeCounsellorLogout = async (id) => {
   try {
     const res = await axios.get(
@@ -168,6 +229,9 @@ export const registerAgent = async (payload) => {
         role: payload?.role,
         preferredMode: payload?.preferred_mode || payload?.preferredMode,
         teamOwnerId: payload?.team_owner_id || payload?.teamOwnerId,
+        login_start_time: payload?.login_start_time || undefined,
+        login_end_time: payload?.login_end_time || undefined,
+        max_active_sessions: payload?.max_active_sessions || undefined,
       },
       { withCredentials: true },
     );
@@ -204,17 +268,17 @@ export const getCounsellorById = async (id) => {
 
 export const assignCounsellorsToStudents = async (assignmentData) => {
   try {
-    console.log('API call with data:', assignmentData);
+    console.log("API call with data:", assignmentData);
     const response = await axios.put(
       `${BASE_URL}/counsellor/assignCounsellors`,
       assignmentData,
-      { withCredentials: true }
+      { withCredentials: true },
     );
-    console.log('API response:', response.data);
+    console.log("API response:", response.data);
     return response.data;
   } catch (error) {
-    console.error('Error in assignCounsellorsToStudents:', error);
-    console.error('Error response:', error.response?.data);
+    console.error("Error in assignCounsellorsToStudents:", error);
+    console.error("Error response:", error.response?.data);
     throw error;
   }
 };
@@ -260,6 +324,22 @@ export const replaceL3CounsellorForStudents = async (data) => {
     return res.data;
   } catch (error) {
     console.error("Error replacing L3 counsellor:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const fetchLoginAttempts = async (params = {}) => {
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/counsellor/login-attempts`,
+      {
+        params,
+        withCredentials: true,
+      }
+    );
+    return res.data;
+  } catch (error) {
     handleError(error);
     throw error;
   }

@@ -7,7 +7,6 @@ import Sidebar from '../SideBar';
 import { useSelector } from 'react-redux';
 import { fetchAllCounsellors } from '../../network/counsellor';
 import StatsComponent from '../StatsComponent';
-import StreamlinedFilters from '../AdvanceFilters';
 import { useLeadsData } from '../hooks/useLeadsData';
 import { useFilters } from '../hooks/useFilters';
 import useURLSync from '../hooks/useURLSync';
@@ -59,6 +58,13 @@ const HomePage = memo(() => {
     const limitFromURL = urlFilters.limit || 10;
 
     updateFilters(urlFilters);
+    setCurrentPage(Number(pageFromURL)); 
+    setLeadsPerPage(Number(limitFromURL)); 
+    
+    // Sync advanced filters if present in URL
+    if (urlFilters.advancedFilters) {
+      setAdvancedFilters(urlFilters.advancedFilters);
+    }
     setCurrentPage(Number(pageFromURL)); 
     setLeadsPerPage(Number(limitFromURL)); 
     
@@ -165,6 +171,9 @@ const HomePage = memo(() => {
     updateURL(filtersWithPagination, true);
     fetchLeads(filtersWithPagination, 1, true);
   }, [clearFilters, activeTab, leadsPerPage, updateURL, fetchLeads]);
+
+
+
 
   const handleApplyAdvancedFilters = useCallback((filtersArray) => {
     setAdvancedFilters(filtersArray);
@@ -358,6 +367,7 @@ const HomePage = memo(() => {
             onExport={handleExportLeads}
             onRoleSwitch={handleRoleSwitch}
             onOpenAdvancedFilter={() => setIsAdvancedFilterOpen(true)}
+            onOpenAdvancedFilter={() => setIsAdvancedFilterOpen(true)}
           />
 
           {activeTab === "dashboard" && (
@@ -370,7 +380,7 @@ const HomePage = memo(() => {
           )}
 
           <div className="mb-6">
-            <StreamlinedFilters
+            <AdvancedFilter
               filters={filters}
               onFilterChange={handleFilterChange}
               onApplyFilters={handleApplyFilters}
@@ -419,6 +429,14 @@ const HomePage = memo(() => {
             onCloseAssignedL2={() => setIsAssignedtoL2(false)}
             onCloseAssignedL3={() => setIsAssignedtoL3(false)}
             onCloseWhatsApp={() => setOpenChatModel(false)}
+          />
+
+          <AdvancedFilter 
+            isOpen={isAdvancedFilterOpen}
+            onClose={() => setIsAdvancedFilterOpen(false)}
+            onApply={handleApplyAdvancedFilters}
+            onClear={handleClearAdvancedFilters}
+            initialFilters={advancedFilters}
           />
 
           <AdvancedFilter 

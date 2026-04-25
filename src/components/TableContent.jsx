@@ -603,7 +603,7 @@ const TableContent = ({
         title: "Status",
         dataIndex: "status",
         key: "status",
-        width: 160,
+        width: 200,
         render: (value) => (
           <Tag color={getStatusColor(value)}>{value || "Fresh"}</Tag>
         ),

@@ -245,6 +245,7 @@ const CollegeStatusReports = () => {
   };
 
   // Build table columns with Statuses on X-axis and Colleges on Y-axis
+  // Build table columns with Statuses on X-axis and Colleges on Y-axis
   const getTableColumns = () => {
     if (!reportData?.data) return [];
     const { statuses } = reportData.data;
@@ -252,6 +253,7 @@ const CollegeStatusReports = () => {
     const rowKey = isCollegesView ? 'college' : 'counsellor';
     const rowTitle = isCollegesView ? 'College' : 'Counsellor';
 
+    // This creates columns with each status as a column header
     // This creates columns with each status as a column header
     return [
       {
@@ -456,6 +458,8 @@ const CollegeStatusReports = () => {
   const isFirstTimeDateActive = dateFilterType === 'firstTime';
 
   // Toggle between original and transposed view
+
+  // Toggle between original and transposed view
   const [isTransposed, setIsTransposed] = useState(true); // Set to true for transposed view (Statuses as rows)
 
   return (
@@ -466,6 +470,13 @@ const CollegeStatusReports = () => {
           subtitle="Pivot table view showing status distribution"
           actions={
             <>
+              <button
+                onClick={() => setIsTransposed(!isTransposed)}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all font-bold text-xs shadow-sm shadow-slate-100 border bg-indigo-600 text-white border-slate-200 hover:bg-indigo-700"
+              >
+                <LayoutGrid size={14} />
+                {isTransposed ? 'SWITCH TO COLLEGES X STATUSES' : 'SWITCH TO STATUSES X COLLEGES'}
+              </button>
               <button
                 onClick={() => setIsTransposed(!isTransposed)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all font-bold text-xs shadow-sm shadow-slate-100 border bg-indigo-600 text-white border-slate-200 hover:bg-indigo-700"
@@ -618,6 +629,9 @@ const CollegeStatusReports = () => {
             {reportData?.data?.rows ? (
               <div className="overflow-x-auto">
                 <Table
+                  columns={isTransposed ? getTransposedTableColumns() : getTableColumns()}
+                  dataSource={isTransposed ? getTransposedDataSource() : getDataSource()}
+                  rowKey={(record, index) => isTransposed ? record.status : (record[filters.reportType === 'colleges' ? 'college' : 'counsellor'] || index)}
                   columns={isTransposed ? getTransposedTableColumns() : getTableColumns()}
                   dataSource={isTransposed ? getTransposedDataSource() : getDataSource()}
                   rowKey={(record, index) => isTransposed ? record.status : (record[filters.reportType === 'colleges' ? 'college' : 'counsellor'] || index)}
