@@ -26,7 +26,6 @@ function AddCounsellor() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [teamOwners, setTeamOwners] = useState([]);
-  const [teamOwners, setTeamOwners] = useState([]);
   const [loadingTeamOwners, setLoadingTeamOwners] = useState(false);
 
   useEffect(() => {
