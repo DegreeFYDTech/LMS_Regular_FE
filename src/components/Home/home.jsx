@@ -7,14 +7,14 @@ import Sidebar from '../SideBar';
 import { useSelector } from 'react-redux';
 import { fetchAllCounsellors } from '../../network/counsellor';
 import StatsComponent from '../StatsComponent';
-import StreamlinedFilters from '../AdvanceFilters';
 import { useLeadsData } from '../hooks/useLeadsData';
 import { useFilters } from '../hooks/useFilters';
 import useURLSync from '../hooks/useURLSync';
 import Header from './Header';
 import LeadsTable from './LeadsTable';
 import ModalsContainer from './ModalsContainer';
-import AdvancedFilter from './AdvancedFilter';
+import StreamlinedFilters from '../AdvanceFilters';
+import AdvancedFilter from '../AdvanceFilters';
 import { secureCache } from '../../utils/cache';
 import { cleanQueryParams } from '../../utils/cleanParams'
 const HomePage = memo(() => {
