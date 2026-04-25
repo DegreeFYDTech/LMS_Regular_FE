@@ -19,6 +19,7 @@ import {
   Empty,
   message,
   Divider,
+  Modal,
 } from "antd";
 import {
   SearchOutlined,
@@ -38,6 +39,8 @@ import {
   ReloadOutlined,
   PlusOutlined,
   ClearOutlined,
+  LockOutlined,
+  UnlockOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
@@ -51,6 +54,7 @@ import {
   changeSupervisor,
   getAllSupervisors,
   registerAgent,
+  toggleBlockCounsellor,
 } from "../network/counsellor";
 
 import UserDetailsModal from "../components/modals/UserDetailsModal";
@@ -288,6 +292,28 @@ const UserListing = () => {
     }
   };
 
+  const handleToggleBlock = (user) => {
+    Modal.confirm({
+      title: user.is_blocked ? "Unblock Agent" : "Block Agent",
+      content: `Are you sure you want to ${user.is_blocked ? "unblock" : "block"} ${user.counsellor_name}?`,
+      okText: "Yes",
+      cancelText: "No",
+      onOk: async () => {
+        try {
+          const res = await toggleBlockCounsellor(user.counsellor_id);
+          setUsers((prev) =>
+            prev.map((u) =>
+              u.counsellor_id === user.counsellor_id ? { ...u, is_blocked: res.is_blocked } : u
+            )
+          );
+          message.success(res.message);
+        } catch (error) {
+          message.error(`Failed to toggle block status: ${error.message}`);
+        }
+      },
+    });
+  };
+
   const confirmDisableUser = async () => {
     try {
       const newStatus = selectedUser.status === "inactive" ? "active" : "inactive";
@@ -408,17 +434,22 @@ const UserListing = () => {
       dataIndex: "status",
       key: "status",
       width: 110,
-      render: (status) => {
+      render: (status, record) => {
         const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.inactive;
         return (
-          <Badge
-            status={cfg.color}
-            text={
-              <span className={`text-xs font-medium ${status === "active" ? "text-green-600" : status === "suspended" ? "text-yellow-600" : "text-red-500"}`}>
-                {cfg.label}
-              </span>
-            }
-          />
+          <Space direction="vertical" size={0}>
+            <Badge
+              status={cfg.color}
+              text={
+                <span className={`text-xs font-medium ${status === "active" ? "text-green-600" : status === "suspended" ? "text-yellow-600" : "text-red-500"}`}>
+                  {cfg.label}
+                </span>
+              }
+            />
+            {record.is_blocked && (
+              <Tag color="red" className="text-[10px] m-0 mt-1">Blocked</Tag>
+            )}
+          </Space>
         );
       },
     },
@@ -531,6 +562,17 @@ const UserListing = () => {
               className="text-orange-400 hover:text-orange-600 hover:bg-orange-50"
             />
           </Tooltip>
+          {storedUser?.role === "Supervisor" && (
+            <Tooltip title={record.is_blocked ? "Unblock Agent" : "Block Agent"}>
+              <Button
+                type="text"
+                size="small"
+                icon={record.is_blocked ? <UnlockOutlined /> : <LockOutlined />}
+                onClick={() => handleToggleBlock(record)}
+                className={record.is_blocked ? "text-green-400 hover:text-green-600 hover:bg-green-50" : "text-red-400 hover:text-red-600 hover:bg-red-50"}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
     },

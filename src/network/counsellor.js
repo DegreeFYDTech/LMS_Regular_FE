@@ -160,6 +160,20 @@ export const updateCounsellorStatus = async (id, status) => {
   }
 };
 
+export const toggleBlockCounsellor = async (id) => {
+  try {
+    const res = await axios.put(
+      `${BASE_URL}/counsellor/toggleBlock/${id}`,
+      {},
+      { withCredentials: true },
+    );
+    return res.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
 export const makeCounsellorLogout = async (id) => {
   try {
     const res = await axios.get(
