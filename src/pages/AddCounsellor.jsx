@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { registerAgent } from '../network/counsellor';
 import { CounsellorvalidateForm as validateForm } from '../utils/validators';
 import {getAllCounsellors} from '../network/counsellor'
@@ -7,6 +8,9 @@ import {getAllCounsellors} from '../network/counsellor'
 
 function AddCounsellor() {
   const navigate = useNavigate();
+  const storedUser = useSelector((state) => state.auth.user);
+  const storedRole = useSelector((state) => state.auth.role);
+  const isTO = storedRole === 'to' || storedRole === 'admission_to';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -14,22 +18,35 @@ function AddCounsellor() {
     password: '',
     role: '',
     preferredMode: 'Regular',
-    teamOwnerId: '', // New field for team owner
+    teamOwnerId: isTO ? storedUser?.counsellor_id || storedUser?.id || '' : '',
+    login_start_time: '',
+    login_end_time: '',
+    max_active_sessions: 1,
   });
 
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [teamOwners, setTeamOwners] = useState([]); // State for team owners
+  const [teamOwners, setTeamOwners] = useState([]);
   const [loadingTeamOwners, setLoadingTeamOwners] = useState(false);
 
-  // Fetch team owners on component mount
+  // Auto-fill teamOwnerId when logged in as TO
   useEffect(() => {
+    if (isTO) {
+      setFormData(prev => ({
+        ...prev,
+        teamOwnerId: storedUser?.counsellor_id || storedUser?.id || '',
+      }));
+    }
+  }, [isTO, storedUser]);
+
+  // Only load team owners list when NOT a TO (they auto-assign themselves)
+  useEffect(() => {
+    if (isTO) return;
     const loadTeamOwners = async () => {
       setLoadingTeamOwners(true);
       try {
         const owners = await getAllCounsellors('to');
-        
         setTeamOwners(owners);
       } catch (error) {
         console.error('Failed to fetch team owners:', error);
@@ -43,7 +60,7 @@ function AddCounsellor() {
     };
 
     loadTeamOwners();
-  }, []);
+  }, [isTO]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -306,33 +323,79 @@ function AddCounsellor() {
                     </select>
                   </div>
 
-                  {/* New Team Owner Dropdown */}
-                  <div >
+                  {/* Team Owner */}
+                  <div>
                     <label htmlFor="teamOwnerId" className="block text-sm font-medium text-gray-700 mb-1">
                       Team Owner
-                      <span className="text-gray-500 text-xs ml-1"></span>
                     </label>
-                    <select
-                      id="teamOwnerId"
-                      name="teamOwnerId"
-                      value={formData.teamOwnerId}
+                    {isTO ? (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Auto-assigned</span>
+                        <span className="text-sm text-blue-900 font-medium">{storedUser?.counsellor_name || storedUser?.name || 'You'}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <select
+                          id="teamOwnerId"
+                          name="teamOwnerId"
+                          value={formData.teamOwnerId}
+                          onChange={handleChange}
+                          disabled={loadingTeamOwners}
+                          className={`w-full px-3 py-2 border ${errors.teamOwnerId ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white ${loadingTeamOwners ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <option value="">
+                            {loadingTeamOwners ? 'Loading team owners...' : 'Select Team Owner'}
+                          </option>
+                          {teamOwners.map((owner) => (
+                            <option key={owner.counsellor_id} value={owner.counsellor_id}>
+                              {owner.counsellor_name}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.teamOwnerId && <p className="mt-1 text-sm text-red-600">{errors.teamOwnerId}</p>}
+                        {teamOwners.length === 0 && !loadingTeamOwners && (
+                          <p className="mt-1 text-sm text-gray-500">No team owners available</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Login Time Window */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Login Start Time <span className="text-gray-400 text-xs">(optional)</span></label>
+                    <input
+                      type="time"
+                      name="login_start_time"
+                      value={formData.login_start_time}
                       onChange={handleChange}
-                      disabled={loadingTeamOwners}
-                      className={`w-full px-3 py-2 border ${errors.teamOwnerId ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white ${loadingTeamOwners ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Login End Time <span className="text-gray-400 text-xs">(optional)</span></label>
+                    <input
+                      type="time"
+                      name="login_end_time"
+                      value={formData.login_end_time}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    />
+                  </div>
+
+                  {/* Max Active Sessions */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Active Sessions</label>
+                    <select
+                      name="max_active_sessions"
+                      value={formData.max_active_sessions}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     >
-                      <option value="">
-                        {loadingTeamOwners ? 'Loading team owners...' : 'Select Team Owner '}
-                      </option>
-                      {teamOwners.map((owner) => (
-                        <option key={owner.counsellor_id} value={owner.counsellor_id}>
-                          {owner.counsellor_name}
-                        </option>
+                      {[1,2,3,4,5].map(n => (
+                        <option key={n} value={n}>{n} session{n > 1 ? 's' : ''}</option>
                       ))}
                     </select>
-                    {errors.teamOwnerId && <p className="mt-1 text-sm text-red-600">{errors.teamOwnerId}</p>}
-                    {teamOwners.length === 0 && !loadingTeamOwners && (
-                      <p className="mt-1 text-sm text-gray-500">No team owners available</p>
-                    )}
                   </div>
 
                   <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 col-span-2">

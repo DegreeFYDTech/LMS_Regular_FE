@@ -1,10 +1,11 @@
 import axios from "axios";
 import { BASE_URL } from "../config/api";
-export const loginCounsellor = async (email, password) => {
+export const loginCounsellor = async (email, password, forceLogout = false) => {
   try {
     const response = await axios.post(`${BASE_URL}/counsellor/login`, {
       email,
       password,
+      forceLogout,
     }, { withCredentials: true });
     return response.data;
   } catch (error) {

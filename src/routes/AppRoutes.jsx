@@ -42,6 +42,7 @@ const ManageCourses = lazy(() => import("../pages/ManageCourses"));
 const WebsiteChatDashboard = lazy(
   () => import("../components/chat/WebsiteChatDashboard"),
 );
+const LoginAttempts = lazy(() => import("../pages/LoginAttempts"));
 
 const AnalyserBucket = lazy(() => import("../pages/AnalyserBucket"));
 const CollegeBrochure = lazy(() => import("../pages/CollegeBrochure"));
@@ -160,6 +161,14 @@ const AppRoutes = () => {
                 element={
                   <RoleBasedRoute allowedRoles={["Supervisor", "to","to_l3"]}>
                     <CounsellorListing />
+                  </RoleBasedRoute>
+                }
+              />
+                <Route
+                path="/login-attempts"
+                element={
+                  <RoleBasedRoute allowedRoles={["Supervisor"]}>
+                    <LoginAttempts />
                   </RoleBasedRoute>
                 }
               />
