@@ -1,5 +1,6 @@
 import React from 'react';
-import { Form, Input, Select, Divider, Typography, Space } from 'antd';
+import { Form, Input, Select, Divider, Typography, Space, AutoComplete, Button } from 'antd';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -7,6 +8,7 @@ const { TextArea } = Input;
 const RuleForm = ({
   rule,
   options,
+  questionSchema = [],
   submitting,
   isEditing,
   onRuleChange
@@ -92,6 +94,73 @@ const RuleForm = ({
           </div>
         </div>
       ))}
+
+      <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Student Questions</Divider>
+      <div style={{ marginBottom: '24px', backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+        {(rule.conditions?.student_question || []).map((sq, index) => (
+          <div key={index} style={{ display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <AutoComplete
+                style={{ width: '100%' }}
+                placeholder="Enter Question (e.g. Do you have a laptop?)"
+                value={sq.question}
+                options={questionSchema.map(q => ({ value: q.key, label: q.label }))}
+                getPopupContainer={(triggerNode) => triggerNode.parentNode}
+                onChange={(val) => {
+                  const newQs = [...(rule.conditions.student_question || [])];
+                  newQs[index].question = val;
+                  handleConditionChange('student_question', newQs);
+                }}
+                filterOption={(inputValue, option) =>
+                  option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                }
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              {(() => {
+                const schemaForQ = questionSchema.find(q => q.key === sq.question);
+                const answerOptions = schemaForQ?.options?.map(opt => ({ value: opt, label: opt })) || [];
+                return (
+                  <Select
+                    mode="tags"
+                    style={{ width: '100%' }}
+                    placeholder="Enter acceptable answers"
+                    value={sq.answer || []}
+                    options={answerOptions}
+                    getPopupContainer={(triggerNode) => triggerNode.parentNode}
+                    onChange={(val) => {
+                      const newQs = [...(rule.conditions.student_question || [])];
+                      newQs[index].answer = val;
+                      handleConditionChange('student_question', newQs);
+                    }}
+                  />
+                );
+              })()}
+            </div>
+            <Button 
+              danger 
+              icon={<DeleteOutlined />} 
+              onClick={() => {
+                const newQs = [...(rule.conditions.student_question || [])];
+                newQs.splice(index, 1);
+                handleConditionChange('student_question', newQs);
+              }}
+            />
+          </div>
+        ))}
+        <Button 
+          type="dashed" 
+          onClick={() => {
+            const newQs = [...(rule.conditions.student_question || [])];
+            newQs.push({ question: '', answer: [] });
+            handleConditionChange('student_question', newQs);
+          }} 
+          block 
+          icon={<PlusOutlined />}
+        >
+          Add Question Condition
+        </Button>
+      </div>
 
       <Divider orientation="left" style={{ margin: '32px 0 16px' }}>Assignment</Divider>
 

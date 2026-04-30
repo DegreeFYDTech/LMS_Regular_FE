@@ -59,7 +59,8 @@ const LeadAssignmentRules = () => {
       preferred_degree: [],
       preferred_specialization: [],
       preferred_city: [],
-      preferred_state: []
+      preferred_state: [],
+      student_question: []
     },
     assigned_counsellor_ids: [],
     is_active: true,
@@ -83,6 +84,8 @@ const LeadAssignmentRules = () => {
     preferred_state: ["Any"],
     counsellors: []
   });
+
+  const [questionSchema, setQuestionSchema] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -151,6 +154,17 @@ const LeadAssignmentRules = () => {
         preferred_degree: ['Any', ...degrees],
         preferred_specialization: ['Any', ...specializations]
       }));
+
+      try {
+        const schemaRes = await axios.get(`${BASE_URL}/student/advanced-filter/schema`, {
+          withCredentials: true
+        });
+        if (schemaRes.data?.success) {
+          setQuestionSchema(schemaRes.data.fields || []);
+        }
+      } catch (err) {
+        console.error('Error loading question schema:', err);
+      }
     } catch (error) {
       console.error('Error loading filter options:', error);
     }
@@ -183,7 +197,7 @@ const LeadAssignmentRules = () => {
     const allowedFields = [
       'utmCampaign', 'first_source_url', 'source', 'mode', 'preferred_budget',
       'current_profession', 'preferred_level', 'preferred_degree',
-      'preferred_specialization', 'preferred_city', 'preferred_state'
+      'preferred_specialization', 'preferred_city', 'preferred_state', 'student_question'
     ];
 
     Object.keys(payload.conditions).forEach(key => {
@@ -296,6 +310,7 @@ const LeadAssignmentRules = () => {
         first_source_url: Array.isArray(rule.conditions.first_source_url)
           ? rule.conditions.first_source_url.join('\n')
           : rule.conditions.first_source_url || '',
+        student_question: rule?.conditions?.student_question || []
       }
     };
     setEditingRule(editRule);
@@ -315,7 +330,8 @@ const LeadAssignmentRules = () => {
         preferred_degree: [],
         preferred_specialization: [],
         preferred_city: [],
-        preferred_state: []
+        preferred_state: [],
+        student_question: []
       },
       assigned_counsellor_ids: [],
       is_active: true,
@@ -401,7 +417,7 @@ const LeadAssignmentRules = () => {
           }
         }}
       >
-        <RuleForm rule={editingRule || newRule} options={options} submitting={submitting} isEditing={!!editingRule} onRuleChange={editingRule ? setEditingRule : setNewRule} />
+        <RuleForm rule={editingRule || newRule} options={options} questionSchema={questionSchema} submitting={submitting} isEditing={!!editingRule} onRuleChange={editingRule ? setEditingRule : setNewRule} />
       </AntModal>
     </Layout>
   );

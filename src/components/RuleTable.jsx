@@ -155,7 +155,11 @@ const RuleTable = ({
                       <div key={key}>
                         <Text type="secondary" block style={{ fontSize: '12px', textTransform: 'uppercase' }}>{key.replace(/_/g, ' ')}</Text>
                         <Space wrap>
-                          {Array.isArray(value) ? value.map(v => <Tag key={v}>{v}</Tag>) : <Text>{value}</Text>}
+                          {Array.isArray(value) ? value.map((v, idx) => (
+                            <Tag key={idx}>
+                              {key === 'student_question' ? `${v.question} (${Array.isArray(v.answer) ? v.answer.join(', ') : v.answer})` : v}
+                            </Tag>
+                          )) : <Text>{value}</Text>}
                         </Space>
                       </div>
                     );
