@@ -431,21 +431,7 @@ const HomePage = memo(() => {
             onCloseWhatsApp={() => setOpenChatModel(false)}
           />
 
-          <AdvancedFilter 
-            isOpen={isAdvancedFilterOpen}
-            onClose={() => setIsAdvancedFilterOpen(false)}
-            onApply={handleApplyAdvancedFilters}
-            onClear={handleClearAdvancedFilters}
-            initialFilters={advancedFilters}
-          />
-
-          <AdvancedFilter 
-            isOpen={isAdvancedFilterOpen}
-            onClose={() => setIsAdvancedFilterOpen(false)}
-            onApply={handleApplyAdvancedFilters}
-            onClear={handleClearAdvancedFilters}
-            initialFilters={advancedFilters}
-          />
+       
         </main>
       </div>
     </div>

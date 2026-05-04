@@ -195,7 +195,7 @@ const CollegeStatusReports = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `status-report-${filters.reportType}-${dayjs().format('DD-MM-YYYY')}.xlsx`);
+      link.setAttribute('download', `status-report-${filters.reportType}-${dayjs().format('DD-MM-YYYY')}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
