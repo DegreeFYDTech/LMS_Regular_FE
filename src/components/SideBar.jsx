@@ -82,12 +82,7 @@ const Sidebar = ({
             label: "Library",
             onClick: () => navigate("/college-brochure"),
           },
-          {
-            key: "payment-reports",
-            icon: <DollarOutlined className="text-lg" />,
-            label: "Payment Reports",
-            onClick: () => navigate("/payment-reports"),
-          },
+         
           // Form Dashboard - Only for Supervisor
           ...(isSupervisor ? [
             {
@@ -95,7 +90,12 @@ const Sidebar = ({
               icon: <DashboardTwoTone className="text-lg" />,
               label: "Form Dashboard",
               onClick: () => navigate("/form-dashboard"),
-            }
+            }, {
+            key: "payment-reports",
+            icon: <DollarOutlined className="text-lg" />,
+            label: "Payment Reports",
+            onClick: () => navigate("/payment-reports"),
+          },
           ] : []),
         ]
       : [];

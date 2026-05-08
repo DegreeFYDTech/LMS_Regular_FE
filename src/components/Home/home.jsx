@@ -15,6 +15,7 @@ import LeadsTable from './LeadsTable';
 import ModalsContainer from './ModalsContainer';
 import AdvancedFilter from './AdvancedFilter';
 import { secureCache } from '../../utils/cache';
+import StreamlinedFilters from '../AdvanceFilters';
 import { cleanQueryParams } from '../../utils/cleanParams'
 const HomePage = memo(() => {
   const { searchParams, parseFiltersFromURL, updateURL } = useURLSync();
@@ -381,6 +382,17 @@ const HomePage = memo(() => {
 
           <div className="mb-6">
             <AdvancedFilter
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onApplyFilters={handleApplyFilters}
+              onClearFilters={handleClearFilters}
+              loading={loading}
+              activeTab={activeTab}
+            />
+          </div>
+           
+          <div className="mb-6">
+            <StreamlinedFilters
               filters={filters}
               onFilterChange={handleFilterChange}
               onApplyFilters={handleApplyFilters}
