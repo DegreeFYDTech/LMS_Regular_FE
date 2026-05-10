@@ -11,6 +11,7 @@ import CollegeStatusReports from "../pages/CollegeStatusReports";
 import CounsellorStatsDashboard from "../pages/CounsellorReport";
 import FormToAdmissionsReport from "../pages/FormAdmission";
 import FormDashboard from "../pages/FormDashboard";
+import AdmissionGraphReport from "../pages/AdmissionGraphReport";
 
 const Loader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -288,6 +289,14 @@ const AppRoutes = () => {
                 element={
                   <RoleBasedRoute allowedRoles={["Supervisor"]}>
                     <CouponManagement />
+                  </RoleBasedRoute>
+                }
+              />
+              <Route
+                path="/admission-graph-report"
+                element={
+                  <RoleBasedRoute allowedRoles={["Supervisor", "to", "to_l3", "Analyser"]}>
+                    <AdmissionGraphReport />
                   </RoleBasedRoute>
                 }
               />

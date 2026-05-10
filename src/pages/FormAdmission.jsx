@@ -6,7 +6,6 @@ import {
     Spin,
     Empty,
     Tag,
-    Tooltip,
     Space,
     Typography,
     Button,
@@ -25,14 +24,18 @@ import axios from 'axios';
 import { BASE_URL } from '../config/api';
 import DashboardHeader from '../components/MainReport/DashboardHeader';
 
-const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
-const { Option } = Select;
+
+const VIEW_OPTIONS = [
+    { value: 'college', label: 'College' },
+    { value: 'l3', label: 'L3' },
+];
 
 const FormToAdmissionsReport = () => {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState([]);
     const [selectedDate, setSelectedDate] = useState(dayjs());
+    const [viewBy, setViewBy] = useState('college');
     const [summaryStats, setSummaryStats] = useState({
         totalYtdForms: 0,
         totalYtdAdmissions: 0,
@@ -45,19 +48,27 @@ const FormToAdmissionsReport = () => {
         totalFtdF2A: 0
     });
 
-    const fetchData = async (date) => {
+    const fetchData = async (date, view) => {
         setLoading(true);
         try {
             const tillDate = date.format('YYYY-MM-DD');
-            const url = `${BASE_URL}/StudentCourseStatusLogs/course-reports?till_date=${tillDate}`;
+            const baseUrl = `${BASE_URL}/StudentCourseStatusLogs/course-reports?till_date=${tillDate}`;
 
-            const response = await axios.get(url, {
-                withCredentials: true,
-            });
-
-            if (response.data.success) {
-                setData(response.data.data);
-                calculateSummaryStats(response.data.data);
+            if (view === 'college') {
+                const response = await axios.get(`${baseUrl}&view=college`, { withCredentials: true });
+                if (response.data.success) {
+                    setData(response.data.data);
+                    calculateSummaryStats(response.data.data);
+                }
+            } else {
+                // Fetch table data (L3 view) and summary data (college view) in parallel
+                const [tableRes, summaryRes] = await Promise.all([
+                    axios.get(`${baseUrl}&view=${view}`, { withCredentials: true }),
+                    axios.get(`${baseUrl}&view=college`, { withCredentials: true }),
+                ]);
+                if (tableRes.data.success) setData(tableRes.data.data);
+                // Summary cards always reflect college-level totals for consistency
+                if (summaryRes.data.success) calculateSummaryStats(summaryRes.data.data);
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -67,11 +78,10 @@ const FormToAdmissionsReport = () => {
     };
 
     useEffect(() => {
-        fetchData(selectedDate);
+        fetchData(selectedDate, viewBy);
     }, []);
 
     const calculateSummaryStats = (data) => {
-        // Get totals row (last item)
         const totals = data[data.length - 1];
         if (totals && totals.college_name === 'Total') {
             setSummaryStats({
@@ -90,13 +100,19 @@ const FormToAdmissionsReport = () => {
 
     const handleDateChange = (date) => {
         setSelectedDate(date);
-        fetchData(date);
+        fetchData(date, viewBy);
+    };
+
+    const handleViewChange = (value) => {
+        setViewBy(value);
+        fetchData(selectedDate, value);
     };
 
     const handleReset = () => {
         const today = dayjs();
         setSelectedDate(today);
-        fetchData(today);
+        setViewBy('college');
+        fetchData(today, 'college');
     };
 
     const getF2ATag = (value) => {
@@ -118,9 +134,11 @@ const FormToAdmissionsReport = () => {
         );
     };
 
+    const firstColumnTitle = viewBy === 'l3' ? 'L3 Counsellor' : 'College';
+
     const columns = [
         {
-            title: 'College',
+            title: firstColumnTitle,
             dataIndex: 'college_name',
             key: 'college_name',
             fixed: 'left',
@@ -136,7 +154,6 @@ const FormToAdmissionsReport = () => {
                 </Space>
             ),
         },
-        // YTD Columns
         {
             title: 'YTD Forms',
             children: [
@@ -177,7 +194,6 @@ const FormToAdmissionsReport = () => {
                 },
             ],
         },
-        // MTD Columns
         {
             title: 'MTD Forms',
             children: [
@@ -218,7 +234,6 @@ const FormToAdmissionsReport = () => {
                 },
             ],
         },
-        // FTD Columns
         {
             title: 'FTD Forms',
             children: [
@@ -279,7 +294,7 @@ const FormToAdmissionsReport = () => {
             ]
         },
         {
-            title: 'Today\'s Performance',
+            title: "Today's Performance",
             metrics: [
                 { label: 'Total Forms', value: summaryStats.totalFtdForms, color: 'blue' },
                 { label: 'Total Admissions', value: summaryStats.totalFtdAdmissions, color: 'green' },
@@ -295,7 +310,7 @@ const FormToAdmissionsReport = () => {
                     title="Form to Admissions Report"
                     subtitle="Track form submissions and conversion rates across colleges"
                     actions={
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                             <Space>
                                 <CalendarOutlined className="text-gray-400" />
                                 <Text strong className="text-gray-600">Till Date:</Text>
@@ -307,6 +322,21 @@ const FormToAdmissionsReport = () => {
                                 className="!rounded-lg h-10 border-gray-300 hover:border-blue-400 focus:border-blue-500 w-40"
                                 allowClear={false}
                             />
+
+                            <Select
+                                value={viewBy}
+                                onChange={handleViewChange}
+                                options={VIEW_OPTIONS}
+                                style={{ width: 120, height: 40 }}
+                            />
+
+                            <Button
+                                icon={<ReloadOutlined />}
+                                onClick={handleReset}
+                                className="h-10"
+                            >
+                                Reset
+                            </Button>
 
                             <Button
                                 type="primary"
@@ -353,7 +383,7 @@ const FormToAdmissionsReport = () => {
                                 pagination={{
                                     pageSize: 20,
                                     showSizeChanger: true,
-                                    showTotal: (total) => `Total ${total} colleges`,
+                                    showTotal: (total) => `Total ${total} ${viewBy === 'l3' ? 'L3 counsellors' : 'colleges'}`,
                                     className: "px-4 py-2"
                                 }}
                                 bordered

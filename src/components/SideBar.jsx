@@ -25,6 +25,7 @@ import {
   UpOutlined,
   DollarOutlined,
   DashboardTwoTone,
+  LineChartOutlined,
 } from "@ant-design/icons";
 import AgentsDropdown from "./AgentDropdown";
 
@@ -255,6 +256,12 @@ const Sidebar = ({
             onClick: () => navigate("/analysisreport"),
           },
           {
+            key: "graph-reports",
+            icon: <LineChartOutlined />,
+            label: "Graph Reports",
+            onClick: () => navigate("/admission-graph-report"),
+          },
+          {
             key: "manage-courses",
             icon: <AppstoreOutlined />,
             label: "Manage Courses",
@@ -274,6 +281,12 @@ const Sidebar = ({
               icon: <SolutionOutlined />,
               label: "Reports Portal",
               onClick: () => navigate("/analysisreport"),
+            },
+            {
+              key: "graph-reports",
+              icon: <LineChartOutlined />,
+              label: "Graph Reports",
+              onClick: () => navigate("/admission-graph-report"),
             },
             {
               key: "bulk-upload",
