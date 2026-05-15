@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table,
   DatePicker,
+  Select,
   Spin,
   Empty,
   Tooltip,
@@ -18,16 +19,17 @@ const ActiveFormReport = () => {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState([]);
   const [dateRange, setDateRange] = useState([dayjs().startOf('month'), dayjs()]);
+  const [groupBy, setGroupBy] = useState('college');
 
   const fetchReportData = useCallback(async () => {
     if (!dateRange || !dateRange[0] || !dateRange[1]) return;
-    
+
     setLoading(true);
     try {
       const params = {
         date_from: dateRange[0].format('YYYY-MM-DD'),
         date_to: dateRange[1].format('YYYY-MM-DD'),
-        type: 'summary'
+        type: groupBy === 'l3' ? 'l3_summary' : 'summary'
       };
 
       const response = await axios.get(`${BASE_URL}/studentcoursestatus/active-form-college-report`, { params });
@@ -43,7 +45,7 @@ const ActiveFormReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateRange]);
+  }, [dateRange, groupBy]);
 
   useEffect(() => {
     fetchReportData();
@@ -55,6 +57,7 @@ const ActiveFormReport = () => {
 
   const handleResetFilters = () => {
     setDateRange([dayjs().startOf('month'), dayjs()]);
+    setGroupBy('college');
   };
 
   const handleExport = async () => {
@@ -108,7 +111,7 @@ const ActiveFormReport = () => {
   };
 
   const stats = {
-    totalColleges: reportData.length,
+    totalCount: reportData.length,
     totalForms: reportData.reduce((acc, curr) => acc + parseInt(curr.total_count || 0), 0),
     notWorked: reportData.reduce((acc, curr) => acc + parseInt(curr.not_worked_cases || 0), 0),
     zeroToThree: reportData.reduce((acc, curr) => acc + parseInt(curr.days_0_3 || 0), 0),
@@ -116,9 +119,9 @@ const ActiveFormReport = () => {
 
   const columns = [
     {
-      title: 'College Name',
-      dataIndex: 'university_name',
-      key: 'university_name',
+      title: groupBy === 'l3' ? 'L3 Counsellor' : 'College Name',
+      dataIndex: groupBy === 'l3' ? 'assigned_l3_name' : 'university_name',
+      key: 'group_name',
       render: (text) => <div className="font-semibold text-slate-800">{text}</div>,
     },
     {
@@ -220,6 +223,21 @@ const ActiveFormReport = () => {
                 allowClear={false}
               />
             </div>
+
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2 border bg-slate-50 border-slate-200">
+              <Users size={16} className="text-slate-400" />
+              <Select
+                value={groupBy}
+                onChange={setGroupBy}
+                size="middle"
+                className="!border-0 !bg-transparent !shadow-none min-w-[130px]"
+                variant="borderless"
+                options={[
+                  { value: 'college', label: 'By College' },
+                  { value: 'l3', label: 'By L3' },
+                ]}
+              />
+            </div>
             
             <div className="ml-auto flex items-center gap-2">
               <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Selected Period:</span>
@@ -238,8 +256,8 @@ const ActiveFormReport = () => {
                 <Building2 size={20} className="text-white" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">Total Colleges</p>
-                <p className="text-2xl font-black text-blue-700">{stats.totalColleges}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">{groupBy === 'l3' ? 'Total L3s' : 'Total Colleges'}</p>
+                <p className="text-2xl font-black text-blue-700">{stats.totalCount}</p>
               </div>
             </div>
           </div>
@@ -288,7 +306,7 @@ const ActiveFormReport = () => {
               <Table
                 columns={columns}
                 dataSource={reportData}
-                rowKey="university_name"
+                rowKey={groupBy === 'l3' ? 'assigned_l3_name' : 'university_name'}
                 pagination={false}
                 className="custom-report-table"
                 size="middle"
