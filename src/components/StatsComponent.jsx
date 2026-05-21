@@ -25,17 +25,24 @@ const StatsComponent = ({ overallStats, filters, activeRole, onFilterChange }) =
   const { token } = useToken();
 
   const handleCardClick = (cardLabel) => {
+    const dateFilters = {
+      ...(filters.createdAt_start && { createdAt_start: filters.createdAt_start }),
+      ...(filters.createdAt_end && { createdAt_end: filters.createdAt_end }),
+    };
+
     let newFilters = {};
 
     switch (cardLabel) {
       case 'Fresh Leads':
         newFilters = {
+          ...dateFilters,
           freshLeads: 'Fresh',
           data: activeRole
         };
         break;
       case 'Today CB Pending':
         newFilters = {
+          ...dateFilters,
           callback: 'today',
           data: activeRole,
           sort: 'createdAt:asc'
@@ -43,24 +50,28 @@ const StatsComponent = ({ overallStats, filters, activeRole, onFilterChange }) =
         break;
       case 'Not Connected Yet':
         newFilters = {
+          ...dateFilters,
           data: activeRole,
           isconnectedyet: 'Not Connected'
         };
         break;
       case 'Unread Messages':
         newFilters = {
+          ...dateFilters,
           data: activeRole,
           number_of_unread_messages: "true"
         };
         break;
       case 'Students Reactivity':
         newFilters = {
+          ...dateFilters,
           data: activeRole,
           lead_reactive: true
         };
         break;
       case 'Total Leads':
         newFilters = {
+          ...dateFilters,
           data: activeRole
         };
         break;

@@ -755,10 +755,13 @@ const UnifiedCallModal = ({
         setIsCredSubmitting(false);
       }
 
-      const res = await updateStudentStatus(
-        selectedStudent.student_id,
-        payload,
-      );
+      const res = await updateStudentStatus(selectedStudent.student_id, {
+        ...payload,
+        formID,
+        couponCode,
+        userName,
+        password,
+      });
       if (res.success) {
         const i = leads.findIndex(
           (l) => l.student_id === selectedStudent.student_id,

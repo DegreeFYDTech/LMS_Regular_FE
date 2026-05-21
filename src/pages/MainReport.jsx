@@ -9,6 +9,7 @@ import CounsellorStatsDashboard from './CounsellorReport';
 import TabsNavigation from '../components/ReportAnalysis/TabsNavigation';
 import { useSelector } from 'react-redux';
 import FormToAdmissionsReport from './FormAdmission';
+import ActiveFormReport from './ActiveFormReport';
 
 const MainReport = () => {
   const storedRole = useSelector((state) => state.auth.role);
@@ -49,6 +50,8 @@ const MainReport = () => {
         return <CounsellorStatsDashboard key="counsellorReport" />;
       case 'formToAdmissions':
         return <FormToAdmissionsReport key="formToAdmissions" />;
+      case 'activeFormReport':
+        return <ActiveFormReport key="activeFormReport" />;
       default:
         return <ReportAnalysis key="default" forcedTab="lead" leadSubTabProp={leadSubTab} setLeadSubTabProp={setLeadSubTab} />;
     }

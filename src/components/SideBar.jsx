@@ -25,6 +25,7 @@ import {
   UpOutlined,
   DollarOutlined,
   DashboardTwoTone,
+  LineChartOutlined,
 } from "@ant-design/icons";
 import AgentsDropdown from "./AgentDropdown";
 
@@ -82,21 +83,24 @@ const Sidebar = ({
             label: "Library",
             onClick: () => navigate("/college-brochure"),
           },
-         
+
           // Form Dashboard - Only for Supervisor
-          ...(isSupervisor ? [
-            {
-              key: "form-dashboard",
-              icon: <DashboardTwoTone className="text-lg" />,
-              label: "Form Dashboard",
-              onClick: () => navigate("/form-dashboard"),
-            }, {
-            key: "payment-reports",
-            icon: <DollarOutlined className="text-lg" />,
-            label: "Payment Reports",
-            onClick: () => navigate("/payment-reports"),
-          },
-          ] : []),
+          ...(isSupervisor
+            ? [
+                {
+                  key: "form-dashboard",
+                  icon: <DashboardTwoTone className="text-lg" />,
+                  label: "Form Dashboard",
+                  onClick: () => navigate("/form-dashboard"),
+                },
+                {
+                  key: "payment-reports",
+                  icon: <DollarOutlined className="text-lg" />,
+                  label: "Payment Reports",
+                  onClick: () => navigate("/payment-reports"),
+                },
+              ]
+            : []),
         ]
       : [];
 
@@ -252,6 +256,12 @@ const Sidebar = ({
             onClick: () => navigate("/analysisreport"),
           },
           {
+            key: "graph-reports",
+            icon: <LineChartOutlined />,
+            label: "Graph Reports",
+            onClick: () => navigate("/admission-graph-report"),
+          },
+          {
             key: "manage-courses",
             icon: <AppstoreOutlined />,
             label: "Manage Courses",
@@ -271,6 +281,12 @@ const Sidebar = ({
               icon: <SolutionOutlined />,
               label: "Reports Portal",
               onClick: () => navigate("/analysisreport"),
+            },
+            {
+              key: "graph-reports",
+              icon: <LineChartOutlined />,
+              label: "Graph Reports",
+              onClick: () => navigate("/admission-graph-report"),
             },
             {
               key: "bulk-upload",

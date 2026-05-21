@@ -100,7 +100,7 @@ const StreamlinedFilters = ({
     debounce((key, value, updatedFilters) => {
       onFilterChange(key, value, updatedFilters);
     }, 500),
-    [],
+    [onFilterChange],
   );
 
   const handleLocalFilterChange = (key, value) => {
