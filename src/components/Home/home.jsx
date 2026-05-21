@@ -391,7 +391,7 @@ const HomePage = memo(() => {
             />
           </div>
            
-          <div className="mb-6">
+          {/*<div className="mb-6">
             <StreamlinedFilters
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -400,7 +400,7 @@ const HomePage = memo(() => {
               loading={loading}
               activeTab={activeTab}
             />
-          </div>
+          </div>*/}
 
           <LeadsTable
             loading={loading}
