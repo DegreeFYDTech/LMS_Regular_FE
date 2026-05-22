@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { debounce } from "lodash";
 import {
   Table,
   Card,
@@ -20,6 +21,7 @@ import {
   message,
   Divider,
   Modal,
+  Switch,
 } from "antd";
 import {
   SearchOutlined,
@@ -28,19 +30,15 @@ import {
   TeamOutlined,
   CheckCircleOutlined,
   StopOutlined,
-  WifiOutlined,
-  EyeOutlined,
   KeyOutlined,
   SettingOutlined,
   PoweroffOutlined,
-  LogoutOutlined,
   UsergroupAddOutlined,
   HistoryOutlined,
   ReloadOutlined,
   PlusOutlined,
   ClearOutlined,
-  LockOutlined,
-  UnlockOutlined,
+  WifiOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
@@ -49,20 +47,14 @@ import {
   getAllCounsellors,
   updateCounsellorStatus,
   changeCounsellorPassword,
-  updateCounsellorPreferredMode,
-  makeCounsellorLogout,
   changeSupervisor,
   getAllSupervisors,
-  registerAgent,
   toggleBlockCounsellor,
 } from "../network/counsellor";
 
-import UserDetailsModal from "../components/modals/UserDetailsModal";
-import LogoutUserModal from "../components/modals/LogoutCounsellorModal";
 import ChangePasswordModal from "../components/modals/ChangePasswordModal";
 import DisableUserModal from "../components/modals/DisableUserModal";
 import ChangeRoleModal from "../components/modals/ChangeRoleModal";
-import PreferredModeModal from "../components/modals/PreferredModeModal";
 import SupervisorModal from "../components/modals/SupervisorModal";
 import AccessSettingsModal from "../components/modals/AccessSettingsModal";
 import BulkAccessModal from "../components/modals/BulkAccessModal";
@@ -111,15 +103,12 @@ const UserListing = () => {
   const hasActiveFilter = roleFilter || statusFilter || supervisorFilter || dateRange.length === 2 || searchQuery;
 
   // Modal visibility
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAccessModal, setShowAccessModal] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showSupervisorModal, setShowSupervisorModal] = useState(false);
-  const [showPreferredModeModal, setShowPreferredModeModal] = useState(false);
 
   // Selected data
   const [selectedUser, setSelectedUser] = useState(null);
@@ -127,14 +116,10 @@ const UserListing = () => {
   const [selectedSupervisorId, setSelectedSupervisorId] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isAddingPartner, setIsAddingPartner] = useState(false);
 
   const storedUser = useSelector((state) => state.auth.user);
   const storedRole = useSelector((state) => state.auth.role);
   const isSupervisor = storedRole === "Supervisor";
-
-  // Debounce search
-  const searchTimer = useRef(null);
 
   const buildParams = useCallback(
     (page, limit) => {
@@ -196,19 +181,26 @@ const UserListing = () => {
     [buildParams, pageSize]
   );
 
+  // Keep a ref to the latest fetchData so the debounced function never closes over stale state
+  const fetchDataRef = useRef(fetchData);
+  useEffect(() => { fetchDataRef.current = fetchData; });
+
   // Initial load
   useEffect(() => {
-    fetchData(1, pageSize);
+    fetchDataRef.current(1, pageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Debounced search refetch
+  // Lodash debounced search — calls through ref so it always uses latest fetchData/searchQuery
+  const debouncedSearch = useMemo(
+    () => debounce(() => fetchDataRef.current(1, pageSize), 400),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pageSize]
+  );
+
   useEffect(() => {
-    clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      fetchData(1, pageSize);
-    }, 400);
-    return () => clearTimeout(searchTimer.current);
+    debouncedSearch();
+    return () => debouncedSearch.cancel();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
@@ -266,8 +258,6 @@ const UserListing = () => {
   ];
 
   // Action handlers
-  const handleViewDetails = (user) => { setSelectedUser(user); setShowDetailsModal(true); };
-  const handleLogoutUser = (user) => { setSelectedUser(user); setShowLogoutModal(true); };
   const handleChangePassword = (user) => {
     setSelectedUser(user);
     setShowChangePasswordModal(true);
@@ -281,16 +271,6 @@ const UserListing = () => {
     setShowSupervisorModal(true);
   };
   const handleAccessSettings = (user) => { setAccessUser(user); setShowAccessModal(true); };
-
-  const confirmLogoutUser = async () => {
-    try {
-      await makeCounsellorLogout(selectedUser.counsellor_id);
-      setShowLogoutModal(false);
-      message.success("User logged out successfully!");
-    } catch (err) {
-      message.error(`Failed to logout user: ${err.message}`);
-    }
-  };
 
   const handleToggleBlock = (user) => {
     Modal.confirm({
@@ -435,21 +415,19 @@ const UserListing = () => {
       key: "status",
       width: 110,
       render: (status, record) => {
+        if (record.is_blocked) {
+          return <Tag color="red" className="text-xs font-semibold">Blocked</Tag>;
+        }
         const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.inactive;
         return (
-          <Space direction="vertical" size={0}>
-            <Badge
-              status={cfg.color}
-              text={
-                <span className={`text-xs font-medium ${status === "active" ? "text-green-600" : status === "suspended" ? "text-yellow-600" : "text-red-500"}`}>
-                  {cfg.label}
-                </span>
-              }
-            />
-            {record.is_blocked && (
-              <Tag color="red" className="text-[10px] m-0 mt-1">Blocked</Tag>
-            )}
-          </Space>
+          <Badge
+            status={cfg.color}
+            text={
+              <span className={`text-xs font-medium ${status === "active" ? "text-green-600" : status === "suspended" ? "text-yellow-600" : "text-red-500"}`}>
+                {cfg.label}
+              </span>
+            }
+          />
         );
       },
     },
@@ -474,18 +452,19 @@ const UserListing = () => {
         ),
     },
     {
-      title: "Work Mode",
-      dataIndex: "counsellor_preferred_mode",
-      key: "mode",
-      width: 110,
-      render: (mode) => (
-        <Tag
-          icon={<WifiOutlined />}
-          color={mode === "Online" ? "processing" : "default"}
-          className="text-xs rounded-md"
-        >
-          {mode || "Regular"}
-        </Tag>
+      title: "Blocked",
+      key: "blocked",
+      width: 90,
+      align: "center",
+      render: (_, record) => (
+        <Switch
+          size="small"
+          checked={!!record.is_blocked}
+          checkedChildren="Yes"
+          unCheckedChildren="No"
+          onChange={() => handleToggleBlock(record)}
+          className={record.is_blocked ? "bg-red-500" : ""}
+        />
       ),
     },
     {
@@ -504,15 +483,6 @@ const UserListing = () => {
       width: 200,
       render: (_, record) => (
         <Space size={2}>
-          <Tooltip title="View Profile">
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => handleViewDetails(record)}
-              className="text-blue-400 hover:text-blue-600 hover:bg-blue-50"
-            />
-          </Tooltip>
           <Tooltip title="Change Password">
             <Button
               type="text"
@@ -553,26 +523,6 @@ const UserListing = () => {
               className={record.status === "active" ? "text-red-400 hover:text-red-600 hover:bg-red-50" : "text-green-400 hover:text-green-600 hover:bg-green-50"}
             />
           </Tooltip>
-          <Tooltip title="Force Logout">
-            <Button
-              type="text"
-              size="small"
-              icon={<LogoutOutlined />}
-              onClick={() => handleLogoutUser(record)}
-              className="text-orange-400 hover:text-orange-600 hover:bg-orange-50"
-            />
-          </Tooltip>
-          {storedUser?.role === "Supervisor" && (
-            <Tooltip title={record.is_blocked ? "Unblock Agent" : "Block Agent"}>
-              <Button
-                type="text"
-                size="small"
-                icon={record.is_blocked ? <UnlockOutlined /> : <LockOutlined />}
-                onClick={() => handleToggleBlock(record)}
-                className={record.is_blocked ? "text-green-400 hover:text-green-600 hover:bg-green-50" : "text-red-400 hover:text-red-600 hover:bg-red-50"}
-              />
-            </Tooltip>
-          )}
         </Space>
       ),
     },
@@ -840,36 +790,6 @@ const UserListing = () => {
       </Drawer>
 
       {/* Modals */}
-      <UserDetailsModal
-        isOpen={showDetailsModal}
-        onClose={() => setShowDetailsModal(false)}
-        user={selectedUser}
-        displayStatus={(u) =>
-          u.status === "active" ? "Active" : u.status === "suspended" ? "Suspended" : "Inactive"
-        }
-      />
-
-      <PreferredModeModal
-        isOpen={showPreferredModeModal}
-        onClose={() => setShowPreferredModeModal(false)}
-        onConfirm={async () => {
-          const newMode =
-            selectedUser.counsellor_preferred_mode === "Online" ? "Regular" : "Online";
-          await updateCounsellorPreferredMode(selectedUser.counsellor_id, newMode);
-          fetchData(currentPage, pageSize);
-          setShowPreferredModeModal(false);
-          message.success(`Mode updated to ${newMode}`);
-        }}
-        user={selectedUser}
-      />
-
-      <LogoutUserModal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={confirmLogoutUser}
-        user={selectedUser}
-      />
-
       <ChangePasswordModal
         isOpen={showChangePasswordModal}
         onClose={() => setShowChangePasswordModal(false)}

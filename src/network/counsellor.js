@@ -44,11 +44,11 @@ export const bulkUpdateCounsellorAccessSettings = async (ids, settings) => {
 };
 
 // Get all counsellors
-export const getAllCounsellors = async (role = null) => {
+export const getAllCounsellors = async (params = {}) => {
   try {
     const res = await axios.get(`${BASE_URL}/counsellor/getAllCounsellors`, {
       withCredentials: true,
-      params: { role },
+      params,
     });
     return res.data;
   } catch (error) {
