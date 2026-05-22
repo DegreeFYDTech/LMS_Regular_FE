@@ -228,7 +228,7 @@ const DataTable = ({
           if (row.isSupervisor && row.supervisorName === 'No Supervisor') {
             const metrics = [
               'lead_count', 'total_leads', 'freshCount', 'attempted', 'connectedAnytime',
-              'icc', 'formfilled', 'formFilled', 'admission', 'active_cases', 'ni', 'enrolled',
+              'icc', 'formfilled', 'formFilled', 'need_active', 'admission', 'active_cases', 'ni', 'enrolled',
               'under_3_remarks', 'remarks_4_7', 'remarks_8_10', 'remarks_gt_10', 'preNI'
             ];
 
@@ -321,6 +321,16 @@ const DataTable = ({
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
               return renderValueWithDash(val, row, 'formFilled');
+            }
+          },
+          {
+            key: 'need_active',
+            label: 'Need Active',
+            align: 'center',
+            sortable: true,
+            render: (val, row) => {
+              if (shouldHideSupervisorRow(row)) return null;
+              return renderValueWithDash(val, row, 'need_active');
             }
           },
           {
@@ -540,6 +550,16 @@ const DataTable = ({
             }
           },
           {
+            key: 'need_active',
+            label: 'NEED ACTIVE',
+            align: 'center',
+            sortable: true,
+            render: (val, row) => {
+              if (shouldHideSupervisorRow(row)) return null;
+              return renderValueWithDash(val, row, 'need_active');
+            }
+          },
+          {
             key: 'admission',
             label: 'ADMISSIONS',
             align: 'center',
@@ -724,7 +744,7 @@ const DataTable = ({
         // Skip processing if this is a "No Supervisor" row with all zeros
         const metrics = [
           'lead_count', 'total_leads', 'freshCount', 'attempted', 'connectedAnytime',
-          'icc', 'formfilled', 'formFilled', 'admission', 'active_cases', 'ni', 'enrolled',
+          'icc', 'formfilled', 'formFilled', 'need_active', 'admission', 'active_cases', 'ni', 'enrolled',
           'under_3_remarks', 'remarks_4_7', 'remarks_8_10', 'remarks_gt_10', 'preNI'
         ];
 
@@ -735,7 +755,7 @@ const DataTable = ({
         if (allZeros) return; // Skip this item entirely
 
         // Identify if this is a Total row
-        const isTotalRow = sName.toLowerCase() === 'total' || 
+        const isTotalRow = sName.toLowerCase() === 'total' ||
                           item.group_by?.toString().toLowerCase() === 'total' ||
                           item.agentName?.toString().toLowerCase() === 'total';
 
@@ -750,6 +770,7 @@ const DataTable = ({
             icc: 0,
             formfilled: 0,
             formFilled: 0,
+            need_active: 0,
             admission: 0,
             connectedAnytimePercent: 0,
             iccPercent: 0,
@@ -780,6 +801,7 @@ const DataTable = ({
         supervisors[sName].icc += item.icc || 0;
         supervisors[sName].formfilled += item.formfilled || 0;
         supervisors[sName].formFilled += item.formFilled || 0;
+        supervisors[sName].need_active += item.need_active || 0;
         supervisors[sName].admission += item.admission || 0;
         supervisors[sName].active_cases += item.active_cases || 0;
         supervisors[sName].ni += item.ni || 0;
@@ -843,6 +865,7 @@ const DataTable = ({
           icc: item.icc || 0,
           formfilled: item.formfilled || item.formFilled || 0,
           formFilled: item.formFilled || item.formfilled || 0,
+          need_active: item.need_active || 0,
           admission: item.admission || item.admission_count || 0,
           connectedAnytimePercent: item.connectedAnytimePercent || 0,
           iccPercent: item.iccPercent || 0,

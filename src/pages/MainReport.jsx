@@ -10,6 +10,7 @@ import TabsNavigation from '../components/ReportAnalysis/TabsNavigation';
 import { useSelector } from 'react-redux';
 import FormToAdmissionsReport from './FormAdmission';
 import ActiveFormReport from './ActiveFormReport';
+import FirstRemarkTimeReport from './FirstRemarkTimeReport';
 
 const MainReport = () => {
   const storedRole = useSelector((state) => state.auth.role);
@@ -52,6 +53,8 @@ const MainReport = () => {
         return <FormToAdmissionsReport key="formToAdmissions" />;
       case 'activeFormReport':
         return <ActiveFormReport key="activeFormReport" />;
+      case 'firstRemarkTime':
+        return <FirstRemarkTimeReport key="firstRemarkTime" />;
       default:
         return <ReportAnalysis key="default" forcedTab="lead" leadSubTabProp={leadSubTab} setLeadSubTabProp={setLeadSubTab} />;
     }
