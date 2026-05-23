@@ -35,7 +35,7 @@ function AddCounsellor() {
       if (!isTeamOwner) {
         setLoadingTeamOwners(true);
         try {
-          const owners = await getAllCounsellors("to");
+          const owners = await getAllCounsellors({ role: "to" });
           setTeamOwners(owners);
         } catch (error) {
           console.error("Failed to fetch team owners:", error);

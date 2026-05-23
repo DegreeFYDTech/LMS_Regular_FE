@@ -115,6 +115,7 @@ const FilterPanel = ({
 
     if (activeTab === 'lead') {
       if (leadFilters?.source?.length > 0) count++;
+      if (leadFilters?.sourceUrl?.length > 0) count++;
       if (leadFilters?.utmCampaign?.length > 0) count++;
       if (leadFilters?.counsellorId?.length > 0) count++;
       if (leadFilters?.counsellorStatus) count++;
@@ -202,6 +203,10 @@ const FilterPanel = ({
       newActive.source = leadFilters.source.join(", ");
     }
 
+    if (leadFilters?.sourceUrl?.length > 0) {
+      newActive.sourceUrl = leadFilters.sourceUrl.join(", ");
+    }
+
     if (leadFilters?.utmCampaign?.length > 0) {
       newActive.utmCampaign = leadFilters.utmCampaign.join(", ");
     }
@@ -241,6 +246,10 @@ const FilterPanel = ({
 
     if (leadFilters?.source?.length > 0) {
       params.source = leadFilters.source;
+    }
+
+    if (leadFilters?.sourceUrl?.length > 0) {
+      params.source_url = leadFilters.sourceUrl.join(",");
     }
 
     if (leadFilters?.utmCampaign?.length > 0) {
@@ -285,6 +294,7 @@ const FilterPanel = ({
     if (activeTab === 'lead') {
       setLeadFilters({
         source: [],
+        sourceUrl: [],
         utmCampaign: [],
         counsellorId: [],
         counsellorNames: [],
@@ -357,6 +367,23 @@ const FilterPanel = ({
                       allowClear
                       showSearch
                       options={filterOptions.source?.map((s) => ({ value: s, label: s })) || []}
+                      className="w-full"
+                      filterOption={(input, option) =>
+                        option?.label?.toLowerCase().includes(input.toLowerCase())
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Source URL</label>
+                    <Select
+                      mode="multiple"
+                      placeholder="Select Source URLs"
+                      value={leadFilters?.sourceUrl || []}
+                      onChange={(value) => handleLeadFilterChange("sourceUrl", value)}
+                      allowClear
+                      showSearch
+                      options={filterOptions.sourceUrl?.map((u) => ({ value: u, label: u })) || []}
                       className="w-full"
                       filterOption={(input, option) =>
                         option?.label?.toLowerCase().includes(input.toLowerCase())
