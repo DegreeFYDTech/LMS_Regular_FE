@@ -56,7 +56,7 @@ const TabsNavigation = ({ activeTab, setActiveTab, leadSubTab, setLeadSubTab }) 
         ]
       },
       { id: 'remarks', label: 'Counsellor Remarks', icon: PieChart },
-      { id: 'track', label: 'General Track', icon: BarChart2 },
+      // { id: 'track', label: 'General Track', icon: BarChart2 },
       {
         id: 'attempt',
         label: 'Lead Attempt',
