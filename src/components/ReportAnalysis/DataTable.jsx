@@ -325,7 +325,7 @@ const DataTable = ({
           },
           {
             key: 'need_active',
-            label: 'Need Active',
+            label: 'Still ACTIVE',
             align: 'center',
             sortable: true,
             render: (val, row) => {
@@ -551,7 +551,7 @@ const DataTable = ({
           },
           {
             key: 'need_active',
-            label: 'NEED ACTIVE',
+            label: 'Still ACTIVE',
             align: 'center',
             sortable: true,
             render: (val, row) => {
