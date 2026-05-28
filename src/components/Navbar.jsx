@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/auth/authSlice";
 import {
@@ -10,6 +10,7 @@ import {
 import webSocketService from "../utils/websocket";
 import notificationDB from "../config/notificationDB";
 import { BASE_URL } from "../config/api";
+import { getStudentById } from "../network/student";
 import BreakModel from "./modals/Break";
 import {
   UserOutlined,
@@ -45,6 +46,7 @@ import WatsaapChat from "./WatsaapChat";
 const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [api, contextHolder] = notification.useNotification();
 
   // Notification states
@@ -55,7 +57,7 @@ const Navbar = () => {
   const [callbackUnreadCount, setCallbackUnreadCount] = useState(0);
   const [whatsappUnreadCount, setWhatsappUnreadCount] = useState(0);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
-
+  const [navbarStudent, setNavbarStudent] = useState(null);
   // Modal states
   const [showCallbackModal, setShowCallbackModal] = useState(false);
   const [showLeadModal, setShowLeadModal] = useState(false);
@@ -122,6 +124,34 @@ const Navbar = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const match = location.pathname.match(/^\/student\/(.+)$/);
+    if (match) {
+      const studentId = match[1];
+      getStudentById(studentId)
+        .then((res) => setNavbarStudent(res?.data || res))
+        .catch(() => setNavbarStudent(null));
+    } else {
+      setNavbarStudent(null);
+    }
+  }, [location.pathname]);
+
+  const preferredColleges = navbarStudent?.lead_activities
+    ?.filter((activity) => activity.lead_type === "csl")
+    .flatMap((activity) => activity.preferred_college_cll || [])
+    .filter(Boolean) || [];
+
+  const isCSL = navbarStudent?.lead_activities?.some(
+    (activity) => activity.lead_type === "csl",
+  );
+
+  const collegeSpecificMessage =
+    isCSL && preferredColleges.length > 0
+      ? `This is College Specific Lead for ${preferredColleges.join(", ")}`
+      : isCSL
+        ? "This is College Specific Lead"
+        : null;
 
   useEffect(() => {
     if (user && user.id) {
@@ -590,7 +620,30 @@ const Navbar = () => {
                 />
               </Link>
             </div>
-
+            {collegeSpecificMessage && (
+              <div className=" p-4 mb-4 rounded">
+                <div className="flex items-center justify-center">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-5 w-5 text-blue-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-700 text-center">
+                      {collegeSpecificMessage}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="hidden md:flex items-center space-x-4">
               {role !== "Supervisor" && role !== "Analyser" && (
                 <Tooltip title="Refresh Notifications">
@@ -609,7 +662,7 @@ const Navbar = () => {
                 role !== "to" && <BreakModel />}
 
               {/* Website Chat for Everyone including Supervisors */}
-              {(role !== "to") && (
+              {role !== "to" && (
                 <Tooltip title="Website Chat">
                   <Badge
                     count={chatUnreadCount}
