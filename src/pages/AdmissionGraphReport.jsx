@@ -299,7 +299,9 @@ const ChartCard = ({ title, subtitle, children, t }) => (
 const AdmissionGraphReport = () => {
   const [isDark, setIsDark] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [dateRange, setDateRange] = useState([dayjs().subtract(14, 'day'), dayjs()]);
+  const DEFAULT_RANGE = [dayjs().subtract(14, 'day'), dayjs()];
+  const [pendingDateRange, setPendingDateRange] = useState(DEFAULT_RANGE);
+  const [appliedDateRange, setAppliedDateRange] = useState(DEFAULT_RANGE);
   const [colleges, setColleges] = useState([]);
   const [selectedColleges, setSelectedColleges] = useState([]);
   const [graphData, setGraphData] = useState(null);
@@ -322,14 +324,15 @@ const AdmissionGraphReport = () => {
     fetchColleges();
   }, []);
 
-  const fetchData = useCallback(async (overrideColleges) => {
-    if (!dateRange[0] || !dateRange[1]) return;
+  const fetchData = useCallback(async (overrideColleges, overrideDateRange) => {
+    const dates = overrideDateRange ?? appliedDateRange;
+    if (!dates[0] || !dates[1]) return;
     setLoading(true);
     try {
       const active = overrideColleges ?? selectedColleges;
       const params = new URLSearchParams({
-        start_date: dateRange[0].format('YYYY-MM-DD'),
-        end_date: dateRange[1].format('YYYY-MM-DD'),
+        start_date: dates[0].format('YYYY-MM-DD'),
+        end_date: dates[1].format('YYYY-MM-DD'),
       });
       if (active.length > 0 && active.length < colleges.length) {
         active.forEach(c => params.append('colleges', c));
@@ -345,7 +348,7 @@ const AdmissionGraphReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateRange, selectedColleges, colleges.length]);
+  }, [appliedDateRange, selectedColleges, colleges.length]);
 
   useEffect(() => {
     if (colleges.length > 0) fetchData(colleges);
@@ -367,8 +370,8 @@ const AdmissionGraphReport = () => {
   const totalAdmissions = visibleSeries.reduce((sum, s) => sum + s.admissions.reduce((a, b) => a + b, 0), 0);
   const convRate = totalForms > 0 ? ((totalAdmissions / totalForms) * 100).toFixed(1) : '0.0';
 
-  const dateSubtitle = dateRange[0] && dateRange[1]
-    ? `${dateRange[0].format('MMM D')} – ${dateRange[1].format('MMM D, YYYY')}`
+  const dateSubtitle = appliedDateRange[0] && appliedDateRange[1]
+    ? `${appliedDateRange[0].format('MMM D')} – ${appliedDateRange[1].format('MMM D, YYYY')}`
     : '';
 
   const sharedLineProps = (key, s, i) => {
@@ -440,8 +443,8 @@ const AdmissionGraphReport = () => {
           <span style={{ color: t.textMuted, fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', marginRight: 2 }}>FILTERS</span>
           <div style={{ width: 1, height: 20, background: t.border, margin: '0 4px' }} />
           <RangePicker
-            value={dateRange}
-            onChange={v => v && setDateRange(v)}
+            value={pendingDateRange}
+            onChange={v => v && setPendingDateRange(v)}
             format="MMM D, YYYY"
             allowClear={false}
           />
@@ -454,7 +457,10 @@ const AdmissionGraphReport = () => {
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             <Button
               type="primary"
-              onClick={() => fetchData()}
+              onClick={() => {
+                setAppliedDateRange(pendingDateRange);
+                fetchData(undefined, pendingDateRange);
+              }}
               loading={loading}
               style={{ background: '#7C3AED', borderColor: '#7C3AED', fontWeight: 600 }}
             >
@@ -465,9 +471,10 @@ const AdmissionGraphReport = () => {
                 icon={<ReloadOutlined />}
                 onClick={() => {
                   const newRange = [dayjs().subtract(14, 'day'), dayjs()];
-                  setDateRange(newRange);
+                  setPendingDateRange(newRange);
+                  setAppliedDateRange(newRange);
                   setSelectedColleges(colleges);
-                  fetchData(colleges);
+                  fetchData(colleges, newRange);
                 }}
                 style={{ borderColor: t.border, color: t.textSub, background: t.bg }}
               />

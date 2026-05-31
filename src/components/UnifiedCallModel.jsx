@@ -325,7 +325,7 @@ const UnifiedCallModal = ({
       leadStatus.funnel1 === "Application" ||
       isAppDone ||
       (leadStatus.funnel1.includes("Initial Counsel") &&
-        leadStatus.funnel2 === "Walkin marked");
+        leadStatus.funnel2 === "Walkin Completed");
     if (!show) return false;
     return !isOnlineCollege(selectedUniversity);
   };
@@ -515,7 +515,13 @@ const UnifiedCallModal = ({
     resetToggles();
     setIsAppDone(checked);
     setIsAppStepSelectedFromProgress(checked);
-    if (checked) setSelectedAction("Connected");
+    if (checked) {
+      setSelectedAction("Connected");
+      setLeadStatus((prev) => ({
+        ...prev,
+        funnel2: existingCourseSubStatus || "Form Submitted – Portal Pending",
+      }));
+    }
   };
 
   const handleAdmissionToggle = (e) => {
@@ -524,6 +530,7 @@ const UnifiedCallModal = ({
     setIsAdmissionDone(checked);
     if (checked) {
       setSelectedAction("Connected");
+      setLeadStatus((prev) => ({ ...prev, funnel2: "" }));
       if (Number(coursecount) > 1) setIsAppStepSelectedFromProgress(true);
     } else {
       setIsAppDone(true);
