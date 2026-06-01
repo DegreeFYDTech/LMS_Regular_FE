@@ -530,8 +530,8 @@ const StreamlinedFilters = ({
                   handleLocalFilterChange("is_CSL", e.target.value)
                 }
               >
-                <Radio value="yes">Exclude CSL</Radio>
-                <Radio value="no">Only CSL</Radio>
+                <Radio value="no">Exclude CSL</Radio>
+                <Radio value="yes">Only CSL</Radio>
               </RadioGroup>
             </Form.Item>
           </Col>

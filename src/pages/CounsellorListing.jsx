@@ -22,6 +22,7 @@ import {
   Divider,
   Modal,
   Switch,
+  App as AntApp,
 } from "antd";
 import {
   SearchOutlined,
@@ -79,6 +80,7 @@ const STATUS_CONFIG = {
 };
 
 const UserListing = () => {
+  const { modal } = AntApp.useApp();
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -273,7 +275,7 @@ const UserListing = () => {
   const handleAccessSettings = (user) => { setAccessUser(user); setShowAccessModal(true); };
 
   const handleToggleBlock = (user) => {
-    Modal.confirm({
+    modal.confirm({
       title: user.is_blocked ? "Unblock Agent" : "Block Agent",
       content: `Are you sure you want to ${user.is_blocked ? "unblock" : "block"} ${user.counsellor_name}?`,
       okText: "Yes",
@@ -842,14 +844,17 @@ const UserListing = () => {
         onClose={() => {
           setShowBulkModal(false);
           setSelectedRowKeys([]);
+          setSelectedUsers([]);
         }}
-        users={selectedUsers}
+        selectedIds={selectedUsers.map((u) => u.counsellor_id)}
+        onSaved={() => fetchData(currentPage, pageSize)}
       />
 
       <AccessSettingsModal
         isOpen={showAccessModal}
         onClose={() => setShowAccessModal(false)}
-        counsellor={accessUser}
+        user={accessUser}
+        onSaved={() => fetchData(currentPage, pageSize)}
       />
     </div>
   );
