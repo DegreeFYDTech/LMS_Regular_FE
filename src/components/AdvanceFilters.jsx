@@ -551,7 +551,6 @@ const StreamlinedFilters = ({
     >
       <div className="mb-6">
         <div className="flex items-center gap-4">
-          {/* Search Bar */}
           <div className="relative flex-1">
             <input
               type="text"

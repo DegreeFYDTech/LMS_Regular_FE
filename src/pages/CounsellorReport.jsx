@@ -20,6 +20,7 @@ const CounsellorStatsDashboard = () => {
     const [data, setData] = useState([]);
     const [dateRange, setDateRange] = useState([null, null]);
     const [selectedCounsellor, setSelectedCounsellor] = useState('all');
+    const [formType, setFormType] = useState(null);
     const [showFilters, setShowFilters] = useState(false);
     const [summaryStats, setSummaryStats] = useState({
         totalForms: 0,
@@ -43,6 +44,7 @@ const CounsellorStatsDashboard = () => {
             if (counsellorId && counsellorId !== 'all') {
                 params.append('counsellor_id', counsellorId);
             }
+            if (formType) params.append('form_type', formType);
 
             const url = `${BASE_URL}/StudentCourseStatusLogs/counsellor-stats${params.toString() ? `?${params.toString()}` : ''}`;
 
@@ -84,8 +86,9 @@ const CounsellorStatsDashboard = () => {
     };
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        const [start, end] = dateRange;
+        fetchData(start, end, selectedCounsellor);
+    }, [formType]);
 
     const handleDateRangeChange = (dates) => {
         setDateRange(dates);
@@ -279,6 +282,17 @@ const CounsellorStatsDashboard = () => {
                     subtitle="Track counsellor performance and student follow-up metrics"
                     actions={
                         <div className="flex items-center gap-3">
+                            <Select
+                                value={formType}
+                                onChange={setFormType}
+                                allowClear
+                                placeholder="Form Type"
+                                style={{ minWidth: 130 }}
+                                options={[
+                                    { value: 'paid', label: '✓ Paid' },
+                                    { value: 'unpaid', label: '✗ Unpaid' },
+                                ]}
+                            />
                             <RangePicker
                                 className="!rounded-lg h-10 border-gray-300 hover:border-blue-400 focus:border-blue-500"
                                 onChange={handleDateRangeChange}

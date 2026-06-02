@@ -120,6 +120,7 @@ const FilterPanel = ({
       if (leadFilters?.counsellorId?.length > 0) count++;
       if (leadFilters?.counsellorStatus) count++;
       if (leadFilters?.dateRange) count++;
+      if (leadFilters?.formType) count++;
 
       if (pivotFilters?.colleges?.length > 0) count++;
       if (pivotFilters?.supervisors?.length > 0) count++;
@@ -266,6 +267,9 @@ const FilterPanel = ({
       params.created_at_start = leadFilters.dateRange[0].format("YYYY-MM-DD");
       params.created_at_end = leadFilters.dateRange[1].format("YYYY-MM-DD");
     }
+    if (leadFilters?.formType) {
+      params.form_type = leadFilters.formType;
+    }
 
     handleLeadSubfilter?.(params);
   };
@@ -299,7 +303,8 @@ const FilterPanel = ({
         counsellorId: [],
         counsellorNames: [],
         dateRange: null,
-        counsellorStatus: ''
+        counsellorStatus: '',
+        formType: '',
       });
       setPivotFilters({
         colleges: [],
@@ -432,6 +437,21 @@ const FilterPanel = ({
                       ]}
                     />
                   </div>}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Form Type</label>
+                    <Select
+                      placeholder="All form types"
+                      value={leadFilters?.formType || ''}
+                      onChange={(value) => handleLeadFilterChange("formType", value)}
+                      allowClear
+                      className="w-full"
+                      options={[
+                        { value: 'paid', label: '✓ Paid' },
+                        { value: 'unpaid', label: '✗ Unpaid' },
+                      ]}
+                    />
+                  </div>
 
                 </div>
 

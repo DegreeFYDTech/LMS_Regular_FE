@@ -53,7 +53,8 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
     counsellorId: [],
     counsellorNames: [],
     dateRange: null,
-    counsellorStatus: ''
+    counsellorStatus: '',
+    formType: '',
   });
   const [pivotFilters, setPivotFilters] = useState({
     colleges: [],
@@ -397,6 +398,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
           params.created_at_start = filters.dateRange[0].format("YYYY-MM-DD");
           params.created_at_end = filters.dateRange[1].format("YYYY-MM-DD");
         }
+        if (filters.formType) params.form_type = filters.formType;
         return params;
       }
 
@@ -738,6 +740,9 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
       }
       if (pivotFilters.counsellorStatus) {
         params.append('counsellor_status', pivotFilters.counsellorStatus);
+      }
+      if (filters.formType) {
+        params.append('form_type', filters.formType);
       }
       const response = await axios.get(
         `${BASE_URL}/studentcoursestatus/lead-status-report?${params.toString()}`
