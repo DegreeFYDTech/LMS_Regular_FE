@@ -132,6 +132,7 @@ const ReconRuleset = () => {
     if (rule) {
       form.setFieldsValue({
         custom_rule_name: rule.custom_rule_name,
+        source_url: rule.source_url || [],
         conditions: rule.conditions,
         assigned_university_names: rule.assigned_university_names,
         is_active: rule.is_active
@@ -585,14 +586,27 @@ const ReconRuleset = () => {
               </Col>
             </Row>
 
+            <Row gutter={isMobile ? 0 : 16}>
+              <Col span={24} className={isMobile ? "mb-4" : "mb-2"}>
+                <Form.Item label="Source URL" name="source_url">
+                  <Select
+                    mode="tags"
+                    placeholder="Type source URLs and press Enter"
+                    size={isMobile ? "large" : "middle"}
+                    tokenSeparators={[',']}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
             <div className="mb-4">
               <h4 className="font-medium mb-3">Conditions</h4>
               
               <Row gutter={isMobile ? 0 : 16}>
                 <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
                   <Form.Item label="UTM Campaign" name={['conditions', 'utmCampaign']}>
-                    <Select 
-                      mode="multiple" 
+                    <Select
+                      mode="multiple"
                       placeholder="Select UTM campaigns"
                       size={isMobile ? "large" : "middle"}
                     >
@@ -603,9 +617,22 @@ const ReconRuleset = () => {
                   </Form.Item>
                 </Col>
                 <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
+                  <Form.Item label="Source URL (Condition)" name={['conditions', 'source_url']}>
+                    <Select
+                      mode="tags"
+                      placeholder="Type source URLs and press Enter"
+                      size={isMobile ? "large" : "middle"}
+                      tokenSeparators={[',']}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={isMobile ? 0 : 16}>
+                <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
                   <Form.Item label="Source" name={['conditions', 'source']}>
-                    <Select 
-                      mode="multiple" 
+                    <Select
+                      mode="multiple"
                       placeholder="Select sources"
                       size={isMobile ? "large" : "middle"}
                     >
@@ -615,13 +642,10 @@ const ReconRuleset = () => {
                     </Select>
                   </Form.Item>
                 </Col>
-              </Row>
-
-              <Row gutter={isMobile ? 0 : 16}>
                 <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
                   <Form.Item label="Mode" name={['conditions', 'mode']}>
-                    <Select 
-                      mode="multiple" 
+                    <Select
+                      mode="multiple"
                       placeholder="Select modes"
                       size={isMobile ? "large" : "middle"}
                     >
@@ -631,10 +655,13 @@ const ReconRuleset = () => {
                     </Select>
                   </Form.Item>
                 </Col>
+              </Row>
+
+              <Row gutter={isMobile ? 0 : 16}>
                 <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
                   <Form.Item label="Preferred Level" name={['conditions', 'preferred_level']}>
-                    <Select 
-                      mode="multiple" 
+                    <Select
+                      mode="multiple"
                       placeholder="Select levels"
                       size={isMobile ? "large" : "middle"}
                     >
