@@ -59,7 +59,7 @@ const ActiveFormReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateRange, groupBy]);
+  }, [dateRange, groupBy, formType]);
 
   useEffect(() => {
     fetchReportData();
