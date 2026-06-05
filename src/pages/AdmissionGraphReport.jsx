@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { DatePicker, Button, Spin, Tooltip, ConfigProvider, theme as antTheme } from 'antd';
+import { DatePicker, Button, Spin, Tooltip, Select, ConfigProvider, theme as antTheme } from 'antd';
 import { ReloadOutlined, SunOutlined, MoonOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
@@ -305,6 +305,8 @@ const AdmissionGraphReport = () => {
   const [colleges, setColleges] = useState([]);
   const [selectedColleges, setSelectedColleges] = useState([]);
   const [graphData, setGraphData] = useState(null);
+  const [pendingFormType, setPendingFormType] = useState('');
+  const [appliedFormType, setAppliedFormType] = useState('');
 
   const t = THEMES[isDark ? 'dark' : 'light'];
 
@@ -324,12 +326,13 @@ const AdmissionGraphReport = () => {
     fetchColleges();
   }, []);
 
-  const fetchData = useCallback(async (overrideColleges, overrideDateRange) => {
+  const fetchData = useCallback(async (overrideColleges, overrideDateRange, overrideFormType) => {
     const dates = overrideDateRange ?? appliedDateRange;
     if (!dates[0] || !dates[1]) return;
     setLoading(true);
     try {
       const active = overrideColleges ?? selectedColleges;
+      const formType = overrideFormType !== undefined ? overrideFormType : appliedFormType;
       const params = new URLSearchParams({
         start_date: dates[0].format('YYYY-MM-DD'),
         end_date: dates[1].format('YYYY-MM-DD'),
@@ -337,6 +340,7 @@ const AdmissionGraphReport = () => {
       if (active.length > 0 && active.length < colleges.length) {
         active.forEach(c => params.append('colleges', c));
       }
+      if (formType) params.set('form_type', formType);
       const res = await fetch(
         `${BASE_URL}/StudentCourseStatusLogs/graph-reports?${params.toString()}`,
         { credentials: 'include' }
@@ -348,7 +352,7 @@ const AdmissionGraphReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [appliedDateRange, selectedColleges, colleges.length]);
+  }, [appliedDateRange, selectedColleges, colleges.length, appliedFormType]);
 
   useEffect(() => {
     if (colleges.length > 0) fetchData(colleges);
@@ -454,12 +458,23 @@ const AdmissionGraphReport = () => {
             onChange={setSelectedColleges}
             t={t}
           />
+          <Select
+            value={pendingFormType || undefined}
+            onChange={v => setPendingFormType(v || '')}
+            allowClear
+            placeholder="Form Type"
+            style={{ minWidth: 130, background: t.inputBg, color: t.text }}
+          >
+            <Select.Option value="paid">Paid</Select.Option>
+            <Select.Option value="unpaid">Unpaid</Select.Option>
+          </Select>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             <Button
               type="primary"
               onClick={() => {
                 setAppliedDateRange(pendingDateRange);
-                fetchData(undefined, pendingDateRange);
+                setAppliedFormType(pendingFormType);
+                fetchData(undefined, pendingDateRange, pendingFormType);
               }}
               loading={loading}
               style={{ background: '#7C3AED', borderColor: '#7C3AED', fontWeight: 600 }}
@@ -473,8 +488,10 @@ const AdmissionGraphReport = () => {
                   const newRange = [dayjs().subtract(14, 'day'), dayjs()];
                   setPendingDateRange(newRange);
                   setAppliedDateRange(newRange);
+                  setPendingFormType('');
+                  setAppliedFormType('');
                   setSelectedColleges(colleges);
-                  fetchData(colleges, newRange);
+                  fetchData(colleges, newRange, '');
                 }}
                 style={{ borderColor: t.border, color: t.textSub, background: t.bg }}
               />

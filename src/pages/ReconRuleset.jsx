@@ -226,11 +226,15 @@ const ReconRuleset = () => {
     },
     {
       title: 'Conditions',
-      dataIndex: 'conditions',
       key: 'conditions',
-      render: (conditions) => (
+      render: (_, record) => (
         <div className="max-w-xs">
-          {Object.entries(conditions || {}).map(([key, value]) => (
+          {record.source_url?.length > 0 && (
+            <div className="text-xs mb-1">
+              <span className="font-medium">source_url:</span> {renderConditionValue(record.source_url)}
+            </div>
+          )}
+          {Object.entries(record.conditions || {}).map(([key, value]) => (
             <div key={key} className="text-xs mb-1">
               <span className="font-medium">{key}:</span> {renderConditionValue(value)}
             </div>
@@ -475,6 +479,11 @@ const ReconRuleset = () => {
                 <div className="mb-3">
                   <h4 className="text-xs md:text-sm font-medium text-gray-700 mb-1">Conditions:</h4>
                   <div className="max-h-24 overflow-y-auto">
+                    {rule.source_url?.length > 0 && (
+                      <div className="text-xs text-gray-600 mb-1">
+                        <span className="font-medium">source_url:</span> {renderConditionValue(rule.source_url)}
+                      </div>
+                    )}
                     {Object.entries(rule.conditions || {}).map(([key, value]) => (
                       <div key={key} className="text-xs text-gray-600 mb-1">
                         <span className="font-medium">{key}:</span> {renderConditionValue(value)}

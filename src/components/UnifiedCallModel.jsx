@@ -81,6 +81,9 @@ const UnifiedCallModal = ({
   const isL2 = activeRole === "l2";
   const isL3 = activeRole === "l3" || activeRole === "to_l3";
   const isTO = activeRole === "to" || activeRole === "to_l3";
+  const isOriginallyNotInterested =
+    selectedStudent?.current_student_status === "NotInterested" ||
+    selectedStudent?.current_student_status === "Not Interested";
 
   // Get existing course_id from selectedStudent
   const existingCourseId = selectedStudent?.course_id || null;
@@ -722,46 +725,6 @@ const UnifiedCallModal = ({
       if (f === "Admission" && feesAmount && (isL3 || isSupervisor))
         payload.feesAmount = Number(feesAmount);
 
-      if (
-        shouldShowCredentialFields() &&
-        validateCredentialForm() &&
-        !isCredsFound
-      ) {
-        setIsUpdatingCreds(true);
-        setIsCredSubmitting(true);
-        try {
-          await updateCollegeSentStatusCreds({
-            formID,
-            couponCode,
-            userName,
-            password,
-            studentId: selectedStudent.student_id,
-            courseId: cid,
-            collegeName: selectedUniversity,
-            counsellorId: agent?.id,
-            counsellorName: agent?.name,
-          });
-        } catch (credError) {
-          console.error("Credential update error:", credError);
-          // Extract error message from response
-          let errorMsg = "Failed to save credentials. Please try again.";
-
-          if (credError?.response?.data?.message) {
-            errorMsg = credError.response.data.message;
-          } else if (credError?.message) {
-            errorMsg = credError.message;
-          }
-
-          setCredError(errorMsg);
-          message.error(errorMsg);
-          setIsUpdatingCreds(false);
-          setIsCredSubmitting(false);
-          setIsSubmitting(false);
-          return;
-        }
-        setIsCredSubmitting(false);
-      }
-
       const res = await updateStudentStatus(selectedStudent.student_id, {
         ...payload,
         formID,
@@ -884,7 +847,7 @@ const UnifiedCallModal = ({
                   handler: handleAdmissionToggle,
                   color: "emerald",
                   hidden:
-                    (leadStatus.funnel1 !== "Application" && !isSupervisor) ||
+                    (leadStatus.funnel1 !== "Application" && !isSupervisor && !(isL3 && isOriginallyNotInterested)) ||
                     (!isL3 && !isSupervisor),
                 },
                 {

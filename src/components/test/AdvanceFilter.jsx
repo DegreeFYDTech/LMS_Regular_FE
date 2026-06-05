@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Input,
   Button,
@@ -24,6 +25,7 @@ import {
   ReloadOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { BASE_URL } from '../../config/api';
 
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
@@ -171,7 +173,7 @@ const ActiveFilters = ({ filters, onClear, onRemoveFilter }) => {
 };
 
 // Desktop Filters Component
-const DesktopFilters = ({ filters, onFilterChange, filterOptions }) => (
+const DesktopFilters = ({ filters, onFilterChange, filterOptions, universityOptions }) => (
   <Card style={{ marginBottom: 16, borderRadius: 12, boxShadow: '0 4px 4px rgba(0,0,0,0.05)' }}>
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={12} lg={6}>
@@ -359,12 +361,32 @@ const DesktopFilters = ({ filters, onFilterChange, filterOptions }) => (
           </Select>
         </FilterItem>
       </Col>
+
+      <Col xs={24} sm={12} lg={6}>
+        <FilterItem label="University Name (Journey First Entry)">
+          <Select
+            mode="multiple"
+            style={{ width: '100%' }}
+            placeholder="Select University"
+            value={filters.universityName}
+            onChange={(value) => onFilterChange('universityName', value)}
+            showSearch
+            filterOption={(input, option) =>
+              option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+          >
+            {universityOptions.map(opt => (
+              <Option key={opt} value={opt}>{opt}</Option>
+            ))}
+          </Select>
+        </FilterItem>
+      </Col>
     </Row>
   </Card>
 );
 
 // Mobile Filter Drawer Component
-const MobileFilterDrawer = ({ visible, onClose, filters, onFilterChange, filterOptions, onApply, onClear }) => (
+const MobileFilterDrawer = ({ visible, onClose, filters, onFilterChange, filterOptions, universityOptions, onApply, onClear }) => (
   <Drawer
     title={
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -536,6 +558,21 @@ const MobileFilterDrawer = ({ visible, onClose, filters, onFilterChange, filterO
           ))}
         </Select>
       </FilterItem>
+
+      <FilterItem label="University Name (Journey First Entry)">
+        <Select
+          mode="multiple"
+          style={{ width: '100%' }}
+          placeholder="Select University"
+          value={filters.universityName}
+          onChange={(value) => onFilterChange('universityName', value)}
+          showSearch
+        >
+          {universityOptions.map(opt => (
+            <Option key={opt} value={opt}>{opt}</Option>
+          ))}
+        </Select>
+      </FilterItem>
     </div>
   </Drawer>
 );
@@ -552,6 +589,13 @@ const EnhancedFilters = ({
   const [searchTerm, setSearchTerm] = useState(initialFilters.searchTerm || '');
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [universityOptions, setUniversityOptions] = useState([]);
+
+  useEffect(() => {
+    axios.get(`${BASE_URL}/StudentCourseStatusLogs/colleges-list`, { withCredentials: true })
+      .then(res => { if (res.data.success) setUniversityOptions(res.data.data || []); })
+      .catch(() => {});
+  }, []);
 
   // Handle window resize
   useEffect(() => {
@@ -664,6 +708,7 @@ const EnhancedFilters = ({
               filters={filters}
               onFilterChange={handleFilterChange}
               filterOptions={filterOptions}
+              universityOptions={universityOptions}
             />
           )}
 
@@ -676,6 +721,7 @@ const EnhancedFilters = ({
             filters={filters}
             onFilterChange={handleFilterChange}
             filterOptions={filterOptions}
+            universityOptions={universityOptions}
             onApply={() => {
               onApplyFilters?.(filters);
               setDrawerVisible(false);

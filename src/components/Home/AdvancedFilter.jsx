@@ -29,7 +29,9 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 
+import axios from "axios";
 import { fetchFilterOptions } from "../../network/filterOptions";
+import { BASE_URL } from "../../config/api";
 import { SlidersHorizontal, Trash } from "lucide-react";
 
 const { Option } = Select;
@@ -57,6 +59,7 @@ const StreamlinedFilters = ({
     calling_status: [],
     calling_sub_status: [],
     campaign_name: [],
+    university_name: [],
   });
 
   const roleToSend = (() => {
@@ -78,7 +81,11 @@ const StreamlinedFilters = ({
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const { data } = await fetchFilterOptions();
+        const [filterRes, collegesRes] = await Promise.all([
+          fetchFilterOptions(),
+          axios.get(`${BASE_URL}/StudentCourseStatusLogs/colleges-list`, { withCredentials: true }),
+        ]);
+        const { data } = filterRes;
         setFilterOptionsState({
           mode: data.mode || [],
           source: data.source || [],
@@ -87,6 +94,7 @@ const StreamlinedFilters = ({
           calling_status: data.calling_status || [],
           calling_sub_status: data.calling_sub_status || [],
           campaign_name: data.campaign_name || [],
+          university_name: collegesRes.data?.success ? (collegesRes.data.data || []) : [],
         });
       } catch (error) {
         console.error("Error fetching filter options:", error);
@@ -457,6 +465,68 @@ const StreamlinedFilters = ({
                   <Option key={option} value={option}>
                     {option}
                   </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+
+          <Col span={24}>
+            <Form.Item label="University Name (Journey First Entry)">
+              <Select
+                mode="multiple"
+                placeholder="Select University"
+                value={localFilters.university_name}
+                onChange={(value) =>
+                  handleLocalFilterChange("university_name", value)
+                }
+                allowClear
+                showSearch
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+                style={{ width: "100%" }}
+              >
+                {filterOptionsState.university_name.map((option) => (
+                  <Option key={option} value={option}>
+                    {option}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+
+          <Col span={24}>
+            <Form.Item label="Course Status (Last Entry)">
+              <Select
+                mode="multiple"
+                placeholder="Select Course Status"
+                value={localFilters.journey_course_status}
+                onChange={(value) =>
+                  handleLocalFilterChange("journey_course_status", value)
+                }
+                allowClear
+                showSearch
+                style={{ width: "100%" }}
+              >
+                {[
+                  "Form Filled_Degreefyd",
+                  "Form Filled_Partner website",
+                  "Form Submitted – Portal Pending",
+                  "Form Submitted – Offline",
+                  "Form Submitted – Completed",
+                  "Application Fee Paid",
+                  "Exam/Interview Scheduled",
+                  "Exam Interview Pending",
+                  "Walkin Marked",
+                  "Walkin Completed",
+                  "Ready For Admission",
+                  "Offer Letter/Results Pending",
+                  "Offer Letter/Results Released",
+                  "Shortlisted",
+                  "Admission",
+                  "Not Interested",
+                ].map((s) => (
+                  <Option key={s} value={s}>{s}</Option>
                 ))}
               </Select>
             </Form.Item>
