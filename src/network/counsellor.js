@@ -14,7 +14,41 @@ export const getCounsellorAccessSettings = async (id) => {
     throw error;
   }
 };
-
+export const applyBreakForCounsellor = async (counsellorId, breakType, notes = null) => {
+  try {
+    const res = await apiClient.post('/counsellor/break/start', {
+      counselor_id: counsellorId,
+      break_start: new Date().toISOString(),
+      break_type: breakType,
+      break_notes: notes || null,
+    });
+    return res.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+export const endBreakForCounsellor = async (counsellorId) => {
+  try {
+    const res = await apiClient.put('/counsellor/break/end', {
+      counselor_id: counsellorId,
+      break_end: new Date().toISOString(),
+    });
+    return res.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+export const getCounsellorBreakDetails = async (counsellor_id, params = {}) => {
+  try {
+    const res = await apiClient.get(`/counsellor/break-details/${counsellor_id}`, { params });
+    return res.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
 export const updateCounsellorAccessSettings = async (id, settings) => {
   try {
     const res = await axios.put(
