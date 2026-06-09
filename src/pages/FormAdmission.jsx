@@ -44,6 +44,7 @@ const FormToAdmissionsReport = () => {
     const [meta, setMeta] = useState({ rangeLabel: '', monthLabel: '', yearLabel: '', groupBy: 'college' });
     const [selectedRange, setSelectedRange] = useState([dayjs().subtract(6, 'day'), dayjs()]);
     const [groupBy, setGroupBy] = useState('college');
+    const [formType, setFormType] = useState(null);
     const [summaryStats, setSummaryStats] = useState({
         totalRangeForms: 0,
         totalRangeAdmissions: 0,
@@ -70,7 +71,7 @@ const FormToAdmissionsReport = () => {
         try {
             const startDate = range[0].format('YYYY-MM-DD');
             const endDate = range[1].format('YYYY-MM-DD');
-            const url = `${BASE_URL}/StudentCourseStatusLogs/course-reports?start_date=${startDate}&end_date=${endDate}&group_by=${gb}`;
+            const url = `${BASE_URL}/StudentCourseStatusLogs/course-reports?start_date=${startDate}&end_date=${endDate}&group_by=${gb}${formType ? `&form_type=${formType}` : ''}`;
 
             const response = await axios.get(url, { withCredentials: true });
 
@@ -87,8 +88,8 @@ const FormToAdmissionsReport = () => {
     };
 
     useEffect(() => {
-        fetchData(selectedRange);
-    }, []);
+        fetchData(selectedRange, groupBy);
+    }, [formType]);
 
     const computeF2A = (forms, admissions) =>
         forms > 0 ? Number(((admissions / forms) * 100).toFixed(1)) : 0;
@@ -370,6 +371,17 @@ const FormToAdmissionsReport = () => {
                                 options={[
                                     { value: 'college', label: <span><AppstoreOutlined className="mr-1" />College-wise</span> },
                                     { value: 'l3', label: <span><AppstoreOutlined className="mr-1" />L3-wise</span> },
+                                ]}
+                            />
+                            <Select
+                                value={formType}
+                                onChange={setFormType}
+                                allowClear
+                                placeholder="Form Type"
+                                style={{ minWidth: 130 }}
+                                options={[
+                                    { value: 'paid', label: '✓ Paid' },
+                                    { value: 'unpaid', label: '✗ Unpaid' },
                                 ]}
                             />
                             <Space>

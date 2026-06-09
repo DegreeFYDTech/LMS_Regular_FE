@@ -29,6 +29,7 @@ const ActiveFormReport = () => {
   const [reportData, setReportData] = useState([]);
   const [dateRange, setDateRange] = useState([dayjs().startOf('month'), dayjs()]);
   const [groupBy, setGroupBy] = useState('college');
+  const [formType, setFormType] = useState(null);
 
   const [drillDown, setDrillDown] = useState({
     visible: false,
@@ -47,6 +48,7 @@ const ActiveFormReport = () => {
         date_from: dateRange[0].format('YYYY-MM-DD'),
         date_to: dateRange[1].format('YYYY-MM-DD'),
         type: groupBy === 'l3' ? 'l3_summary' : 'summary',
+        ...(formType && { form_type: formType }),
       };
 
       const response = await axios.get(`${BASE_URL}/studentcoursestatus/active-form-college-report`, { params });
@@ -57,7 +59,7 @@ const ActiveFormReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateRange, groupBy]);
+  }, [dateRange, groupBy, formType]);
 
   useEffect(() => {
     fetchReportData();
@@ -313,6 +315,21 @@ const ActiveFormReport = () => {
                 options={[
                   { value: 'college', label: 'By College' },
                   { value: 'l3', label: 'By L3' },
+                ]}
+              />
+            </div>
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2 border bg-slate-50 border-slate-200">
+              <Select
+                value={formType}
+                onChange={setFormType}
+                allowClear
+                placeholder="Form Type"
+                size="middle"
+                className="!border-0 !bg-transparent !shadow-none min-w-[110px]"
+                variant="borderless"
+                options={[
+                  { value: 'paid', label: '✓ Paid' },
+                  { value: 'unpaid', label: '✗ Unpaid' },
                 ]}
               />
             </div>

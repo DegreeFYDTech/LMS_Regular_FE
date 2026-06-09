@@ -521,6 +521,20 @@ const StreamlinedFilters = ({
               </Form.Item>
             </Col>
           }
+
+          <Col span={24}>
+            <Form.Item label="Is CSL">
+              <RadioGroup
+                value={localFilters.is_CSL}
+                onChange={(e) =>
+                  handleLocalFilterChange("is_CSL", e.target.value)
+                }
+              >
+                <Radio value="no">Exclude CSL</Radio>
+                <Radio value="yes">Only CSL</Radio>
+              </RadioGroup>
+            </Form.Item>
+          </Col>
         </Row>
       );
     }
@@ -537,7 +551,6 @@ const StreamlinedFilters = ({
     >
       <div className="mb-6">
         <div className="flex items-center gap-4">
-          {/* Search Bar */}
           <div className="relative flex-1">
             <input
               type="text"

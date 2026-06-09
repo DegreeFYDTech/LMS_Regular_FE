@@ -29,13 +29,12 @@ function AddCounsellor() {
   const [loadingTeamOwners, setLoadingTeamOwners] = useState(false);
 
   useEffect(() => {
-    if (isTO) return;
     const loadTeamOwners = async () => {
       // Only load if user is NOT a team owner
       if (!isTeamOwner) {
         setLoadingTeamOwners(true);
         try {
-          const owners = await getAllCounsellors("to");
+          const owners = await getAllCounsellors({ role: "to" });
           setTeamOwners(owners);
         } catch (error) {
           console.error("Failed to fetch team owners:", error);

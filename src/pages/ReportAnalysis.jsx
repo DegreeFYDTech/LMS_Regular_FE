@@ -48,11 +48,13 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
   });
   const [filters, setFilters] = useState({
     source: [],
+    sourceUrl: [],
     utmCampaign: [],
     counsellorId: [],
     counsellorNames: [],
     dateRange: null,
-    counsellorStatus: ''
+    counsellorStatus: '',
+    formType: '',
   });
   const [pivotFilters, setPivotFilters] = useState({
     colleges: [],
@@ -86,6 +88,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
   const [currentPage, setCurrentPage] = useState(1);
   const [filterOptions, setFilterOptions] = useState({
     source: [],
+    sourceUrl: [],
     utmCampaign: [],
     mode: [],
     callingStatus: [],
@@ -387,6 +390,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
       function newFilters() {
         const params = {};
         if (filters.source.length > 0) params.source = filters.source;
+        if (filters.sourceUrl?.length > 0) params.source_url = filters.sourceUrl.join(",");
         if (filters.utmCampaign.length > 0) params.utm_campaign = filters.utmCampaign;
         if (filters.counsellorId.length > 0) params.counsellor_id = filters.counsellorId;
         if (filters.counsellorStatus) params.counsellor_status = filters.counsellorStatus;
@@ -394,6 +398,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
           params.created_at_start = filters.dateRange[0].format("YYYY-MM-DD");
           params.created_at_end = filters.dateRange[1].format("YYYY-MM-DD");
         }
+        if (filters.formType) params.form_type = filters.formType;
         return params;
       }
 
@@ -663,6 +668,10 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
       existingParams.append('source', filters.source.join(','));
     }
 
+    if (filters.sourceUrl?.length > 0) {
+      existingParams.append('source_url', filters.sourceUrl.join(','));
+    }
+
     if (filters.utmCampaign.length > 0) {
       existingParams.append('utm_campaign', filters.utmCampaign.join(','));
     }
@@ -732,6 +741,9 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
       if (pivotFilters.counsellorStatus) {
         params.append('counsellor_status', pivotFilters.counsellorStatus);
       }
+      if (filters.formType) {
+        params.append('form_type', filters.formType);
+      }
       const response = await axios.get(
         `${BASE_URL}/studentcoursestatus/lead-status-report?${params.toString()}`
       );
@@ -774,6 +786,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
         const { data } = await fetchFilterOptions();
         setFilterOptions({
           source: data.source || [],
+          sourceUrl: data.first_source_url || [],
           utmCampaign: data.utmCampaign || data?.utm_campaign || data?.campaign_name || [],
           mode: data.mode || [],
           callingStatus: data.callingStatus || data?.calling_status || [],

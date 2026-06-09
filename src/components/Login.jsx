@@ -4,7 +4,7 @@ import { loginCounsellor, supervisorLogin, analyserLogin } from "../network/auth
 import { login as loginAction } from "../features/auth/authSlice";
 import { useDispatch } from "react-redux";
 import { showToast } from "../utils/toast";
-import { Modal } from "antd";
+import { Modal, Button } from "antd";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,6 +13,7 @@ function Login() {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [selectedRole, setSelectedRole] = useState("counsellor");
+  const [forceLogoutModal, setForceLogoutModal] = useState({ open: false, message: "" });
   const dispatch = useDispatch()
   const roles = [
     {
@@ -88,32 +89,30 @@ const doLogin = async (forceLogout = false) => {
 const handleLogin = async (e) => {
   e.preventDefault();
   setLoading(true);
-
   try {
     await doLogin(false);
   } catch (error) {
     if (error?.response?.status === 409 && error?.response?.data?.requires_force_logout) {
       setLoading(false);
-      Modal.confirm({
-        title: "Already Logged In!",
-        content: error.response.data.message || "You are already logged in on another device. Force logout?",
-        okText: "Yes, force login!",
-        cancelText: "Cancel",
-        okButtonProps: { danger: true },
-        onOk: async () => {
-          setLoading(true);
-          try {
-            await doLogin(true);
-          } finally {
-            setLoading(false);
-          }
-        },
+      setForceLogoutModal({
+        open: true,
+        message: error.response.data.message || "You are already logged in on another device.",
       });
       return;
     }
     showToast(error?.response?.data?.message || "Login failed", "error");
   }
+  setLoading(false);
+};
 
+const handleForceLogin = async () => {
+  setForceLogoutModal({ open: false, message: "" });
+  setLoading(true);
+  try {
+    await doLogin(true);
+  } catch (error) {
+    showToast(error?.response?.data?.message || "Login failed", "error");
+  }
   setLoading(false);
 };
 
@@ -308,6 +307,26 @@ const handleLogin = async (e) => {
           </div>
         </div>
       </div>
+
+      {/* Force logout confirmation modal */}
+      <Modal
+        open={forceLogoutModal.open}
+        title="Already Logged In!"
+        onCancel={() => setForceLogoutModal({ open: false, message: "" })}
+        footer={[
+          <Button key="cancel" onClick={() => setForceLogoutModal({ open: false, message: "" })}>
+            Cancel
+          </Button>,
+          <Button key="force" type="primary" danger loading={loading} onClick={handleForceLogin}>
+            Yes, Force Login
+          </Button>,
+        ]}
+      >
+        <p className="text-gray-600">{forceLogoutModal.message}</p>
+        <p className="text-gray-500 text-sm mt-2">
+          This will log out your other active session and log you in here.
+        </p>
+      </Modal>
     </div>
   );
 }

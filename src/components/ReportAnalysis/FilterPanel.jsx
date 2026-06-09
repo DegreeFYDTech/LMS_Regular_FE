@@ -115,10 +115,12 @@ const FilterPanel = ({
 
     if (activeTab === 'lead') {
       if (leadFilters?.source?.length > 0) count++;
+      if (leadFilters?.sourceUrl?.length > 0) count++;
       if (leadFilters?.utmCampaign?.length > 0) count++;
       if (leadFilters?.counsellorId?.length > 0) count++;
       if (leadFilters?.counsellorStatus) count++;
       if (leadFilters?.dateRange) count++;
+      if (leadFilters?.formType) count++;
 
       if (pivotFilters?.colleges?.length > 0) count++;
       if (pivotFilters?.supervisors?.length > 0) count++;
@@ -202,6 +204,10 @@ const FilterPanel = ({
       newActive.source = leadFilters.source.join(", ");
     }
 
+    if (leadFilters?.sourceUrl?.length > 0) {
+      newActive.sourceUrl = leadFilters.sourceUrl.join(", ");
+    }
+
     if (leadFilters?.utmCampaign?.length > 0) {
       newActive.utmCampaign = leadFilters.utmCampaign.join(", ");
     }
@@ -243,6 +249,10 @@ const FilterPanel = ({
       params.source = leadFilters.source;
     }
 
+    if (leadFilters?.sourceUrl?.length > 0) {
+      params.source_url = leadFilters.sourceUrl.join(",");
+    }
+
     if (leadFilters?.utmCampaign?.length > 0) {
       params.utm_campaign = leadFilters.utmCampaign;
     }
@@ -256,6 +266,9 @@ const FilterPanel = ({
     if (leadFilters?.dateRange?.length === 2) {
       params.created_at_start = leadFilters.dateRange[0].format("YYYY-MM-DD");
       params.created_at_end = leadFilters.dateRange[1].format("YYYY-MM-DD");
+    }
+    if (leadFilters?.formType) {
+      params.form_type = leadFilters.formType;
     }
 
     handleLeadSubfilter?.(params);
@@ -285,11 +298,13 @@ const FilterPanel = ({
     if (activeTab === 'lead') {
       setLeadFilters({
         source: [],
+        sourceUrl: [],
         utmCampaign: [],
         counsellorId: [],
         counsellorNames: [],
         dateRange: null,
-        counsellorStatus: ''
+        counsellorStatus: '',
+        formType: '',
       });
       setPivotFilters({
         colleges: [],
@@ -365,6 +380,23 @@ const FilterPanel = ({
                   </div>
 
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Source URL</label>
+                    <Select
+                      mode="multiple"
+                      placeholder="Select Source URLs"
+                      value={leadFilters?.sourceUrl || []}
+                      onChange={(value) => handleLeadFilterChange("sourceUrl", value)}
+                      allowClear
+                      showSearch
+                      options={filterOptions.sourceUrl?.map((u) => ({ value: u, label: u })) || []}
+                      className="w-full"
+                      filterOption={(input, option) =>
+                        option?.label?.toLowerCase().includes(input.toLowerCase())
+                      }
+                    />
+                  </div>
+
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">UTM Campaign</label>
                     <Select
                       mode="multiple"
@@ -405,6 +437,21 @@ const FilterPanel = ({
                       ]}
                     />
                   </div>}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Form Type</label>
+                    <Select
+                      placeholder="All form types"
+                      value={leadFilters?.formType || ''}
+                      onChange={(value) => handleLeadFilterChange("formType", value)}
+                      allowClear
+                      className="w-full"
+                      options={[
+                        { value: 'paid', label: '✓ Paid' },
+                        { value: 'unpaid', label: '✗ Unpaid' },
+                      ]}
+                    />
+                  </div>
 
                 </div>
 

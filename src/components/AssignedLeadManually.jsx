@@ -55,7 +55,7 @@ const AssignedLeadManually = ({
             const fetchCounsellors = async () => {
                 try {
                     setLoading(true);
-                    const res = await getAllCounsellors('l2');
+                    const res = await getAllCounsellors({ role: 'l2' });
                     setCounsellors(res.data || res || []);
                     setFilteredCounsellors(res.data || res || []);
                 } catch (error) {
@@ -128,7 +128,7 @@ const AssignedLeadManually = ({
                     }
 
                     // Fetch all L3 counsellors
-                    const allRes = await getAllCounsellors('l3');
+                    const allRes = await getAllCounsellors({ role: 'l3', status: 'active' });
                     setAllL3Counsellors(allRes.data || allRes || []);
                     setFilteredAllL3Counsellors(allRes.data || allRes || []);
 

@@ -43,12 +43,14 @@ const CollegeStatusReports = () => {
     endDate: null,
     firstTimeDateRange: [dayjs().startOf('month'), dayjs()],
   });
+  const [formType, setFormType] = useState(null);
 
   const fetchReportData = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
         reportType: filters.reportType,
+        ...(formType && { form_type: formType }),
       };
 
       // Only include the active date filter based on selection
@@ -107,7 +109,7 @@ const CollegeStatusReports = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, dateFilterType]);
+  }, [filters, dateFilterType, formType]);
 
   useEffect(() => {
     fetchReportData();
@@ -573,6 +575,20 @@ const CollegeStatusReports = () => {
                 <Option value="l2">L2 Counsellors</Option>
                 <Option value="l3">L3 Counsellors</Option>
               </Select>
+
+              {/* Form Type Dropdown */}
+              <Select
+                value={formType}
+                onChange={setFormType}
+                allowClear
+                placeholder="Form Type"
+                size="middle"
+                className="min-w-[130px]"
+                options={[
+                  { value: 'paid', label: '✓ Paid' },
+                  { value: 'unpaid', label: '✗ Unpaid' },
+                ]}
+              />
 
               {/* Active Filter Indicators */}
               <div className="flex items-center gap-2 ml-auto">

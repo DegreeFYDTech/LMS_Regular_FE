@@ -13,7 +13,8 @@ import {
   Database,
   Search,
   Building2,
-  UserCheck
+  UserCheck,
+  Timer
 } from 'lucide-react';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -55,7 +56,7 @@ const TabsNavigation = ({ activeTab, setActiveTab, leadSubTab, setLeadSubTab }) 
         ]
       },
       { id: 'remarks', label: 'Counsellor Remarks', icon: PieChart },
-      { id: 'track', label: 'General Track', icon: BarChart2 },
+      // { id: 'track', label: 'General Track', icon: BarChart2 },
       {
         id: 'attempt',
         label: 'Lead Attempt',
@@ -93,6 +94,12 @@ const TabsNavigation = ({ activeTab, setActiveTab, leadSubTab, setLeadSubTab }) 
         id: 'activeFormReport',
         label: 'Active Form Reports',
         icon: FileText
+      },
+      {
+        id: 'firstRemarkTime',
+        label: 'First Remark Time',
+        icon: Timer,
+        description: 'Avg time to first L2 remark'
       },
     ];
   };

@@ -132,6 +132,7 @@ const ReconRuleset = () => {
     if (rule) {
       form.setFieldsValue({
         custom_rule_name: rule.custom_rule_name,
+        source_url: rule.source_url || [],
         conditions: rule.conditions,
         assigned_university_names: rule.assigned_university_names,
         is_active: rule.is_active
@@ -225,11 +226,15 @@ const ReconRuleset = () => {
     },
     {
       title: 'Conditions',
-      dataIndex: 'conditions',
       key: 'conditions',
-      render: (conditions) => (
+      render: (_, record) => (
         <div className="max-w-xs">
-          {Object.entries(conditions || {}).map(([key, value]) => (
+          {record.source_url?.length > 0 && (
+            <div className="text-xs mb-1">
+              <span className="font-medium">source_url:</span> {renderConditionValue(record.source_url)}
+            </div>
+          )}
+          {Object.entries(record.conditions || {}).map(([key, value]) => (
             <div key={key} className="text-xs mb-1">
               <span className="font-medium">{key}:</span> {renderConditionValue(value)}
             </div>
@@ -474,6 +479,11 @@ const ReconRuleset = () => {
                 <div className="mb-3">
                   <h4 className="text-xs md:text-sm font-medium text-gray-700 mb-1">Conditions:</h4>
                   <div className="max-h-24 overflow-y-auto">
+                    {rule.source_url?.length > 0 && (
+                      <div className="text-xs text-gray-600 mb-1">
+                        <span className="font-medium">source_url:</span> {renderConditionValue(rule.source_url)}
+                      </div>
+                    )}
                     {Object.entries(rule.conditions || {}).map(([key, value]) => (
                       <div key={key} className="text-xs text-gray-600 mb-1">
                         <span className="font-medium">{key}:</span> {renderConditionValue(value)}
@@ -585,14 +595,27 @@ const ReconRuleset = () => {
               </Col>
             </Row>
 
+            <Row gutter={isMobile ? 0 : 16}>
+              <Col span={24} className={isMobile ? "mb-4" : "mb-2"}>
+                <Form.Item label="Source URL" name="source_url">
+                  <Select
+                    mode="tags"
+                    placeholder="Type source URLs and press Enter"
+                    size={isMobile ? "large" : "middle"}
+                    tokenSeparators={[',']}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
             <div className="mb-4">
               <h4 className="font-medium mb-3">Conditions</h4>
               
               <Row gutter={isMobile ? 0 : 16}>
                 <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
                   <Form.Item label="UTM Campaign" name={['conditions', 'utmCampaign']}>
-                    <Select 
-                      mode="multiple" 
+                    <Select
+                      mode="multiple"
                       placeholder="Select UTM campaigns"
                       size={isMobile ? "large" : "middle"}
                     >
@@ -603,9 +626,22 @@ const ReconRuleset = () => {
                   </Form.Item>
                 </Col>
                 <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
+                  <Form.Item label="Source URL (Condition)" name={['conditions', 'source_url']}>
+                    <Select
+                      mode="tags"
+                      placeholder="Type source URLs and press Enter"
+                      size={isMobile ? "large" : "middle"}
+                      tokenSeparators={[',']}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={isMobile ? 0 : 16}>
+                <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
                   <Form.Item label="Source" name={['conditions', 'source']}>
-                    <Select 
-                      mode="multiple" 
+                    <Select
+                      mode="multiple"
                       placeholder="Select sources"
                       size={isMobile ? "large" : "middle"}
                     >
@@ -615,13 +651,10 @@ const ReconRuleset = () => {
                     </Select>
                   </Form.Item>
                 </Col>
-              </Row>
-
-              <Row gutter={isMobile ? 0 : 16}>
                 <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
                   <Form.Item label="Mode" name={['conditions', 'mode']}>
-                    <Select 
-                      mode="multiple" 
+                    <Select
+                      mode="multiple"
                       placeholder="Select modes"
                       size={isMobile ? "large" : "middle"}
                     >
@@ -631,10 +664,13 @@ const ReconRuleset = () => {
                     </Select>
                   </Form.Item>
                 </Col>
+              </Row>
+
+              <Row gutter={isMobile ? 0 : 16}>
                 <Col span={isMobile ? 24 : 12} className={isMobile ? "mb-4" : ""}>
                   <Form.Item label="Preferred Level" name={['conditions', 'preferred_level']}>
-                    <Select 
-                      mode="multiple" 
+                    <Select
+                      mode="multiple"
                       placeholder="Select levels"
                       size={isMobile ? "large" : "middle"}
                     >

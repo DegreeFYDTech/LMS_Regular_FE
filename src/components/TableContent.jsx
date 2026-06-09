@@ -423,7 +423,19 @@ const TableContent = ({
         dataIndex: "student_name",
         key: "student_name",
         width: 200,
-        ellipsis: true,
+        render: (value, record) => (
+          <div className="relative pr-1">
+            {record.lead_type?.toLowerCase() === "csl" && (
+              <span
+                className="absolute -top-2.5 -right-1 bg-violet-600 text-white text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-bl-md rounded-tr-sm shadow-sm select-none z-10"
+                style={{ lineHeight: "14px" }}
+              >
+                CSL
+              </span>
+            )}
+            <span className="block truncate">{value || "--"}</span>
+          </div>
+        ),
       },
       {
         title: "Contact",
@@ -738,6 +750,10 @@ const TableContent = ({
               <div className="w-4 h-4 bg-yellow-500 rounded-sm" />
               <span className="text-gray-700">Today Callback</span>
             </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-violet-600 rounded-sm" />
+              <span className="text-gray-700">CSL Lead</span>
+            </div>
           </div>
         </div>
       )}
@@ -786,7 +802,8 @@ const TableContent = ({
           const base = index % 2 === 0 ? "bg-white" : "bg-gray-50";
           const selectedClass = isSelected ? "bg-blue-50 border-blue-200" : "";
           const borderClass = getLeftBorderClass(record);
-          return `${base} ${selectedClass} ${borderClass} hover:bg-gray-50`;
+          const cslClass = record.lead_type?.toLowerCase() === "csl" ? "border-r-4 border-r-violet-500" : "";
+          return `${base} ${selectedClass} ${borderClass} ${cslClass} hover:bg-gray-50`;
         }}
         className="custom-table"
         sticky={{ offsetHeader: 0, offsetScroll: 0 }}
