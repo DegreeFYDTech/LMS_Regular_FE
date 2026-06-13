@@ -9,6 +9,7 @@ import {
   Info
 } from "lucide-react";
 import Select from "react-select";
+import { Select as AntSelect } from "antd";
 import { showToast } from "../utils/toast";
 import { updateStudent } from "../network/student";
 import statesData from '../data/cityandstatejson.json';
@@ -114,6 +115,7 @@ const ProfileSidebar = ({ initialStudent }) => {
         student_current_city: student?.student_current_city ? { value: student.student_current_city, label: student.student_current_city } : null,
         student_current_state: student?.student_current_state ? { value: student.student_current_state, label: student.student_current_state } : null,
         student_email: student?.student_email || "",
+        student_alt_numbers: student?.student_alt_numbers || student?.studentAltNumbers || [],
       });
     }
   }, [student, isEditing]);
@@ -142,6 +144,14 @@ const ProfileSidebar = ({ initialStudent }) => {
     try {
       setLoading(true);
 
+      const alts = formData.student_alt_numbers || [];
+      const invalidNumbers = alts.filter(num => !/^[0-9]{10}$/.test(num));
+      if (invalidNumbers.length > 0) {
+        showToast("Alternate numbers must be exactly 10 digits", "error");
+        setLoading(false);
+        return;
+      }
+
       const hasChanges = 
         formData.name !== student?.student_name ||
         formData.whatsapp !== student?.whatsapp ||
@@ -149,7 +159,8 @@ const ProfileSidebar = ({ initialStudent }) => {
         formData.student_secondary_email !== student?.student_secondary_email ||
         formData.student_current_city?.value !== student?.student_current_city ||
         formData.student_current_state?.value !== student?.student_current_state ||
-        formData.student_email !== student?.student_email;
+        formData.student_email !== student?.student_email ||
+        JSON.stringify(alts) !== JSON.stringify(student?.student_alt_numbers || []);
 
       if (!hasChanges) {
         showToast("No changes to update", "info");
@@ -165,6 +176,7 @@ const ProfileSidebar = ({ initialStudent }) => {
         student_current_city: formData.student_current_city?.value || "",
         student_current_state: formData.student_current_state?.value || "",
         student_email: formData.student_email,
+        student_alt_numbers: alts,
       };
 
       const response = await updateStudent(initialStudent.student_id, payload);
@@ -176,6 +188,7 @@ const ProfileSidebar = ({ initialStudent }) => {
           ...payload,
           student_current_city: payload.student_current_city,
           student_current_state: payload.student_current_state,
+          student_alt_numbers: response.data.student?.student_alt_numbers || payload.student_alt_numbers,
           is_edited: true,
           edited_by: response.data.student?.edited_by
         }));
@@ -185,7 +198,8 @@ const ProfileSidebar = ({ initialStudent }) => {
           ...prev,
           ...payload,
           student_current_city: payload.student_current_city,
-          student_current_state: payload.student_current_state
+          student_current_state: payload.student_current_state,
+          student_alt_numbers: response.data.student?.student_alt_numbers || response.student?.student_alt_numbers || payload.student_alt_numbers,
         }));
       }
 
@@ -368,6 +382,39 @@ const ProfileSidebar = ({ initialStudent }) => {
                     <span>{student?.student_phone || "Not Provided"}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="group">
+              <label className="flex items-center text-sm font-semibold text-gray-700 mb-2 space-x-2">
+                <div className="w-6 h-6 bg-green-50 rounded-md flex items-center justify-center">
+                  <Phone className="text-gray-600 w-4 h-4" />
+                </div>
+                <span className="text-xs">Alternate Phone Number(s)</span>
+              </label>
+              <div className="relative">
+                {isEditing ? (
+                  <AntSelect
+                    mode="tags"
+                    style={{ width: "100%" }}
+                    placeholder="Press enter to add numbers"
+                    value={formData.student_alt_numbers || []}
+                    onChange={(values) => {
+                      const sanitized = values.map(v => String(v).trim().replace(/\D/g, ''));
+                      setFormData(prev => ({ ...prev, student_alt_numbers: sanitized }));
+                    }}
+                    tokenSeparators={[",", " "]}
+                    className="text-xs"
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-1 w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 text-xs">
+                    {student?.student_alt_numbers && student.student_alt_numbers.length > 0
+                      ? student.student_alt_numbers.map((num, i) => (
+                          <span key={i} className="bg-gray-200 px-2 py-0.5 rounded text-xs">{num}</span>
+                        ))
+                      : "None Provided"}
+                  </div>
+                )}
               </div>
             </div>
 

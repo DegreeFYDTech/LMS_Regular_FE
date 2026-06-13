@@ -1164,7 +1164,7 @@ const CollegesTable = ({
                                         }}
                                       >
                                         <Info className="w-3 h-3" />
-                                        API: {college.college_api_sent_status}
+                                        API: {college.college_api_sent_status ? college.college_api_sent_status?.includes("Bot") ? "Sent via Automation" : college.college_api_sent_status : "N/A"  }
                                       </div>
                                     )}
                                 </div>
@@ -1235,6 +1235,10 @@ function getData(courses) {
 
   const allNull = courses.every((val) => val.college_api_sent_status == null);
   if (allNull) return { status: "" };
-
+   const botSending = courses.some(
+    (val) =>
+      val.college_api_sent_status === "Submitted via Bot (Direct Portal)" ||
+      val.college_api_sent_status === "Submitted via Bot (Direct Portal)" );
+  if (botSending) return { status: "Sent via Automation" };
   return { status: "Under Review" };
 }

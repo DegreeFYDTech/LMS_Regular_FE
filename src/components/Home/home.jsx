@@ -16,6 +16,7 @@ import ModalsContainer from './ModalsContainer';
 import AdvancedFilter from './AdvancedFilter';
 import ExportFieldsModal from '../modals/ExportFieldsModal';
 import { secureCache } from '../../utils/cache';
+import StreamlinedFilters from '../AdvanceFilters';
 import { cleanQueryParams } from '../../utils/cleanParams'
 const HomePage = memo(() => {
   const { searchParams, parseFiltersFromURL, updateURL } = useURLSync();
@@ -396,6 +397,17 @@ const HomePage = memo(() => {
               activeTab={activeTab}
             />
           </div>
+           
+          {/*<div className="mb-6">
+            <StreamlinedFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onApplyFilters={handleApplyFilters}
+              onClearFilters={handleClearFilters}
+              loading={loading}
+              activeTab={activeTab}
+            />
+          </div>*/}
 
           <LeadsTable
             loading={loading}
