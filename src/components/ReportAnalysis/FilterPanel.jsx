@@ -121,6 +121,7 @@ const FilterPanel = ({
       if (leadFilters?.counsellorStatus) count++;
       if (leadFilters?.dateRange) count++;
       if (leadFilters?.formType) count++;
+      if (leadFilters?.leadType) count++;
 
       if (pivotFilters?.colleges?.length > 0) count++;
       if (pivotFilters?.supervisors?.length > 0) count++;
@@ -147,7 +148,7 @@ const FilterPanel = ({
   const handleLeadFilterChange = (field, value) => {
     setLeadFilters((prev) => ({
       ...prev,
-      [field]: value || (field === 'counsellorStatus' ? '' : []), // Handle string vs array values
+      [field]: value || (['counsellorStatus', 'leadType', 'formType'].includes(field) ? '' : []),
     }));
   };
 
@@ -270,6 +271,10 @@ const FilterPanel = ({
     if (leadFilters?.formType) {
       params.form_type = leadFilters.formType;
     }
+    if (leadFilters?.leadType) {
+      newActive.leadType = leadFilters.leadType.toUpperCase();
+      params.lead_type = leadFilters.leadType;
+    }
 
     handleLeadSubfilter?.(params);
   };
@@ -305,6 +310,7 @@ const FilterPanel = ({
         dateRange: null,
         counsellorStatus: '',
         formType: '',
+        leadType: '',
       });
       setPivotFilters({
         colleges: [],
@@ -452,6 +458,27 @@ const FilterPanel = ({
                       ]}
                     />
                   </div>
+
+                  {leadSubTab !== 'api' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Lead Type</label>
+                      <div className="flex gap-2">
+                        {[{ value: '', label: 'All' }, { value: 'csl', label: 'CSL' }, { value: 'cll', label: 'CLL' }].map(({ value, label }) => (
+                          <button
+                            key={label}
+                            onClick={() => handleLeadFilterChange('leadType', value)}
+                            className={`px-3 py-1.5 rounded text-sm font-medium border ${
+                              (leadFilters?.leadType || '') === value
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-gray-50 text-gray-700 border-gray-200'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                 </div>
 

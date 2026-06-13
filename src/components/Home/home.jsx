@@ -14,6 +14,7 @@ import Header from './Header';
 import LeadsTable from './LeadsTable';
 import ModalsContainer from './ModalsContainer';
 import AdvancedFilter from './AdvancedFilter';
+import ExportFieldsModal from '../modals/ExportFieldsModal';
 import { secureCache } from '../../utils/cache';
 import { cleanQueryParams } from '../../utils/cleanParams'
 const HomePage = memo(() => {
@@ -33,6 +34,8 @@ const HomePage = memo(() => {
   });
 
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [isDisconnectPopupOpen, setIsDisconnectPopupOpen] = useState(false);
   const [isConnectedPopupOpen, setIsConnectedPopupOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -276,30 +279,25 @@ const HomePage = memo(() => {
     fetchLeads(updatedFilters, 1, true);
   }, [filters, updateURL, fetchLeads]);
 
-  const handleExportLeads = useCallback(async () => {
+  const handleExportLeads = useCallback(() => {
+    setIsExportModalOpen(true);
+  }, []);
+
+  const doExportLeads = useCallback(async (selectedFields) => {
     try {
+      setIsExporting(true);
       const autoFilters = getTabAutoFilters(activeTab);
       const allFilters = {
         ...autoFilters,
         ...filters,
-        data: filters.data || autoFilters.data || activeRole
+        data: filters.data || autoFilters.data || activeRole,
       };
 
-      let lastLogged = 0;
       const response = await axios.get(`${BASE_URL}/student/export`, {
-        params: { ...allFilters, export: true },
+        params: { ...allFilters, export: true, selectedFields: selectedFields.join(',') },
         responseType: 'blob',
         paramsSerializer: cleanQueryParams,
         withCredentials: true,
-        onDownloadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / (progressEvent.total || 1)
-          );
-
-          if (percentCompleted !== lastLogged) {
-            lastLogged = percentCompleted;
-          }
-        }
       });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -310,8 +308,11 @@ const HomePage = memo(() => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+      setIsExportModalOpen(false);
     } catch (error) {
       console.error("Error exporting leads:", error);
+    } finally {
+      setIsExporting(false);
     }
   }, [activeTab, filters, activeRole, getTabAutoFilters]);
 
@@ -365,9 +366,15 @@ const HomePage = memo(() => {
             activeRole={activeRole}
             onAddLead={() => setIsAddLeadModalOpen(true)}
             onExport={handleExportLeads}
+            isExporting={isExporting}
             onRoleSwitch={handleRoleSwitch}
             onOpenAdvancedFilter={() => setIsAdvancedFilterOpen(true)}
-            onOpenAdvancedFilter={() => setIsAdvancedFilterOpen(true)}
+          />
+          <ExportFieldsModal
+            open={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            onExport={doExportLeads}
+            isExporting={isExporting}
           />
 
           {activeTab === "dashboard" && (

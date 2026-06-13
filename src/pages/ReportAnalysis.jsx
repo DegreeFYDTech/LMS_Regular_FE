@@ -55,6 +55,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
     dateRange: null,
     counsellorStatus: '',
     formType: '',
+    leadType: '',
   });
   const [pivotFilters, setPivotFilters] = useState({
     colleges: [],
@@ -399,6 +400,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
           params.created_at_end = filters.dateRange[1].format("YYYY-MM-DD");
         }
         if (filters.formType) params.form_type = filters.formType;
+        if (filters.leadType) params.lead_type = filters.leadType;
         return params;
       }
 
@@ -685,6 +687,9 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
     if (filters.dateRange?.length === 2) {
       existingParams.append('created_at_start', filters.dateRange[0].format("YYYY-MM-DD"));
       existingParams.append('created_at_end', filters.dateRange[1].format("YYYY-MM-DD"));
+    }
+    if (filters.leadType) {
+      existingParams.append('lead_type', filters.leadType);
     }
 
     const queryString = existingParams.toString();

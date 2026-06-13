@@ -91,6 +91,17 @@ const UnifiedCallModal = ({
   const currentStudentStatus = selectedStudent?.current_student_status || "";
   const coursecount = selectedStudent?.course_count || 1;
   const existingCourseSubStatus = selectedStudent?.course_sub_status || "";
+
+  const _admissionJourney = selectedStudent?.l3_journeys?.find(
+    (j) => j.course_status === "Admission",
+  );
+  const prevFeeType =
+    selectedStudent?.fee_type || _admissionJourney?.fee_type || null;
+  const prevFeesAmount =
+    Number(selectedStudent?.deposit_amount) ||
+    Number(_admissionJourney?.deposit_amount) ||
+    0;
+
   // Time slot generation function with time ranges
   const generateTimeSlots = useCallback(() => {
     const slots = [];
@@ -359,9 +370,16 @@ const UnifiedCallModal = ({
         selectedStudent?.student_remarks?.[0]?.leadSubStatus ||
         "Counselling Yet to be Done";
 
+      // Use latest l3_journey as fallback for supervisor (course_sub_status not at root)
+      const latestJourney = selectedStudent?.l3_journeys?.[0];
+
       // Auto-select application sub-status from existing course_sub_status
-      if (f1 === "Application" && existingCourseSubStatus) {
-        f2 = existingCourseSubStatus;
+      if (f1 === "Application") {
+        if (existingCourseSubStatus) {
+          f2 = existingCourseSubStatus;
+        } else if (latestJourney?.course_status) {
+          f2 = latestJourney.course_status;
+        }
       }
 
       if (f1 === "Fresh" || f1 === "NotInterested") {
@@ -377,12 +395,35 @@ const UnifiedCallModal = ({
       setIsEnrDone(s === "Enrolled");
       setIsNotInterestedDone(s === "NotInterested");
 
+      if (f1 === "Admission") {
+        const admissionJourney = selectedStudent?.l3_journeys?.find(
+          (j) => j.course_status === "Admission",
+        );
+        const existingFees =
+          Number(selectedStudent?.deposit_amount) ||
+          Number(admissionJourney?.deposit_amount);
+        if (existingFees > 0) setFeesAmount(String(existingFees));
+        const existingFeeType =
+          selectedStudent?.fee_type || admissionJourney?.fee_type;
+        if (existingFeeType) {
+          f2 = existingFeeType;
+          setLeadStatus({ funnel1: f1, funnel2: existingFeeType });
+        }
+      }
+
       if (existingCourseId) {
         setSelectedUniversity(existingUniversity);
         setcourse_id(existingCourseId);
       } else {
-        setSelectedUniversity(preselectedUniversity);
-        setcourse_id(precourse_id);
+        const journeyCourseId = latestJourney?.course_id;
+        const journeyUniversity = latestJourney?.university_course?.university_name;
+        if (journeyCourseId && journeyUniversity) {
+          setSelectedUniversity(journeyUniversity);
+          setcourse_id(journeyCourseId);
+        } else {
+          setSelectedUniversity(preselectedUniversity);
+          setcourse_id(precourse_id);
+        }
       }
 
       setIsAppStepSelectedFromProgress(false);
