@@ -94,11 +94,15 @@ const RuleFormL3 = ({
                     <Form.Item label="L2 Counsellor" extra="Only match students currently assigned to these L2 counsellors. Leave empty to match any.">
                         <Select
                             mode="multiple"
+                            showSearch
                             style={{ width: '100%' }}
                             placeholder="Select L2 Counsellors"
                             value={rule.l2_counsellor_ids || []}
                             onChange={handleL2CounsellorChange}
                             options={options.l2Counsellors?.map(c => ({ label: c.counsellor_name, value: c.counsellor_id })) || []}
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
                             maxTagCount="responsive"
                             allowClear
                         />
@@ -186,12 +190,16 @@ const RuleFormL3 = ({
             <Form.Item label={<Text strong>Assign to L3 Agents</Text>} required extra="Leads matching these conditions will be distributed among selected L3 agents using round-robin.">
                 <Select
                     mode="multiple"
+                    showSearch
                     size="large"
                     style={{ width: '100%' }}
                     placeholder="Select agent(s)"
                     value={rule.assigned_counsellor_ids || []}
                     onChange={handleCounsellorChange}
                     options={options.counsellors?.map(agent => ({ label: agent.counsellor_name, value: agent.counsellor_id })) || []}
+                    filterOption={(input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
                     maxTagCount="responsive"
                     allowClear
                 />
