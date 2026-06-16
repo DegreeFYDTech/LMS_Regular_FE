@@ -34,6 +34,7 @@ const RuleCards = ({
       let count = 0;
       if (rule.university_name?.length > 0) count++;
       if (rule.source?.length > 0) count++;
+      if (rule.l2_counsellor_ids?.length > 0) count++;
       if (rule.course_conditions) {
         Object.values(rule.course_conditions).forEach(val => {
           if (Array.isArray(val) && val.length > 0) count++;
@@ -130,6 +131,12 @@ const RuleCards = ({
                             <div style={{ display: 'flex', alignItems: 'start', fontSize: '12px' }}>
                               <Text type="secondary" style={{ width: '70px', flexShrink: 0 }}>Stream:</Text>
                               <Text ellipsis>{rule.course_conditions.stream.join(', ')}</Text>
+                            </div>
+                          )}
+                          {rule.l2_counsellor_ids?.length > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'start', fontSize: '12px' }}>
+                              <Text type="secondary" style={{ width: '70px', flexShrink: 0 }}>L2:</Text>
+                              <Text ellipsis>{rule.l2_counsellor_ids.length} counsellor(s)</Text>
                             </div>
                           )}
                         </>

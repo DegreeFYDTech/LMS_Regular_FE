@@ -26,6 +26,7 @@ const RuleTable = ({
       if (record.course_conditions?.stream?.length > 0) parts.push(`Streams: ${record.course_conditions.stream.join(', ')}`);
       if (record.course_conditions?.degree?.length > 0) parts.push(`Degrees: ${record.course_conditions.degree.join(', ')}`);
       if (record.source?.length > 0) parts.push(`Source: ${record.source.join(', ')}`);
+      if (record.l2_counsellor_ids?.length > 0) parts.push(`L2 Counsellor: ${record.l2_counsellor_ids.length} selected`);
       return parts.join(' • ') || 'Any';
     }
 
@@ -136,6 +137,12 @@ const RuleTable = ({
                       <div>
                         <Text type="secondary" block style={{ fontSize: '12px', textTransform: 'uppercase' }}>University</Text>
                         <Space wrap>{record.university_name.map(v => <Tag key={v}>{v}</Tag>)}</Space>
+                      </div>
+                    )}
+                    {record.l2_counsellor_ids?.length > 0 && (
+                      <div>
+                        <Text type="secondary" block style={{ fontSize: '12px', textTransform: 'uppercase' }}>L2 Counsellor</Text>
+                        <Space wrap>{record.l2_counsellor_ids.map(v => <Tag key={v} color="purple">{v}</Tag>)}</Space>
                       </div>
                     )}
                     {Object.entries(record.course_conditions || {}).map(([key, value]) => {

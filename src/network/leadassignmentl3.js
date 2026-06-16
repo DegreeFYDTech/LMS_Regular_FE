@@ -88,3 +88,17 @@ export const fetchL3Agents = async () => {
         throw error;
     }
 };
+
+// Fetch L2 agents (used as a condition: only match students assigned to these L2 counsellors)
+export const fetchL2Agents = async () => {
+    try {
+        const res = await axios.get(
+            `${BASE_URL}/counsellor/getAllCounsellors?role=l2`,
+            { withCredentials: true }
+        );
+        return res.data;
+    } catch (error) {
+        handleError(error);
+        throw error;
+    }
+};

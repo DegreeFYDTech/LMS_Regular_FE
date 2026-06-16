@@ -41,6 +41,13 @@ const RuleFormL3 = ({
         }));
     };
 
+    const handleL2CounsellorChange = (value) => {
+        onRuleChange(prev => ({
+            ...prev,
+            l2_counsellor_ids: value
+        }));
+    };
+
     return (
         <Form layout="vertical">
             <Form.Item label={<Text strong>Rule Name</Text>} required>
@@ -78,6 +85,20 @@ const RuleFormL3 = ({
                             value={rule.source || []}
                             onChange={handleSourceChange}
                             options={options.source?.map(s => ({ label: s, value: s })) || []}
+                            maxTagCount="responsive"
+                            allowClear
+                        />
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item label="L2 Counsellor" extra="Only match students currently assigned to these L2 counsellors. Leave empty to match any.">
+                        <Select
+                            mode="multiple"
+                            style={{ width: '100%' }}
+                            placeholder="Select L2 Counsellors"
+                            value={rule.l2_counsellor_ids || []}
+                            onChange={handleL2CounsellorChange}
+                            options={options.l2Counsellors?.map(c => ({ label: c.counsellor_name, value: c.counsellor_id })) || []}
                             maxTagCount="responsive"
                             allowClear
                         />

@@ -6,6 +6,7 @@ import {
     deleteLeadAssignmentRuleL3,
     toggleLeadAssignmentRuleL3,
     fetchL3Agents,
+    fetchL2Agents,
 } from '../network/leadassignmentl3';
 import {
     Layout,
@@ -57,6 +58,7 @@ const LeadAssignmentL3 = () => {
         },
         source: [],
         assigned_counsellor_ids: [],
+        l2_counsellor_ids: [],
         is_active: true,
         custom_rule_name: ''
     });
@@ -72,7 +74,8 @@ const LeadAssignmentL3 = () => {
         levels: [],
         courses: [],
         source: [],
-        counsellors: []
+        counsellors: [],
+        l2Counsellors: []
     });
 
     useEffect(() => {
@@ -85,6 +88,7 @@ const LeadAssignmentL3 = () => {
             await Promise.all([
                 loadRules(),
                 loadAgents(),
+                loadL2Agents(),
                 loadInitialDropdownData(),
                 fetchSources()
             ]);
@@ -112,6 +116,15 @@ const LeadAssignmentL3 = () => {
             setOptions(prev => ({ ...prev, counsellors: [...data] }));
         } catch (error) {
             console.error('Error loading agents:', error);
+        }
+    };
+
+    const loadL2Agents = async () => {
+        try {
+            const data = await fetchL2Agents();
+            setOptions(prev => ({ ...prev, l2Counsellors: [...data] }));
+        } catch (error) {
+            console.error('Error loading L2 agents:', error);
         }
     };
 
@@ -242,6 +255,7 @@ const LeadAssignmentL3 = () => {
             },
             source: Array.isArray(rule.source) ? [...rule.source] : [],
             assigned_counsellor_ids: rule.assigned_counsellor_ids ? [...rule.assigned_counsellor_ids] : [],
+            l2_counsellor_ids: Array.isArray(rule.l2_counsellor_ids) ? [...rule.l2_counsellor_ids] : [],
             is_active: true,
             custom_rule_name: (rule.custom_rule_name || 'Rule') + ' (Copy)'
         };
@@ -271,6 +285,7 @@ const LeadAssignmentL3 = () => {
             },
             source: [],
             assigned_counsellor_ids: [],
+            l2_counsellor_ids: [],
             is_active: true,
             custom_rule_name: ''
         });
