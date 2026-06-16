@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import dayjs from 'dayjs';
+import { Modal, Table, Spin, Empty } from 'antd';
 import { BASE_URL } from '../config/api';
 import ReportTable from '../components/MainReport/ReportTable';
 import DashboardHeader from '../components/MainReport/DashboardHeader';
@@ -57,11 +59,55 @@ const TrackReportAnalysis = () => {
     setTo(today);
   };
 
+  const BUCKET_LABELS = {
+    new_leads: 'New Leads',
+    new_counselling: 'Counselling Done',
+    connected_calls: 'Connected Calls',
+  };
+
+  const [drillDown, setDrillDown] = useState({
+    visible: false, loading: false, data: [], timeInterval: '', bucket: '',
+  });
+
+  const handleCellClick = async (timeInterval, bucket) => {
+    setDrillDown({ visible: true, loading: true, data: [], timeInterval, bucket });
+    try {
+      const res = await axios.get(`${BASE_URL}/studentcoursestatus/track-report-drilldown`, {
+        params: { start_date: from, end_date: to, time_interval: timeInterval, bucket },
+      });
+      setDrillDown(prev => ({ ...prev, loading: false, data: res.data.success ? res.data.data : [] }));
+    } catch (err) {
+      console.error('Drill-down fetch failed:', err);
+      setDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+    }
+  };
+
+  const drillColumns = [
+    {
+      title: 'Student ID', dataIndex: 'student_id', key: 'student_id', width: 130,
+      render: (v) => (
+        <span className="text-blue-600 hover:underline cursor-pointer font-mono text-sm"
+          onClick={() => window.open(`/student/${v}`, '_blank')}>{v}</span>
+      ),
+    },
+    { title: 'Name', dataIndex: 'student_name', key: 'student_name', width: 150 },
+    { title: 'Status', dataIndex: 'current_student_status', key: 'current_student_status', width: 150 },
+    { title: 'Source', dataIndex: 'source', key: 'source', width: 120 },
+    { title: 'Time', dataIndex: 'created_at', key: 'created_at', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : '--' },
+  ];
+
+  const renderClickableCount = (key) => (val, row) => {
+    const count = typeof val === 'object' ? val?.count : (val || 0);
+    return count > 0 ? (
+      <span className="cursor-pointer hover:underline hover:text-blue-700 font-semibold" onClick={() => handleCellClick(row.time_interval, key)}>{count}</span>
+    ) : count;
+  };
+
   const columns = [
     { key: 'time_interval', label: 'Time Interval' },
-    { key: 'new_leads', label: 'New Leads', align: 'center', render: (val) => typeof val === 'object' ? val.count : (val || 0) },
-    { key: 'new_counselling', label: 'Counselling Done', align: 'center', render: (val) => typeof val === 'object' ? val.count : (val || 0) },
-    { key: 'connected_calls', label: 'Connected', align: 'center', render: (val) => typeof val === 'object' ? val.count : (val || 0) },
+    { key: 'new_leads', label: 'New Leads', align: 'center', render: renderClickableCount('new_leads') },
+    { key: 'new_counselling', label: 'Counselling Done', align: 'center', render: renderClickableCount('new_counselling') },
+    { key: 'connected_calls', label: 'Connected', align: 'center', render: renderClickableCount('connected_calls') },
   ];
 
   const data = timeIntervals.map(time => {
@@ -99,6 +145,38 @@ const TrackReportAnalysis = () => {
           emptyText="No tracking data found for this period"
         />
       </div>
+
+      {/* Drill-down modal */}
+      <Modal
+        open={drillDown.visible}
+        onCancel={() => setDrillDown(prev => ({ ...prev, visible: false }))}
+        width="92vw"
+        style={{ top: 20 }}
+        footer={null}
+        title={
+          <div className="flex items-center gap-3">
+            <span className="font-black text-slate-800">{drillDown.timeInterval || '—'}</span>
+            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              {BUCKET_LABELS[drillDown.bucket] || drillDown.bucket}
+            </span>
+          </div>
+        }
+      >
+        <Spin spinning={drillDown.loading} tip="Loading students...">
+          {drillDown.data.length > 0 ? (
+            <Table
+              columns={drillColumns}
+              dataSource={drillDown.data}
+              rowKey={(r, idx) => r.remark_id || `${r.student_id}-${idx}`}
+              pagination={{ pageSize: 20, showSizeChanger: false }}
+              size="small"
+              scroll={{ x: 'max-content' }}
+            />
+          ) : !drillDown.loading ? (
+            <Empty description="No students found" />
+          ) : null}
+        </Spin>
+      </Modal>
     </>
   );
 };

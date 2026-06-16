@@ -6,7 +6,8 @@ import {
   Spin,
   Empty,
   Tooltip,
-  Radio
+  Radio,
+  Modal
 } from 'antd';
 import dayjs from 'dayjs';
 import axios from 'axios';
@@ -44,6 +45,44 @@ const CollegeStatusReports = () => {
     firstTimeDateRange: [dayjs().startOf('month'), dayjs()],
   });
   const [formType, setFormType] = useState(null);
+
+  const [drillDown, setDrillDown] = useState({
+    visible: false, loading: false, data: [], rowLabel: '', status: '',
+  });
+
+  const handleCellClick = async (rowLabel, status) => {
+    const studentIds = reportData?.data?.drilldown?.[rowLabel]?.[status] || [];
+    setDrillDown({ visible: true, loading: true, data: [], rowLabel, status });
+    if (studentIds.length === 0) {
+      setDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+      return;
+    }
+    try {
+      const response = await axios.get(`${BASE_URL}/StudentCourseStatusLogs/reports/drilldown-students`, {
+        params: { ids: studentIds.join(',') },
+      });
+      setDrillDown(prev => ({ ...prev, loading: false, data: response.data.success ? response.data.data : [] }));
+    } catch (err) {
+      console.error('Drill-down fetch failed:', err);
+      setDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+    }
+  };
+
+  const drillColumns = [
+    {
+      title: 'Student ID', dataIndex: 'student_id', key: 'student_id', width: 130,
+      render: (v) => (
+        <span className="text-blue-600 hover:underline cursor-pointer font-mono text-sm"
+          onClick={() => window.open(`/student/${v}`, '_blank')}>{v}</span>
+      ),
+    },
+    { title: 'Name', dataIndex: 'student_name', key: 'student_name', width: 150 },
+    { title: 'L2 Counsellor', dataIndex: 'counsellor_name_l2', key: 'counsellor_name_l2', width: 150 },
+    { title: 'L3 Counsellor', dataIndex: 'counsellor_name_l3', key: 'counsellor_name_l3', width: 150 },
+    { title: 'Status', dataIndex: 'current_student_status', key: 'current_student_status', width: 150 },
+    { title: 'Source', dataIndex: 'source', key: 'source', width: 120 },
+    { title: 'Created At', dataIndex: 'created_at', key: 'created_at', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : '--' },
+  ];
 
   const fetchReportData = useCallback(async () => {
     setLoading(true);
@@ -280,11 +319,14 @@ const CollegeStatusReports = () => {
         key: status,
         width: 100,
         align: 'center',
-        render: (count) => (
+        render: (count, record) => (
           <Tooltip title={`${status}: ${count} students`}>
             <div className="flex justify-center">
               {count > 0 ? (
-                <span className="inline-flex items-center justify-center min-w-8 h-8 rounded-full text-slate-800 text-sm font-medium bg-slate-50">
+                <span
+                  className={`inline-flex items-center justify-center min-w-8 h-8 rounded-full text-slate-800 text-sm font-medium bg-slate-50 ${!record.isTotalRow ? 'cursor-pointer hover:bg-blue-100 hover:text-blue-700' : ''}`}
+                  onClick={() => !record.isTotalRow && handleCellClick(record[rowKey], status)}
+                >
                   {count}
                 </span>
               ) : (
@@ -341,11 +383,14 @@ const CollegeStatusReports = () => {
         key: `col_${index}`,
         width: 100,
         align: 'center',
-        render: (count) => (
+        render: (count, record) => (
           <Tooltip title={`${row[rowKey]}: ${count} students`}>
             <div className="flex justify-center">
               {count > 0 ? (
-                <span className="inline-flex items-center justify-center min-w-8 h-8 rounded-full text-slate-800 text-sm font-medium bg-slate-50">
+                <span
+                  className={`inline-flex items-center justify-center min-w-8 h-8 rounded-full text-slate-800 text-sm font-medium bg-slate-50 ${record.status !== 'TOTAL' ? 'cursor-pointer hover:bg-blue-100 hover:text-blue-700' : ''}`}
+                  onClick={() => record.status !== 'TOTAL' && handleCellClick(row[rowKey], record.status)}
+                >
                   {count}
                 </span>
               ) : (
@@ -670,6 +715,38 @@ const CollegeStatusReports = () => {
           </Spin>
         </div>
       </div>
+
+      {/* Drill-down modal */}
+      <Modal
+        open={drillDown.visible}
+        onCancel={() => setDrillDown(prev => ({ ...prev, visible: false }))}
+        width="92vw"
+        style={{ top: 20 }}
+        footer={null}
+        title={
+          <div className="flex items-center gap-3">
+            <span className="font-black text-slate-800">{drillDown.rowLabel || '—'}</span>
+            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              {drillDown.status}
+            </span>
+          </div>
+        }
+      >
+        <Spin spinning={drillDown.loading} tip="Loading students...">
+          {drillDown.data.length > 0 ? (
+            <Table
+              columns={drillColumns}
+              dataSource={drillDown.data}
+              rowKey="student_id"
+              pagination={{ pageSize: 20, showSizeChanger: false }}
+              size="small"
+              scroll={{ x: 'max-content' }}
+            />
+          ) : !drillDown.loading ? (
+            <Empty description="No students found" />
+          ) : null}
+        </Spin>
+      </Modal>
 
       <style>{`
         .college-status-table .ant-table-thead > tr > th {

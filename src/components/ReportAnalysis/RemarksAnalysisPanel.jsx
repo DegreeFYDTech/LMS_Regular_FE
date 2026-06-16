@@ -29,7 +29,7 @@ const safeToPng = async (node) => {
   }
 };
 
-export default function RemarksAnalysisPanel({ chartData, tableData, remarksTableData }) {
+export default function RemarksAnalysisPanel({ chartData, tableData, remarksTableData, onCellClick }) {
   const chartRef = useRef();
 
   const handleDownloadPDF = async () => {
@@ -232,7 +232,7 @@ export default function RemarksAnalysisPanel({ chartData, tableData, remarksTabl
         </div>
 
         <div className="bg-white p-4 overflow-auto max-h-[700px] ">
-          <ConnectedCallsTable data={tableData} compact />
+          <ConnectedCallsTable data={tableData} compact onCellClick={onCellClick} />
         </div>
       </div>
 

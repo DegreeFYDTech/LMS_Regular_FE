@@ -4,7 +4,8 @@ import {
     DatePicker,
     Select,
     Spin,
-    Empty
+    Empty,
+    Modal
 } from 'antd';
 import dayjs from 'dayjs';
 import axios from 'axios';
@@ -111,6 +112,59 @@ const CounsellorStatsDashboard = () => {
         fetchData(null, null, 'all');
     };
 
+    const BUCKET_LABELS = {
+        total_forms: 'Total Forms',
+        active_forms: 'Active Forms',
+        not_initiated_count: 'Not Initiated',
+        called_within_3_days: 'Called Within 3 Days',
+        called_4_to_6_days: 'Called 4-6 Days',
+        called_7_plus_days: 'Called 7+ Days',
+    };
+
+    const [drillDown, setDrillDown] = useState({
+        visible: false, loading: false, data: [], counsellorName: '', bucket: '',
+    });
+
+    const handleCellClick = async (row, bucket) => {
+        setDrillDown({ visible: true, loading: true, data: [], counsellorName: row.counsellor_name, bucket });
+        try {
+            const params = new URLSearchParams();
+            const [start, end] = dateRange;
+            if (start && end) {
+                params.append('start_date', start.format('YYYY-MM-DD'));
+                params.append('end_date', end.format('YYYY-MM-DD'));
+            }
+            if (formType) params.append('form_type', formType);
+            params.append('counsellor_id', row.assigned_l3_counsellor_id || row.assigned_counsellor_l3_id || 'Unassigned');
+            params.append('bucket', bucket);
+
+            const res = await axios.get(`${BASE_URL}/StudentCourseStatusLogs/counsellor-stats/drilldown?${params.toString()}`, {
+                withCredentials: true,
+            });
+            setDrillDown(prev => ({ ...prev, loading: false, data: res.data.success ? res.data.data : [] }));
+        } catch (err) {
+            console.error('Drill-down fetch failed:', err);
+            setDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+        }
+    };
+
+    const drillColumns = [
+        {
+            title: 'Student ID', dataIndex: 'student_id', key: 'student_id', width: 130,
+            render: (v) => (
+                <span className="text-blue-600 hover:underline cursor-pointer font-mono text-sm"
+                    onClick={() => window.open(`/student/${v}`, '_blank')}>{v}</span>
+            ),
+        },
+        { title: 'Name', dataIndex: 'student_name', key: 'student_name', width: 150 },
+        { title: 'University', dataIndex: 'university_name', key: 'university_name', width: 180 },
+        { title: 'Course', dataIndex: 'course_name', key: 'course_name', width: 180 },
+        { title: 'Latest Status', dataIndex: 'latest_status', key: 'latest_status', width: 180 },
+        { title: 'First Status Date', dataIndex: 'first_status_date', key: 'first_status_date', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : '--' },
+        { title: 'First Remark Date', dataIndex: 'first_remark_date', key: 'first_remark_date', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : <span className="text-slate-400">No remark</span> },
+        { title: 'Days to First Action', dataIndex: 'days_to_first_action', key: 'days_to_first_action', width: 140, align: 'center', render: (v) => v == null ? <span className="text-slate-400">—</span> : v },
+    ];
+
     const counsellorOptions = [...new Map(
         data.map(item => [item.assigned_counsellor_l3_id, {
             id: item.assigned_counsellor_l3_id,
@@ -201,8 +255,8 @@ const CounsellorStatsDashboard = () => {
             width: 120,
             align: 'center',
             sorter: (a, b) => parseInt(a.total_forms) - parseInt(b.total_forms),
-            render: (value) => (
-                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg  text-blue-700 text-sm font-bold">
+            render: (value, row) => (
+                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg text-blue-700 text-sm font-bold cursor-pointer hover:bg-blue-50" onClick={() => handleCellClick(row, 'total_forms')}>
                     {parseInt(value) || 0}
                 </span>
             ),
@@ -214,8 +268,8 @@ const CounsellorStatsDashboard = () => {
             width: 130,
             align: 'center',
             sorter: (a, b) => parseInt(a.active_forms) - parseInt(b.active_forms),
-            render: (value) => (
-                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg  text-green-700 text-sm font-bold">
+            render: (value, row) => (
+                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg text-green-700 text-sm font-bold cursor-pointer hover:bg-green-50" onClick={() => handleCellClick(row, 'active_forms')}>
                     {parseInt(value) || 0}
                 </span>
             ),
@@ -227,8 +281,8 @@ const CounsellorStatsDashboard = () => {
             width: 130,
             align: 'center',
             sorter: (a, b) => parseInt(a.not_initiated_count) - parseInt(b.not_initiated_count),
-            render: (value) => (
-                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg  text-orange-700 text-sm font-bold">
+            render: (value, row) => (
+                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg text-orange-700 text-sm font-bold cursor-pointer hover:bg-orange-50" onClick={() => handleCellClick(row, 'not_initiated_count')}>
                     {parseInt(value) || 0}
                 </span>
             ),
@@ -240,8 +294,8 @@ const CounsellorStatsDashboard = () => {
             width: 160,
             align: 'center',
             sorter: (a, b) => parseInt(a.called_within_3_days) - parseInt(b.called_within_3_days),
-            render: (value) => (
-                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg  text-purple-700 text-sm font-medium">
+            render: (value, row) => (
+                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg text-purple-700 text-sm font-medium cursor-pointer hover:bg-purple-50" onClick={() => handleCellClick(row, 'called_within_3_days')}>
                     {parseInt(value) || 0}
                 </span>
             ),
@@ -253,8 +307,8 @@ const CounsellorStatsDashboard = () => {
             width: 150,
             align: 'center',
             sorter: (a, b) => parseInt(a.called_4_to_6_days) - parseInt(b.called_4_to_6_days),
-            render: (value) => (
-                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg bg-yellow-50 text-yellow-700 text-sm font-medium">
+            render: (value, row) => (
+                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg bg-yellow-50 text-yellow-700 text-sm font-medium cursor-pointer hover:bg-yellow-100" onClick={() => handleCellClick(row, 'called_4_to_6_days')}>
                     {parseInt(value) || 0}
                 </span>
             ),
@@ -266,8 +320,8 @@ const CounsellorStatsDashboard = () => {
             width: 140,
             align: 'center',
             sorter: (a, b) => parseInt(a.called_7_plus_days) - parseInt(b.called_7_plus_days),
-            render: (value) => (
-                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg bg-red-50 text-red-700 text-sm font-medium">
+            render: (value, row) => (
+                <span className="inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg bg-red-50 text-red-700 text-sm font-medium cursor-pointer hover:bg-red-100" onClick={() => handleCellClick(row, 'called_7_plus_days')}>
                     {parseInt(value) || 0}
                 </span>
             ),
@@ -377,6 +431,38 @@ const CounsellorStatsDashboard = () => {
                     </Spin>
                 </div>
             </div>
+
+            {/* Drill-down modal */}
+            <Modal
+                open={drillDown.visible}
+                onCancel={() => setDrillDown(prev => ({ ...prev, visible: false }))}
+                width="92vw"
+                style={{ top: 20 }}
+                footer={null}
+                title={
+                    <div className="flex items-center gap-3">
+                        <span className="font-black text-slate-800">{drillDown.counsellorName || '—'}</span>
+                        <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                            {BUCKET_LABELS[drillDown.bucket] || drillDown.bucket}
+                        </span>
+                    </div>
+                }
+            >
+                <Spin spinning={drillDown.loading} tip="Loading students...">
+                    {drillDown.data.length > 0 ? (
+                        <Table
+                            columns={drillColumns}
+                            dataSource={drillDown.data}
+                            rowKey={(r, idx) => `${r.student_id}-${r.course_id || idx}`}
+                            pagination={{ pageSize: 20, showSizeChanger: false }}
+                            size="small"
+                            scroll={{ x: 'max-content' }}
+                        />
+                    ) : !drillDown.loading ? (
+                        <Empty description="No students found" />
+                    ) : null}
+                </Spin>
+            </Modal>
 
             <style>{`
                 .counsellor-stats-table .ant-table-thead > tr > th {

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart2, Filter, Layout, Columns } from 'lucide-react';
+import { Modal, Table, Spin, Empty } from 'antd';
+import dayjs from 'dayjs';
 import FilterPanel from '../components/ReportAnalysis/FilterPanel';
 import DashboardHeader from '../components/MainReport/DashboardHeader';
 import DataTable from '../components/ReportAnalysis/DataTable';
@@ -300,6 +302,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
       const response = await getAnalysisReport(params);
       if (response.success) {
         const flattenedData = response.data.map(agent => ({
+          counsellorId: agent.counsellorId,
           counsellorName: agent.counsellorName,
           supervisorName: agent.supervisorName,
           date: `${fromDate} to ${toDate}`,
@@ -763,6 +766,183 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
     }
   };
 
+  const REMARKS_BUCKET_LABELS = {
+    totalRemarks: 'Total Remarks',
+    totalConnectedCalls: 'Connected Calls',
+    slot: 'Hourly Slot',
+  };
+
+  const [remarksDrillDown, setRemarksDrillDown] = useState({
+    visible: false, loading: false, data: [], label: '', bucket: '',
+  });
+
+  const handleRemarksCellClick = async (target, bucket, extra = {}) => {
+    setRemarksDrillDown({ visible: true, loading: true, data: [], label: target.label, bucket });
+    try {
+      const params = new URLSearchParams();
+      if (fromDate) params.append('from', fromDate);
+      if (toDate) params.append('to', toDate);
+      if (target.counsellorId) params.append('counsellor_id', target.counsellorId);
+      if (target.supervisorName) params.append('supervisor_name', target.supervisorName);
+      params.append('bucket', bucket);
+      if (extra.hour !== undefined) params.append('hour', extra.hour);
+
+      const res = await axios.get(`${BASE_URL}/remark/connected-calls-drilldown?${params.toString()}`, { withCredentials: true });
+      setRemarksDrillDown(prev => ({ ...prev, loading: false, data: res.data.success ? res.data.data : [] }));
+    } catch (err) {
+      console.error('Drill-down fetch failed:', err);
+      setRemarksDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+    }
+  };
+
+  const handleRemarksTableCellClick = async (target, bucket, extra = {}) => {
+    setRemarksDrillDown({ visible: true, loading: true, data: [], label: target.label, bucket });
+    try {
+      const params = new URLSearchParams();
+      if (fromDate) params.append('from', fromDate);
+      if (toDate) params.append('to', toDate);
+      if (remarksFilters.mode) params.append('mode', remarksFilters.mode);
+      if (remarksFilters.source) params.append('source', remarksFilters.source);
+      if (remarksFilters.campaign) params.append('campaign', remarksFilters.campaign);
+      if (target.counsellorId) params.append('counsellor_id', target.counsellorId);
+      if (target.supervisorName) params.append('supervisor_name', target.supervisorName);
+      params.append('bucket', bucket);
+      if (extra.hour !== undefined) params.append('hour', extra.hour);
+
+      const res = await axios.get(`${BASE_URL}/remark/analysis-report-drilldown?${params.toString()}`, { withCredentials: true });
+      setRemarksDrillDown(prev => ({ ...prev, loading: false, data: res.data.success ? res.data.data : [] }));
+    } catch (err) {
+      console.error('Drill-down fetch failed:', err);
+      setRemarksDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+    }
+  };
+
+  const remarksDrillColumns = [
+    {
+      title: 'Student ID', dataIndex: 'student_id', key: 'student_id', width: 130,
+      render: (v) => (
+        <span className="text-blue-600 hover:underline cursor-pointer font-mono text-sm"
+          onClick={() => window.open(`/student/${v}`, '_blank')}>{v}</span>
+      ),
+    },
+    { title: 'Name', dataIndex: 'student_name', key: 'student_name', width: 150 },
+    { title: 'Counsellor', dataIndex: 'counsellor_name', key: 'counsellor_name', width: 150 },
+    { title: 'Calling Status', dataIndex: 'calling_status', key: 'calling_status', width: 130 },
+    { title: 'Status', dataIndex: 'current_student_status', key: 'current_student_status', width: 150 },
+    { title: 'Source', dataIndex: 'source', key: 'source', width: 120 },
+    { title: 'Remark Time', dataIndex: 'created_at', key: 'created_at', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : '--' },
+  ];
+
+  const PIVOT_BUCKET_LABELS = {
+    dnp: 'Do Not Proceed',
+    tf: 'Technical Fail',
+    p: 'Proceed',
+    total: 'Total',
+  };
+
+  const [pivotDrillDown, setPivotDrillDown] = useState({
+    visible: false, loading: false, data: [], label: '', bucket: '',
+  });
+
+  const handlePivotCellClick = async (target, bucket, extra = {}) => {
+    setPivotDrillDown({ visible: true, loading: true, data: [], label: target.label, bucket });
+    try {
+      const params = new URLSearchParams();
+      const from = filters.dateRange?.[0]?.format('YYYY-MM-DD') || fromDate || '';
+      const to = filters.dateRange?.[1]?.format('YYYY-MM-DD') || toDate || '';
+      if (from) params.append('from', from);
+      if (to) params.append('to', to);
+      if (target.counsellor) params.append('counsellor', target.counsellor);
+      if (target.supervisorName) params.append('supervisor', target.supervisorName);
+      if (extra.college_name) params.append('college_name', extra.college_name);
+      params.append('bucket', bucket);
+
+      const res = await axios.get(`${BASE_URL}/studentcoursestatus/lead-status-report-drilldown?${params.toString()}`);
+      setPivotDrillDown(prev => ({ ...prev, loading: false, data: res.data.success ? res.data.data : [] }));
+    } catch (err) {
+      console.error('Drill-down fetch failed:', err);
+      setPivotDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+    }
+  };
+
+  const pivotDrillColumns = [
+    {
+      title: 'Student ID', dataIndex: 'student_id', key: 'student_id', width: 130,
+      render: (v) => (
+        <span className="text-blue-600 hover:underline cursor-pointer font-mono text-sm"
+          onClick={() => window.open(`/student/${v}`, '_blank')}>{v}</span>
+      ),
+    },
+    { title: 'Name', dataIndex: 'student_name', key: 'student_name', width: 150 },
+    { title: 'Counsellor', dataIndex: 'counsellor_name', key: 'counsellor_name', width: 150 },
+    { title: 'College', dataIndex: 'college_name', key: 'college_name', width: 200 },
+    { title: 'API Status', dataIndex: 'api_sent_status', key: 'api_sent_status', width: 160 },
+    { title: 'Status', dataIndex: 'current_student_status', key: 'current_student_status', width: 150 },
+    { title: 'Source', dataIndex: 'source', key: 'source', width: 120 },
+    { title: 'Time', dataIndex: 'created_at', key: 'created_at', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : '--' },
+  ];
+
+  const LEAD_BUCKET_LABELS = {
+    lead_count: 'Leads', attempted: 'Attempted', connectedAnytime: 'Connected', icc: 'ICC',
+    formFilled: 'Forms', need_active: 'Still ACTIVE', admission: 'Admissions', preNI: 'PreNI',
+    active_cases: 'Active', ni: 'Not Interested', under_3_remarks: '< 3 Remarks',
+    remarks_4_7: '4-7 Remarks', remarks_8_10: '8-10 Remarks', remarks_gt_10: '> 10 Remarks',
+  };
+
+  const [leadDrillDown, setLeadDrillDown] = useState({
+    visible: false, loading: false, data: [], label: '', bucket: '',
+  });
+
+  const handleLeadCellClick = async (target, bucket) => {
+    setLeadDrillDown({ visible: true, loading: true, data: [], label: target.label, bucket });
+    try {
+      const params = new URLSearchParams();
+      params.append('type', leadSubTab);
+      if (filters.source.length > 0) params.append('source', filters.source.join(','));
+      if (filters.sourceUrl?.length > 0) params.append('source_url', filters.sourceUrl.join(','));
+      if (filters.utmCampaign.length > 0) params.append('utm_campaign', filters.utmCampaign.join(','));
+      if (filters.counsellorStatus) params.append('counsellor_status', filters.counsellorStatus);
+      if (filters.dateRange?.length === 2) {
+        params.append('created_at_start', filters.dateRange[0].format('YYYY-MM-DD'));
+        params.append('created_at_end', filters.dateRange[1].format('YYYY-MM-DD'));
+      }
+      if (filters.formType) params.append('form_type', filters.formType);
+      if (filters.leadType) params.append('lead_type', filters.leadType);
+
+      if (target.counsellorId) {
+        params.append('drill_counsellor_id', target.counsellorId);
+      } else if (target.supervisorId) {
+        params.append('drill_supervisor_id', target.supervisorId);
+      } else if (target.supervisorName) {
+        params.append('drill_supervisor_name', target.supervisorName);
+      } else if (target.drillGroup) {
+        params.append('drill_group', target.drillGroup);
+      }
+      params.append('bucket', bucket);
+
+      const res = await axios.get(`${BASE_URL}/studentcoursestatus/getrecords/form-filled/drilldown?${params.toString()}`, { withCredentials: true });
+      setLeadDrillDown(prev => ({ ...prev, loading: false, data: res.data.success ? res.data.data : [] }));
+    } catch (err) {
+      console.error('Drill-down fetch failed:', err);
+      setLeadDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+    }
+  };
+
+  const leadDrillColumns = [
+    {
+      title: 'Student ID', dataIndex: 'student_id', key: 'student_id', width: 130,
+      render: (v) => (
+        <span className="text-blue-600 hover:underline cursor-pointer font-mono text-sm"
+          onClick={() => window.open(`/student/${v}`, '_blank')}>{v}</span>
+      ),
+    },
+    { title: 'Name', dataIndex: 'student_name', key: 'student_name', width: 150 },
+    { title: 'Counsellor', dataIndex: 'counsellor_name', key: 'counsellor_name', width: 150 },
+    { title: 'Status', dataIndex: 'current_student_status', key: 'current_student_status', width: 160 },
+    { title: 'Source', dataIndex: 'source', key: 'source', width: 120 },
+    { title: 'Created At', dataIndex: 'created_at', key: 'created_at', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : '--' },
+  ];
+
   useEffect(() => {
     setCurrentPage(1);
     setError(null);
@@ -865,6 +1045,11 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
             handleSort={handleSort}
             showDetailedColumns={showDetailedColumns}
             setShowDetailedColumns={setShowDetailedColumns}
+            onCellClick={
+              activeTab === 'remarks' ? handleRemarksTableCellClick :
+              (activeTab === 'lead' && leadSubTab !== 'api') ? handleLeadCellClick :
+              undefined
+            }
           />
 
           {activeTab === 'lead' && leadSubTab === 'api' && (
@@ -877,14 +1062,16 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
               selectedCounsellors={pivotFilters.counsellors}
               onFilterChange={handlePivotFilterChange}
               loading={pivotLoading}
+              onCellClick={handlePivotCellClick}
             />
           )}
-         
+
           {activeTab === 'remarks' && (
             <RemarksAnalysisPanel
               chartData={mergeRemarksAndConnected(getChartData(), connectedCallsData)}
               tableData={connectedCallsData}
               remarksTableData={remarksData.data}
+              onCellClick={handleRemarksCellClick}
             />
           )}
         </div>
@@ -914,6 +1101,102 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
           leadSubTab={leadSubTab}
         />
       </div>
+
+      {/* Remarks drill-down modal */}
+      <Modal
+        open={remarksDrillDown.visible}
+        onCancel={() => setRemarksDrillDown(prev => ({ ...prev, visible: false }))}
+        width="92vw"
+        style={{ top: 20 }}
+        footer={null}
+        title={
+          <div className="flex items-center gap-3">
+            <span className="font-black text-slate-800">{remarksDrillDown.label || '—'}</span>
+            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              {REMARKS_BUCKET_LABELS[remarksDrillDown.bucket] || remarksDrillDown.bucket}
+            </span>
+          </div>
+        }
+      >
+        <Spin spinning={remarksDrillDown.loading} tip="Loading students...">
+          {remarksDrillDown.data.length > 0 ? (
+            <Table
+              columns={remarksDrillColumns}
+              dataSource={remarksDrillDown.data}
+              rowKey={(r, idx) => r.remark_id || `${r.student_id}-${idx}`}
+              pagination={{ pageSize: 20, showSizeChanger: false }}
+              size="small"
+              scroll={{ x: 'max-content' }}
+            />
+          ) : !remarksDrillDown.loading ? (
+            <Empty description="No students found" />
+          ) : null}
+        </Spin>
+      </Modal>
+
+      {/* Lead Intelligence (API pivot) drill-down modal */}
+      <Modal
+        open={pivotDrillDown.visible}
+        onCancel={() => setPivotDrillDown(prev => ({ ...prev, visible: false }))}
+        width="92vw"
+        style={{ top: 20 }}
+        footer={null}
+        title={
+          <div className="flex items-center gap-3">
+            <span className="font-black text-slate-800">{pivotDrillDown.label || '—'}</span>
+            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              {PIVOT_BUCKET_LABELS[pivotDrillDown.bucket] || pivotDrillDown.bucket}
+            </span>
+          </div>
+        }
+      >
+        <Spin spinning={pivotDrillDown.loading} tip="Loading students...">
+          {pivotDrillDown.data.length > 0 ? (
+            <Table
+              columns={pivotDrillColumns}
+              dataSource={pivotDrillDown.data}
+              rowKey={(r, idx) => `${r.student_id}-${r.college_name || idx}`}
+              pagination={{ pageSize: 20, showSizeChanger: false }}
+              size="small"
+              scroll={{ x: 'max-content' }}
+            />
+          ) : !pivotDrillDown.loading ? (
+            <Empty description="No students found" />
+          ) : null}
+        </Spin>
+      </Modal>
+
+      {/* Lead Intelligence (agent/source/campaign pivot) drill-down modal */}
+      <Modal
+        open={leadDrillDown.visible}
+        onCancel={() => setLeadDrillDown(prev => ({ ...prev, visible: false }))}
+        width="92vw"
+        style={{ top: 20 }}
+        footer={null}
+        title={
+          <div className="flex items-center gap-3">
+            <span className="font-black text-slate-800">{leadDrillDown.label || '—'}</span>
+            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              {LEAD_BUCKET_LABELS[leadDrillDown.bucket] || leadDrillDown.bucket}
+            </span>
+          </div>
+        }
+      >
+        <Spin spinning={leadDrillDown.loading} tip="Loading students...">
+          {leadDrillDown.data.length > 0 ? (
+            <Table
+              columns={leadDrillColumns}
+              dataSource={leadDrillDown.data}
+              rowKey="student_id"
+              pagination={{ pageSize: 20, showSizeChanger: false }}
+              size="small"
+              scroll={{ x: 'max-content' }}
+            />
+          ) : !leadDrillDown.loading ? (
+            <Empty description="No students found" />
+          ) : null}
+        </Spin>
+      </Modal>
     </div>
   );
 };

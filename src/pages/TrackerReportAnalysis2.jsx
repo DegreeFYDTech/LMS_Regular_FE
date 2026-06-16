@@ -5,7 +5,8 @@ import autoTable from 'jspdf-autotable';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
-import { Segmented, Button, message, Dropdown } from "antd";
+import { Segmented, Button, message, Dropdown, Modal, Table, Spin, Empty } from "antd";
+import dayjs from 'dayjs';
 import {
   FilePdfOutlined,
   FilterOutlined,
@@ -124,6 +125,55 @@ const fetchData = async () => {
     setDrawerOpen(false);
     fetchData();
   };
+
+  const BUCKET_LABELS = {
+    totalUniqueRemarks: 'Total Unique Remarks',
+    firstTimeConnected: 'First Time Connected',
+    firstTimeICC: 'First Time ICC',
+    firstTimeNI: 'First Time NI',
+  };
+
+  const [drillDown, setDrillDown] = useState({
+    visible: false, loading: false, data: [], groupLabel: '', bucket: '',
+  });
+
+  const handleCellClick = async (groupLabel, bucket, drillBy) => {
+    setDrillDown({ visible: true, loading: true, data: [], groupLabel, bucket });
+    try {
+      const params = new URLSearchParams({
+        date_start: filters.date_start,
+        date_end: filters.date_end,
+        groupBy: groupBy === 'supervisor' ? 'counsellor' : groupBy,
+        drill_group: groupLabel,
+        drill_bucket: bucket,
+      });
+      if (drillBy === 'supervisor') params.append('drill_by', 'supervisor');
+
+      const res = await fetch(`${BASE_URL}/studentcoursestatus/track-report-2-drilldown?${params.toString()}`, {
+        credentials: 'include',
+      });
+      const result = await res.json();
+      setDrillDown(prev => ({ ...prev, loading: false, data: result.success ? result.data : [] }));
+    } catch (err) {
+      console.error('Drill-down fetch failed:', err);
+      setDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+    }
+  };
+
+  const drillColumns = [
+    {
+      title: 'Student ID', dataIndex: 'student_id', key: 'student_id', width: 130,
+      render: (v) => (
+        <span className="text-blue-600 hover:underline cursor-pointer font-mono text-sm"
+          onClick={() => window.open(`/student/${v}`, '_blank')}>{v}</span>
+      ),
+    },
+    { title: 'Name', dataIndex: 'student_name', key: 'student_name', width: 150 },
+    { title: 'Counsellor', dataIndex: 'counsellor_name', key: 'counsellor_name', width: 150 },
+    { title: 'Status', dataIndex: 'current_student_status', key: 'current_student_status', width: 150 },
+    { title: 'Source', dataIndex: 'source', key: 'source', width: 120 },
+    { title: 'Created At', dataIndex: 'created_at', key: 'created_at', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : '--' },
+  ];
 
   const getChartData = (filterOverall = true) => {
     const filteredData = filterOverall ? data.filter(row => row.groupKey !== 'Overall') : data;
@@ -674,13 +724,13 @@ const downloadRawDataAsJSON = async () => {
         <div className=" mx-auto  pb-12">
             {!showChart ? (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <ReportTable 
+                    <ReportTable
                         columns={[
                             { key: 'groupKey', label: groupBy === 'slot' ? 'Time Slot' : groupBy === 'counsellor' ? 'Counsellor' : 'Supervisor' },
-                            { key: 'totalUniqueRemarks', label: 'Total Unique Remarks', align: 'center' },
-                            { key: 'firstTimeConnected', label: 'First Time Connected', align: 'center' },
-                            { key: 'firstTimeICC', label: 'First Time ICC', align: 'center' },
-                            { key: 'firstTimeNI', label: 'First Time NI', align: 'center' },
+                            { key: 'totalUniqueRemarks', label: 'Total Unique Remarks', align: 'center', render: (v, row) => <span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(row.groupKey, 'totalUniqueRemarks', groupBy === 'supervisor' ? 'supervisor' : undefined)}>{v}</span> },
+                            { key: 'firstTimeConnected', label: 'First Time Connected', align: 'center', render: (v, row) => <span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(row.groupKey, 'firstTimeConnected', groupBy === 'supervisor' ? 'supervisor' : undefined)}>{v}</span> },
+                            { key: 'firstTimeICC', label: 'First Time ICC', align: 'center', render: (v, row) => <span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(row.groupKey, 'firstTimeICC', groupBy === 'supervisor' ? 'supervisor' : undefined)}>{v}</span> },
+                            { key: 'firstTimeNI', label: 'First Time NI', align: 'center', render: (v, row) => <span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(row.groupKey, 'firstTimeNI', groupBy === 'supervisor' ? 'supervisor' : undefined)}>{v}</span> },
                         ]}
                         data={groupBy === 'supervisor' ? supervisorGroups.map(g => ({ ...g.totals, groupKey: g.supervisorName })) : data}
                         loading={loading}
@@ -696,6 +746,38 @@ const downloadRawDataAsJSON = async () => {
           </div>
         )}
       </div>
+
+      {/* Drill-down modal */}
+      <Modal
+        open={drillDown.visible}
+        onCancel={() => setDrillDown(prev => ({ ...prev, visible: false }))}
+        width="92vw"
+        style={{ top: 20 }}
+        footer={null}
+        title={
+          <div className="flex items-center gap-3">
+            <span className="font-black text-slate-800">{drillDown.groupLabel || '—'}</span>
+            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              {BUCKET_LABELS[drillDown.bucket] || drillDown.bucket}
+            </span>
+          </div>
+        }
+      >
+        <Spin spinning={drillDown.loading} tip="Loading students...">
+          {drillDown.data.length > 0 ? (
+            <Table
+              columns={drillColumns}
+              dataSource={drillDown.data}
+              rowKey="student_id"
+              pagination={{ pageSize: 20, showSizeChanger: false }}
+              size="small"
+              scroll={{ x: 'max-content' }}
+            />
+          ) : !drillDown.loading ? (
+            <Empty description="No students found" />
+          ) : null}
+        </Spin>
+      </Modal>
     </>
   );
 };

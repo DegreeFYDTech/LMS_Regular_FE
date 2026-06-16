@@ -5,7 +5,7 @@ import DashboardHeader from '../components/MainReport/DashboardHeader';
 import dayjs from 'dayjs';
 import { BASE_URL } from '../config/api';
 import { fetchFilterOptions } from '../network/filterOptions';
-import { Switch } from 'antd';
+import { Switch, Modal, Table, Spin, Empty } from 'antd';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -82,6 +82,61 @@ const LeadAttemptReport = ({ forcedGroupBy = null }) => {
         source: '',
         groupBy: forcedGroupBy || 'counsellor',
     });
+
+    const BUCKET_LABELS = {
+        leadsAssigned: 'Total Leads',
+        attempted: 'Attempted',
+        within15: '< 15 Min',
+        min1530: '15 - 30 Min',
+        gt30: '> 30 Min',
+    };
+
+    const [drillDown, setDrillDown] = useState({
+        visible: false, loading: false, data: [], groupLabel: '', bucket: '',
+    });
+
+    const handleCellClick = async (groupLabel, bucket, drillBy = 'counsellor') => {
+        setDrillDown({ visible: true, loading: true, data: [], groupLabel, bucket });
+        try {
+            const params = new URLSearchParams();
+            if (filters.dateRange && filters.dateRange.length === 2) {
+                params.append('date_start', filters.dateRange[0].format('YYYY-MM-DD'));
+                params.append('date_end', filters.dateRange[1].format('YYYY-MM-DD'));
+            }
+            if (filters.source) params.append('source', filters.source);
+            params.append('group_by', filters.groupBy === 'hour' ? 'hour' : 'counsellor');
+            params.append('drill_group', groupLabel);
+            if (drillBy === 'supervisor') params.append('drill_by', 'supervisor');
+            if (bucket !== 'leadsAssigned') params.append('drill_bucket', bucket);
+
+            const res = await fetch(`${BASE_URL}/studentcoursestatus/lead-attempt-report-drilldown?${params.toString()}`, {
+                credentials: 'include',
+            });
+            const result = await res.json();
+            setDrillDown(prev => ({ ...prev, loading: false, data: result.success ? result.data : [] }));
+        } catch (err) {
+            console.error('Drill-down fetch failed:', err);
+            setDrillDown(prev => ({ ...prev, loading: false, data: [] }));
+        }
+    };
+
+    const drillColumns = [
+        {
+            title: 'Student ID', dataIndex: 'student_id', key: 'student_id', width: 130,
+            render: (v) => (
+                <span className="text-blue-600 hover:underline cursor-pointer font-mono text-sm"
+                    onClick={() => window.open(`/student/${v}`, '_blank')}>{v}</span>
+            ),
+        },
+        { title: 'Name', dataIndex: 'student_name', key: 'student_name', width: 150 },
+        { title: 'Counsellor', dataIndex: 'counsellor_name', key: 'counsellor_name', width: 150 },
+        { title: 'Supervisor', dataIndex: 'supervisor_name', key: 'supervisor_name', width: 150 },
+        { title: 'Lead Created At', dataIndex: 'lead_created_time', key: 'lead_created_time', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : '--' },
+        { title: 'First Remark At', dataIndex: 'first_remark_time', key: 'first_remark_time', width: 170, render: (v) => v ? dayjs(v).format('DD MMM YYYY HH:mm') : <span className="text-slate-400">No remark</span> },
+        { title: 'Attempt (min)', dataIndex: 'attempt_minutes', key: 'attempt_minutes', width: 120, align: 'center', render: (v) => v == null ? <span className="text-slate-400">—</span> : `${v} min` },
+        { title: 'Status', dataIndex: 'current_student_status', key: 'current_student_status', width: 150 },
+        { title: 'Source', dataIndex: 'source', key: 'source', width: 120 },
+    ];
 
     // Update filters when forcedGroupBy changes
     useEffect(() => {
@@ -1064,14 +1119,14 @@ const LeadAttemptReport = ({ forcedGroupBy = null }) => {
                                                             {expandedSupervisors[group.supervisorName] ? '▼' : '▶'}
                                                             <span className="text-blue-600 text-xs">{group.supervisorName}</span>
                                                         </td>
-                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs">{group.totals.leadsAssigned}</td>
-                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs">{group.totals.attempted}</td>
+                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={(e) => { e.stopPropagation(); handleCellClick(group.supervisorName, 'leadsAssigned', 'supervisor'); }}>{group.totals.leadsAssigned}</span></td>
+                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={(e) => { e.stopPropagation(); handleCellClick(group.supervisorName, 'attempted', 'supervisor'); }}>{group.totals.attempted}</span></td>
                                                         <td className="px-4 py-2.5 text-center text-gray-900 text-xs">{group.totals.percAttempted}</td>
-                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs">{group.totals.within15}</td>
+                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={(e) => { e.stopPropagation(); handleCellClick(group.supervisorName, 'within15', 'supervisor'); }}>{group.totals.within15}</span></td>
                                                         <td className="px-4 py-2.5 text-center text-gray-900 text-xs">{group.totals.perc15}</td>
-                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs">{group.totals.min1530}</td>
+                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={(e) => { e.stopPropagation(); handleCellClick(group.supervisorName, 'min1530', 'supervisor'); }}>{group.totals.min1530}</span></td>
                                                         <td className="px-4 py-2.5 text-center text-gray-900 text-xs">{group.totals.perc30}</td>
-                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs">{group.totals.gt30}</td>
+                                                        <td className="px-4 py-2.5 text-center text-gray-900 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={(e) => { e.stopPropagation(); handleCellClick(group.supervisorName, 'gt30', 'supervisor'); }}>{group.totals.gt30}</span></td>
                                                         <td className="px-4 py-2.5 text-center text-gray-900 text-xs">{group.totals.percGt30}</td>
                                                     </tr>
 
@@ -1081,14 +1136,14 @@ const LeadAttemptReport = ({ forcedGroupBy = null }) => {
                                                             <td className="px-4 py-2.5 font-medium text-gray-900 pl-12">
                                                                 <span className="ml-2 text-xs">{counsellor.groupName}</span>
                                                             </td>
-                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{counsellor.leadsAssigned}</td>
-                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{counsellor.attempted}</td>
+                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(counsellor.groupName, 'leadsAssigned', 'counsellor')}>{counsellor.leadsAssigned}</span></td>
+                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(counsellor.groupName, 'attempted', 'counsellor')}>{counsellor.attempted}</span></td>
                                                             <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{counsellor.percAttempted}</td>
-                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{counsellor.within15}</td>
+                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(counsellor.groupName, 'within15', 'counsellor')}>{counsellor.within15}</span></td>
                                                             <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{counsellor.perc15}</td>
-                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{counsellor.min1530}</td>
+                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(counsellor.groupName, 'min1530', 'counsellor')}>{counsellor.min1530}</span></td>
                                                             <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{counsellor.perc30}</td>
-                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{counsellor.gt30}</td>
+                                                            <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(counsellor.groupName, 'gt30', 'counsellor')}>{counsellor.gt30}</span></td>
                                                             <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{counsellor.percGt30}</td>
                                                         </tr>
                                                     ))}
@@ -1107,14 +1162,14 @@ const LeadAttemptReport = ({ forcedGroupBy = null }) => {
                                             data.map((row, idx) => (
                                                 <tr key={idx} className="hover:bg-gray-50 transition-colors text-sm">
                                                     <td className="px-4 py-2.5 font-medium text-gray-900 sticky left-0 bg-white text-xs">{row.groupName}</td>
-                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{row.leadsAssigned}</td>
-                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{row.attempted}</td>
+                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(row.groupName, 'leadsAssigned', 'hour')}>{row.leadsAssigned}</span></td>
+                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(row.groupName, 'attempted', 'hour')}>{row.attempted}</span></td>
                                                     <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{row.percAttempted}</td>
-                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{row.within15}</td>
+                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(row.groupName, 'within15', 'hour')}>{row.within15}</span></td>
                                                     <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{row.perc15}</td>
-                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{row.min1530}</td>
+                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(row.groupName, 'min1530', 'hour')}>{row.min1530}</span></td>
                                                     <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{row.perc30}</td>
-                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{row.gt30}</td>
+                                                    <td className="px-4 py-2.5 text-center text-gray-700 text-xs"><span className="cursor-pointer hover:underline hover:text-blue-700" onClick={() => handleCellClick(row.groupName, 'gt30', 'hour')}>{row.gt30}</span></td>
                                                     <td className="px-4 py-2.5 text-center text-gray-700 text-xs">{row.percGt30}</td>
                                                 </tr>
                                             ))
@@ -1312,6 +1367,38 @@ const LeadAttemptReport = ({ forcedGroupBy = null }) => {
                     </div>
                 </>
             )}
+
+            {/* Drill-down modal */}
+            <Modal
+                open={drillDown.visible}
+                onCancel={() => setDrillDown(prev => ({ ...prev, visible: false }))}
+                width="92vw"
+                style={{ top: 20 }}
+                footer={null}
+                title={
+                    <div className="flex items-center gap-3">
+                        <span className="font-black text-slate-800">{drillDown.groupLabel || '—'}</span>
+                        <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                            {BUCKET_LABELS[drillDown.bucket] || drillDown.bucket}
+                        </span>
+                    </div>
+                }
+            >
+                <Spin spinning={drillDown.loading} tip="Loading students...">
+                    {drillDown.data.length > 0 ? (
+                        <Table
+                            columns={drillColumns}
+                            dataSource={drillDown.data}
+                            rowKey="student_id"
+                            pagination={{ pageSize: 20, showSizeChanger: false }}
+                            size="small"
+                            scroll={{ x: 'max-content' }}
+                        />
+                    ) : !drillDown.loading ? (
+                        <Empty description="No students found" />
+                    ) : null}
+                </Spin>
+            </Modal>
         </div>
     );
 };

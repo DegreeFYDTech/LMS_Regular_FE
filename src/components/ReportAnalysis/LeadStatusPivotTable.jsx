@@ -2,11 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Inbox, Info } from 'lucide-react';
 import ReportTable from '../MainReport/ReportTable';
 
-const LeadStatusPivotTable = ({ 
-  data = [], 
+const LeadStatusPivotTable = ({
+  data = [],
   selectedColleges = [],
   selectedSupervisors = [],
-  selectedCounsellors = []
+  selectedCounsellors = [],
+  onCellClick
 }) => {
   const [expandedSupervisors, setExpandedSupervisors] = useState({});
   const [showTotalOnly, setShowTotalOnly] = useState(false);
@@ -14,6 +15,10 @@ const LeadStatusPivotTable = ({
   const toggleSupervisor = (name) => {
     setExpandedSupervisors(prev => ({ ...prev, [name]: !prev[name] }));
   };
+
+  const rowTarget = (row) => row.isSupervisor
+    ? { supervisorName: row.supervisorName, label: row.supervisorName }
+    : { counsellor: row.counsellor, label: row.counsellor };
 
   // Extract unique values
   const colleges = useMemo(() => {
@@ -49,13 +54,16 @@ const LeadStatusPivotTable = ({
         align: 'center',
         render: (_, row) => {
           const stats = row.collegeStats?.[college] || { dnp: 0, tf: 0, p: 0, t: 0 };
-          if (showTotalOnly) return <span className="font-bold">{stats.t || '-'}</span>;
+          const click = (bucket, val) => val > 0 && onCellClick?.(rowTarget(row), bucket, { college_name: college });
+          if (showTotalOnly) return (
+            <span className="font-bold cursor-pointer hover:underline" onClick={() => click('total', stats.t)}>{stats.t || '-'}</span>
+          );
           return (
             <div className="flex items-center justify-center gap-2 text-xs">
-              <span className="text-red-500 font-black" title="DNP">{stats.dnp || '-'}</span>
-              <span className="text-amber-500 font-black" title="Tech Fail">{stats.tf || '-'}</span>
-              <span className="text-emerald-500 font-black" title="Proceed">{stats.p || '-'}</span>
-              <span className="text-slate-900 font-black bg-slate-100 px-1.5 py-0.5 rounded" title="Total">{stats.t || '-'}</span>
+              <span className="text-red-500 font-black cursor-pointer hover:underline" title="DNP" onClick={() => click('dnp', stats.dnp)}>{stats.dnp || '-'}</span>
+              <span className="text-amber-500 font-black cursor-pointer hover:underline" title="Tech Fail" onClick={() => click('tf', stats.tf)}>{stats.tf || '-'}</span>
+              <span className="text-emerald-500 font-black cursor-pointer hover:underline" title="Proceed" onClick={() => click('p', stats.p)}>{stats.p || '-'}</span>
+              <span className="text-slate-900 font-black bg-slate-100 px-1.5 py-0.5 rounded cursor-pointer hover:underline" title="Total" onClick={() => click('total', stats.t)}>{stats.t || '-'}</span>
             </div>
           );
         }
@@ -67,14 +75,17 @@ const LeadStatusPivotTable = ({
       label: 'Aggregate',
       align: 'center',
       render: (_, row) => (
-        <span className="text-blue-600 font-black px-2 py-1 bg-blue-50 rounded-lg">
+        <span
+          className="text-blue-600 font-black px-2 py-1 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100"
+          onClick={() => (row.totals?.Total || 0) > 0 && onCellClick?.(rowTarget(row), 'total', {})}
+        >
           {row.totals?.Total || 0}
         </span>
       )
     });
 
     return cols;
-  }, [displayColleges, expandedSupervisors, showTotalOnly]);
+  }, [displayColleges, expandedSupervisors, showTotalOnly, onCellClick]);
 
   const tableData = useMemo(() => {
     const supervisors = {};

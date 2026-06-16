@@ -16,7 +16,8 @@ const DataTable = ({
   sortField,
   sortOrder,
   handleSort,
-  showDetailedColumns
+  showDetailedColumns,
+  onCellClick
 }) => {
   const [expandedSupervisors, setExpandedSupervisors] = useState({});
 
@@ -31,12 +32,21 @@ const DataTable = ({
     }
   };
 
+  // For lead/agent rows: which counsellor or supervisor a clicked cell belongs to
+  const leadRowTarget = (row) => row.isSupervisor
+    ? { supervisorId: row.supervisorId, supervisorName: row.supervisorName, label: row.supervisorName }
+    : { counsellorId: row.counsellor_id, drillGroup: row.group_by, label: row.group_by || row.agentName };
+
   // Helper function to render column value based on lead_count
-  const renderValueWithDash = (val, row, columnKey) => {
-    // Check if this is a Total row
-    const isTotalRow = row.group_by?.toString().toLowerCase() === 'total' || 
+  const renderValueWithDash = (val, row, columnKey, clickBucket) => {
+    // Check if this is a Total row (includes the FE-side "All Supervisors" group
+    // wrapper created when the BE's overall "Total" row gets re-grouped client-side)
+    const isTotalRow = row.group_by?.toString().toLowerCase() === 'total' ||
                        row.agentName?.toString().toLowerCase() === 'total' ||
-                       (row.isSupervisor && row.supervisorName?.toString().toLowerCase() === 'total');
+                       (row.isSupervisor && (
+                         row.supervisorName?.toString().toLowerCase() === 'total' ||
+                         row.supervisorName?.toString().toLowerCase() === 'all supervisors'
+                       ));
 
     // Skip for group_by column (first column)
     if (columnKey === 'group_by') {
@@ -67,6 +77,16 @@ const DataTable = ({
     }
 
     // For numeric columns
+    if (clickBucket && onCellClick && !isTotalRow) {
+      return (
+        <span
+          className="font-bold text-slate-900 cursor-pointer hover:underline hover:text-blue-700"
+          onClick={() => onCellClick(leadRowTarget(row), clickBucket)}
+        >
+          {val || 0}
+        </span>
+      );
+    }
     return <span className={`font-bold ${isTotalRow ? 'text-blue-700' : 'text-slate-900'}`}>{val || 0}</span>;
   };
 
@@ -280,7 +300,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'lead_count');
+              return renderValueWithDash(val, row, 'lead_count', 'lead_count');
             }
           },
           {
@@ -290,7 +310,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'attempted');
+              return renderValueWithDash(val, row, 'attempted', 'attempted');
             }
           },
           {
@@ -300,7 +320,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'connectedAnytime');
+              return renderValueWithDash(val, row, 'connectedAnytime', 'connectedAnytime');
             }
           },
           {
@@ -310,7 +330,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'icc');
+              return renderValueWithDash(val, row, 'icc', 'icc');
             }
           },
           {
@@ -320,7 +340,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'formFilled');
+              return renderValueWithDash(val, row, 'formFilled', 'formFilled');
             }
           },
           {
@@ -330,7 +350,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'need_active');
+              return renderValueWithDash(val, row, 'need_active', 'need_active');
             }
           },
           {
@@ -340,7 +360,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'admission');
+              return renderValueWithDash(val, row, 'admission', 'admission');
             }
           },
           {
@@ -350,7 +370,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'preNI');
+              return renderValueWithDash(val, row, 'preNI', 'preNI');
             }
           },
           {
@@ -456,7 +476,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'lead_count');
+              return renderValueWithDash(val, row, 'lead_count', 'lead_count');
             }
           },
           {
@@ -466,7 +486,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'active_cases');
+              return renderValueWithDash(val, row, 'active_cases', 'active_cases');
             }
           },
           {
@@ -476,7 +496,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'ni');
+              return renderValueWithDash(val, row, 'ni', 'ni');
             }
           },
           {
@@ -486,7 +506,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'under_3_remarks');
+              return renderValueWithDash(val, row, 'under_3_remarks', 'under_3_remarks');
             }
           },
           {
@@ -496,7 +516,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'remarks_4_7');
+              return renderValueWithDash(val, row, 'remarks_4_7', 'remarks_4_7');
             }
           },
           {
@@ -506,7 +526,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'remarks_8_10');
+              return renderValueWithDash(val, row, 'remarks_8_10', 'remarks_8_10');
             }
           },
           {
@@ -516,7 +536,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'remarks_gt_10');
+              return renderValueWithDash(val, row, 'remarks_gt_10', 'remarks_gt_10');
             }
           },
           {
@@ -526,7 +546,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'preNI');
+              return renderValueWithDash(val, row, 'preNI', 'preNI');
             }
           },
           {
@@ -546,7 +566,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'formfilled');
+              return renderValueWithDash(val, row, 'formfilled', 'formFilled');
             }
           },
           {
@@ -556,7 +576,7 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'need_active');
+              return renderValueWithDash(val, row, 'need_active', 'need_active');
             }
           },
           {
@@ -566,14 +586,18 @@ const DataTable = ({
             sortable: true,
             render: (val, row) => {
               if (shouldHideSupervisorRow(row)) return null;
-              return renderValueWithDash(val, row, 'admission');
+              return renderValueWithDash(val, row, 'admission', 'admission');
             }
           },
         ];
 
         return showDetailedColumns ? detailedLeadColumns : defaultLeadColumns;
 
-      case 'remarks':
+      case 'remarks': {
+        const remarksRowTarget = (row) => row.isSupervisor
+          ? { supervisorName: row.supervisorName, label: row.supervisorName }
+          : { counsellorId: row.counsellorId, label: row.counsellorName };
+
         const timeColumns = Array.from({ length: 11 }, (_, i) => {
           const hour = (i + 9).toString().padStart(2, '0');
           const nextHour = (i + 10).toString().padStart(2, '0');
@@ -585,7 +609,14 @@ const DataTable = ({
             sortable: false,
             render: (_, row) => {
               const count = row.timeSlots?.[slot]?.count || 0;
-              return count === 0 ? <span className="text-slate-200">—</span> : <span className="font-bold text-slate-900">{count}</span>;
+              return count === 0 ? <span className="text-slate-200">—</span> : (
+                <span
+                  className="font-bold text-slate-900 cursor-pointer hover:underline hover:text-blue-700"
+                  onClick={() => onCellClick?.(remarksRowTarget(row), 'slot', { hour: parseInt(hour, 10) })}
+                >
+                  {count}
+                </span>
+              );
             }
           };
         });
@@ -613,18 +644,26 @@ const DataTable = ({
             label: 'Total',
             align: 'center',
             sortable: false,
-            render: (val) => {
+            render: (val, row) => {
               const display = typeof val === 'object' && val !== null ? val.count : val;
-              return <span className="font-bold text-slate-900">{display ?? 0}</span>;
+              return (
+                <span
+                  className="font-bold text-slate-900 cursor-pointer hover:underline hover:text-blue-700"
+                  onClick={() => onCellClick?.(remarksRowTarget(row), 'totalRemarks')}
+                >
+                  {display ?? 0}
+                </span>
+              );
             }
           },
           ...timeColumns
         ];
+      }
 
       default:
         return [];
     }
-  }, [activeTab, leadSubTab, expandedSupervisors, showDetailedColumns]);
+  }, [activeTab, leadSubTab, expandedSupervisors, showDetailedColumns, onCellClick]);
 
   const tableData = useMemo(() => {
     if (!currentData.data) return [];
@@ -762,6 +801,7 @@ const DataTable = ({
         if (!supervisors[sName]) {
           supervisors[sName] = {
             supervisorName: sName,
+            supervisorId: item.supervisor_id || null,
             lead_count: 0,
             total_leads: 0,
             freshCount: 0,
@@ -793,6 +833,9 @@ const DataTable = ({
           };
         }
 
+        if (!supervisors[sName].supervisorId && item.supervisor_id) {
+          supervisors[sName].supervisorId = item.supervisor_id;
+        }
         supervisors[sName].lead_count += item.lead_count || 0;
         supervisors[sName].total_leads += item.total_leads || 0;
         supervisors[sName].freshCount += item.freshCount || 0;

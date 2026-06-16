@@ -2,17 +2,21 @@ import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import ReportTable from '../MainReport/ReportTable';
 
-const ConnectedCallsTable = ({ data }) => {
+const ConnectedCallsTable = ({ data, onCellClick }) => {
   const [expandedSupervisors, setExpandedSupervisors] = useState({});
 
   const toggleSupervisor = (name) => {
     setExpandedSupervisors(prev => ({ ...prev, [name]: !prev[name] }));
   };
 
+  const rowTarget = (row) => row.isSupervisor
+    ? { supervisorName: row.supervisorName, label: row.supervisorName }
+    : { counsellorId: row.counsellorId, label: row.counsellorName };
+
   const columns = useMemo(() => {
     const cols = [
-      { 
-        key: 'name', 
+      {
+        key: 'name',
         label: 'Counsellor Architecture',
         render: (val, row) => (
           <div className="flex items-center gap-2">
@@ -27,21 +31,35 @@ const ConnectedCallsTable = ({ data }) => {
           </div>
         )
       },
-      { 
-        key: 'totalRemarks', 
-        label: 'Remarks', 
+      {
+        key: 'totalRemarks',
+        label: 'Remarks',
         align: 'center',
-        render: (val) => <span className="font-black text-slate-900">{val || 0}</span>
+        render: (val, row) => (
+          <span
+            className="font-black text-slate-900 cursor-pointer hover:underline hover:text-blue-700"
+            onClick={() => onCellClick?.(rowTarget(row), 'totalRemarks')}
+          >
+            {val || 0}
+          </span>
+        )
       },
-      { 
-        key: 'totalConnectedCalls', 
-        label: 'Connected', 
+      {
+        key: 'totalConnectedCalls',
+        label: 'Connected',
         align: 'center',
-        render: (val) => <span className="font-black text-emerald-600">{val || 0}</span>
+        render: (val, row) => (
+          <span
+            className="font-black text-emerald-600 cursor-pointer hover:underline"
+            onClick={() => onCellClick?.(rowTarget(row), 'totalConnectedCalls')}
+          >
+            {val || 0}
+          </span>
+        )
       },
-      { 
-        key: 'percentage', 
-        label: 'Success Rate', 
+      {
+        key: 'percentage',
+        label: 'Success Rate',
         align: 'center',
         render: (_, row) => {
           const perc = row.totalRemarks > 0 ? Math.round((row.totalConnectedCalls / row.totalRemarks) * 100) : 0;
@@ -73,13 +91,20 @@ const ConnectedCallsTable = ({ data }) => {
                 } else {
                     count = Number(row.timeSlots?.[slotLabel]?.count) || 0;
                 }
-                return <span className={`text-[11px] font-bold ${count > 0 ? 'text-slate-900' : 'text-slate-300'}`}>{count || '-'}</span>;
+                return (
+                  <span
+                    className={`text-[11px] font-bold cursor-pointer hover:underline ${count > 0 ? 'text-slate-900' : 'text-slate-300'}`}
+                    onClick={() => count > 0 && onCellClick?.(rowTarget(row), 'slot', { hour })}
+                  >
+                    {count || '-'}
+                  </span>
+                );
             }
         });
     }
 
     return cols;
-  }, [expandedSupervisors]);
+  }, [expandedSupervisors, onCellClick]);
 
   const tableData = useMemo(() => {
     const groups = {};
