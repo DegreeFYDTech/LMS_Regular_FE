@@ -12,6 +12,7 @@ import axios from 'axios';
 import { BASE_URL } from '../config/api';
 import { Filter, Download, RotateCcw, Users, FileText, AlertTriangle, Clock } from 'lucide-react';
 import DashboardHeader from '../components/MainReport/DashboardHeader';
+import ExportFieldSelectModal from '../components/modals/ExportFieldSelectModal';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -110,6 +111,47 @@ const CounsellorStatsDashboard = () => {
         setDateRange([null, null]);
         setSelectedCounsellor('all');
         fetchData(null, null, 'all');
+    };
+
+    const COUNSELLOR_EXPORT_FIELD_LABELS = {
+        counsellor_name: 'Counsellor',
+        total_forms: 'Total Forms',
+        active_forms: 'Active Forms',
+        not_initiated_count: 'Not Initiated',
+        called_within_3_days: 'Called Within 3 Days',
+        called_4_to_6_days: 'Called 4-6 Days',
+        called_7_plus_days: 'Called 7+ Days',
+    };
+
+    const [exportModalOpen, setExportModalOpen] = useState(false);
+
+    const convertToCSV = (rows) => {
+        if (!rows || rows.length === 0) return '';
+        const headers = Object.keys(rows[0]);
+        const csvRows = rows.map((row) =>
+            headers.map((h) => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(',')
+        );
+        return [headers.join(','), ...csvRows].join('\n');
+    };
+
+    const confirmExport = (selectedFields) => {
+        const filteredData = data.map((row) => {
+            const filtered = {};
+            selectedFields.forEach((key) => {
+                filtered[key] = row[key];
+            });
+            return filtered;
+        });
+        const csvContent = convertToCSV(filteredData);
+        const url = window.URL.createObjectURL(new Blob([csvContent], { type: 'text/csv' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `counsellor-performance-${dayjs().format('DD-MM-YYYY')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        setExportModalOpen(false);
     };
 
     const BUCKET_LABELS = {
@@ -356,6 +398,15 @@ const CounsellorStatsDashboard = () => {
                             />
 
                             <button
+                                onClick={() => setExportModalOpen(true)}
+                                disabled={data.length === 0}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all font-medium text-sm bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50"
+                            >
+                                <Download size={16} />
+                                Export
+                            </button>
+
+                            <button
                                 onClick={handleReset}
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all font-medium text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                             >
@@ -364,6 +415,22 @@ const CounsellorStatsDashboard = () => {
                             </button>
                         </div>
                     }
+                />
+
+                <ExportFieldSelectModal
+                    open={exportModalOpen}
+                    onClose={() => setExportModalOpen(false)}
+                    onExport={confirmExport}
+                    title="Select Fields to Export"
+                    fieldGroups={[
+                        {
+                            label: 'Available Fields',
+                            color: 'blue',
+                            fields: Object.keys(data[0] || {})
+                                .filter((key) => COUNSELLOR_EXPORT_FIELD_LABELS[key])
+                                .map((key) => ({ key, label: COUNSELLOR_EXPORT_FIELD_LABELS[key] })),
+                        },
+                    ]}
                 />
 
                 {/* Stats Cards */}

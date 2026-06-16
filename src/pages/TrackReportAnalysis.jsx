@@ -5,6 +5,7 @@ import { Modal, Table, Spin, Empty } from 'antd';
 import { BASE_URL } from '../config/api';
 import ReportTable from '../components/MainReport/ReportTable';
 import DashboardHeader from '../components/MainReport/DashboardHeader';
+import ExportFieldSelectModal from '../components/modals/ExportFieldSelectModal';
 
 const timeIntervals = [
   'Till 11 AM','11:00 - 12:00','12:00 - 13:00','13:00 - 14:00','14:00 - 15:00',
@@ -114,6 +115,43 @@ const TrackReportAnalysis = () => {
     return tableRows.find(r => r.time_interval === time) || { time_interval: time };
   });
 
+  const TRACK_EXPORT_FIELD_LABELS = {
+    time_interval: 'Time Interval',
+    new_leads: 'New Leads',
+    new_counselling: 'Counselling Done',
+    connected_calls: 'Connected Calls',
+  };
+
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  const getValueOnly = (v) => (typeof v === 'object' && v !== null ? v.count ?? 0 : v ?? 0);
+
+  const confirmExport = (selectedFields) => {
+    const exportRows = data.map((row) => {
+      const filtered = {};
+      selectedFields.forEach((key) => {
+        filtered[key] = key === 'time_interval' ? row.time_interval : getValueOnly(row[key]);
+      });
+      return filtered;
+    });
+    const headers = selectedFields;
+    const csvRows = [headers.join(',')];
+    exportRows.forEach((row) => {
+      csvRows.push(headers.map((h) => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(','));
+    });
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `track-report-${from}-to-${to}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    setExportModalOpen(false);
+  };
+
   return (
     <>
       <DashboardHeader 
@@ -132,6 +170,14 @@ const TrackReportAnalysis = () => {
               onNext={handleNextDay}
               onClear={handleClear}
             />
+
+            <button
+              onClick={() => setExportModalOpen(true)}
+              disabled={data.length === 0}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all text-sm font-bold disabled:opacity-50"
+            >
+              Export
+            </button>
           </div>
         }
       />
@@ -145,6 +191,24 @@ const TrackReportAnalysis = () => {
           emptyText="No tracking data found for this period"
         />
       </div>
+
+      {/* Export field-selection modal */}
+      <ExportFieldSelectModal
+        open={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        onExport={confirmExport}
+        title="Select Fields to Export"
+        fieldGroups={[
+          {
+            label: 'Available Fields',
+            color: 'blue',
+            fields: Object.keys(TRACK_EXPORT_FIELD_LABELS).map((key) => ({
+              key,
+              label: TRACK_EXPORT_FIELD_LABELS[key],
+            })),
+          },
+        ]}
+      />
 
       {/* Drill-down modal */}
       <Modal

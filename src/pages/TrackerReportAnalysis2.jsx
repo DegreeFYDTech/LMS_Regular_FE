@@ -7,6 +7,7 @@ import { Bar } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Segmented, Button, message, Dropdown, Modal, Table, Spin, Empty } from "antd";
 import dayjs from 'dayjs';
+import ExportFieldSelectModal from '../components/modals/ExportFieldSelectModal';
 import {
   FilePdfOutlined,
   FilterOutlined,
@@ -36,6 +37,8 @@ const TrackerReportAnalysis2 = ({ forcedGroupBy = null }) => {
   const [loading, setLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingRaw, setIsDownloadingRaw] = useState(false);
+  const [rawExportModalOpen, setRawExportModalOpen] = useState(false);
+  const [rawExportPendingData, setRawExportPendingData] = useState([]);
   const [groupBy, setGroupBy] = useState(forcedGroupBy || 'slot');
   const [showChart, setShowChart] = useState(false);
   const [filters, setFilters] = useState({
@@ -419,6 +422,28 @@ const fetchData = async () => {
 };
 
 
+const escapeRawCSV = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+const confirmRawCSVExport = (selectedFields) => {
+  const csvRows = [selectedFields.map(escapeRawCSV).join(',')];
+  rawExportPendingData.forEach((row) => {
+    csvRows.push(selectedFields.map((f) => escapeRawCSV(row[f])).join(','));
+  });
+  const csvData = csvRows.join('\n');
+
+  const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `student-raw-data-${filters.date_start}-${filters.date_end}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  setRawExportModalOpen(false);
+  message.success(`CSV file downloaded! (${rawExportPendingData.length} records)`);
+};
+
 const downloadRawDataAsCSV = async () => {
   setIsDownloadingRaw(true);
 
@@ -456,60 +481,19 @@ const downloadRawDataAsCSV = async () => {
     }
 
     const result = await response.json();
-    
+
     if (!result.success) {
       message.error(result.message || 'Failed to fetch raw data');
       return;
     }
 
-    // Convert JSON to CSV
-    const convertToCSV = (data) => {
-      if (!data || data.length === 0) return '';
-      
-      // Get headers from the first object
-      const headers = Object.keys(data[0]);
-      
-      // Create CSV content
-      const csvRows = [];
-      
-      // Add headers
-      csvRows.push(headers.join(','));
-      
-      // Add data rows
-      for (const row of data) {
-        const values = headers.map(header => {
-          const value = row[header] || '';
-          // Escape quotes and wrap in quotes if contains comma
-          const escaped = String(value).replace(/"/g, '""');
-          return `"${escaped}"`;
-        });
-        csvRows.push(values.join(','));
-      }
-      
-      return csvRows.join('\n');
-    };
-
-    const csvData = convertToCSV(result.data);
-    
-    if (!csvData) {
+    if (!result.data || result.data.length === 0) {
       message.error('No data to download');
       return;
     }
 
-    // Create and download CSV file
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `student-raw-data-${filters.date_start}-${filters.date_end}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    URL.revokeObjectURL(url);
-    
-    message.success(`CSV file downloaded! (${result.count} records)`);
+    setRawExportPendingData(result.data);
+    setRawExportModalOpen(true);
 
   } catch (error) {
     if (error.name === 'AbortError') {
@@ -746,6 +730,24 @@ const downloadRawDataAsJSON = async () => {
           </div>
         )}
       </div>
+
+      {/* Export field-selection modal */}
+      <ExportFieldSelectModal
+        open={rawExportModalOpen}
+        onClose={() => setRawExportModalOpen(false)}
+        onExport={confirmRawCSVExport}
+        title="Select Fields to Export"
+        fieldGroups={[
+          {
+            label: 'Available Fields',
+            color: 'blue',
+            fields: Object.keys(rawExportPendingData[0] || {}).map((key) => ({
+              key,
+              label: key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+            })),
+          },
+        ]}
+      />
 
       {/* Drill-down modal */}
       <Modal

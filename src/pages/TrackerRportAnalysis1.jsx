@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { BASE_URL } from '../config/api';
 import { fetchFilterOptions } from '../network/filterOptions';
 import { Switch, Modal, Table, Spin, Empty } from 'antd';
+import ExportFieldSelectModal from '../components/modals/ExportFieldSelectModal';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -151,6 +152,57 @@ const LeadAttemptReport = ({ forcedGroupBy = null }) => {
         '16:00 - 17:00', '17:00 - 18:00', '18:00 - 19:00', '19:00 - 20:00',
         '20:00 - 21:00', 'After 9 PM'
     ];
+    const RAW_EXPORT_FIELD_LABELS = {
+        student_id: 'Student ID',
+        student_name: 'Student Name',
+        phone: 'Phone',
+        email: 'Email',
+        source: 'Source',
+        counsellor_name: 'Counsellor Name',
+        supervisor_name: 'Supervisor Name',
+        lead_date: 'Lead Date',
+        lead_time: 'Lead Time',
+        lead_datetime: 'Lead Datetime',
+        first_attempt_date: 'First Attempt Date',
+        first_attempt_time: 'First Attempt Time',
+        first_attempt_datetime: 'First Attempt Datetime',
+        attempt_minutes: 'Attempt Minutes',
+        attempt_category: 'Attempt Category',
+        status: 'Status',
+    };
+
+    const [exportModalOpen, setExportModalOpen] = useState(false);
+    const [exportPendingData, setExportPendingData] = useState([]);
+
+    const escapeCSV = (field) => {
+        if (field === null || field === undefined) return '';
+        const stringField = String(field);
+        if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+            return `"${stringField.replace(/"/g, '""')}"`;
+        }
+        return stringField;
+    };
+
+    const confirmRawExport = (selectedFields) => {
+        const headerRow = selectedFields.map((k) => escapeCSV(RAW_EXPORT_FIELD_LABELS[k] || k)).join(',');
+        const dataRows = exportPendingData.map((row) =>
+            selectedFields.map((k) => escapeCSV(row[k])).join(',')
+        ).join('\n');
+        const csvContent = `${headerRow}\n${dataRows}`;
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const fileName = `lead-attempt-raw-data-${filters.dateRange[0].format('YYYY-MM-DD')}-${filters.dateRange[1].format('YYYY-MM-DD')}.csv`;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        setExportModalOpen(false);
+    };
+
     const [isDownloadingRaw, setIsDownloadingRaw] = useState(false);
     const downloadRawData = async () => {
         setIsDownloadingRaw(true);
@@ -163,8 +215,6 @@ const LeadAttemptReport = ({ forcedGroupBy = null }) => {
             if (filters.source) params.append('source', filters.source);
             params.append('group_by', 'detailed'); // Always get detailed data
 
-            console.log('Fetching raw data from:', `${BASE_URL}/studentcoursestatus/lead-attempt-report-raw?${params.toString()}`);
-
             const res = await fetch(`${BASE_URL}/studentcoursestatus/lead-attempt-report-raw?${params.toString()}`);
 
             if (!res.ok) {
@@ -172,124 +222,27 @@ const LeadAttemptReport = ({ forcedGroupBy = null }) => {
             }
 
             const result = await res.json();
-            console.log('Raw data response:', result);
 
-            if (result.success) {
-                // Convert data to CSV format
-                let csvContent = '';
-                let headers = [];
-                let rows = [];
-
-                if (result.group_by === 'detailed' && Array.isArray(result.data)) {
-                    // Detailed student data format
-                    headers = [
-                        'Student ID',
-                        'Student Name',
-                        'Phone',
-                        'Email',
-                        'Source',
-                        'Counsellor Name',
-                        'Supervisor Name',
-                        'Lead Date',
-                        'Lead Time',
-                        'Lead Datetime',
-                        'First Attempt Date',
-                        'First Attempt Time',
-                        'First Attempt Datetime',
-                        'Attempt Minutes',
-                        'Attempt Category',
-                        'Status'
-                    ];
-
-                    rows = result.data.map(row => [
-                        row.student_id || '',
-                        row.student_name || '',
-                        row.phone || '',
-                        row.email || '',
-                        row.source || '',
-                        row.counsellor_name || '',
-                        row.supervisor_name || '',
-                        row.lead_date || '',
-                        row.lead_time || '',
-                        row.lead_datetime || '',
-                        row.first_attempt_date || '',
-                        row.first_attempt_time || '',
-                        row.first_attempt_datetime || '',
-                        row.attempt_minutes || '0',
-                        row.attempt_category || '',
-                        row.status || ''
-                    ]);
-                } else if (result.group_by === 'counsellor' && result.data && result.data.summary) {
-                    // Counsellor grouped format
-                    headers = [
-                        'Counsellor Name',
-                        'Supervisor Name',
-                        'Total Leads',
-                        'Attempted',
-                        'Not Attempted',
-                        'Within 15 mins',
-                        '15-30 mins',
-                        'After 30 mins',
-                        '% Attempted',
-                        '% Within 15',
-                        '% 15-30',
-                        '% After 30'
-                    ];
-
-                    rows = result.data.summary.map(group => [
-                        group.counsellor_name || '',
-                        group.supervisor_name || '',
-                        group.total_leads || '0',
-                        group.attempted || '0',
-                        group.not_attempted || '0',
-                        group.within_15 || '0',
-                        group.min_15_30 || '0',
-                        group.after_30 || '0',
-                        group.perc_attempted || '0%',
-                        group.perc_within_15 || '0%',
-                        group.perc_15_30 || '0%',
-                        group.perc_after_30 || '0%'
-                    ]);
-                } else {
-                    // Fallback: stringify JSON
-                    csvContent = JSON.stringify(result.data, null, 2);
-                    headers = ['JSON Data'];
-                    rows = [[csvContent]];
-                }
-
-                // Build CSV content
-                if (rows.length > 0) {
-                    // Escape quotes and wrap in quotes if contains comma
-                    const escapeCSV = (field) => {
-                        if (field === null || field === undefined) return '';
-                        const stringField = String(field);
-                        if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
-                            return `"${stringField.replace(/"/g, '""')}"`;
-                        }
-                        return stringField;
-                    };
-
-                    const headerRow = headers.map(escapeCSV).join(',');
-                    const dataRows = rows.map(row =>
-                        row.map(escapeCSV).join(',')
-                    ).join('\n');
-
-                    csvContent = `${headerRow}\n${dataRows}`;
-                }
-
-                // Create and download CSV file
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                const fileName = `lead-attempt-raw-data-${filters.dateRange[0].format('YYYY-MM-DD')}-${filters.dateRange[1].format('YYYY-MM-DD')}.csv`;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-
-                alert(`Raw data downloaded successfully! ${rows.length} records exported.`);
+            if (result.success && Array.isArray(result.data)) {
+                setExportPendingData(result.data.map(row => ({
+                    student_id: row.student_id || '',
+                    student_name: row.student_name || '',
+                    phone: row.phone || '',
+                    email: row.email || '',
+                    source: row.source || '',
+                    counsellor_name: row.counsellor_name || '',
+                    supervisor_name: row.supervisor_name || '',
+                    lead_date: row.lead_date || '',
+                    lead_time: row.lead_time || '',
+                    lead_datetime: row.lead_datetime || '',
+                    first_attempt_date: row.first_attempt_date || '',
+                    first_attempt_time: row.first_attempt_time || '',
+                    first_attempt_datetime: row.first_attempt_datetime || '',
+                    attempt_minutes: row.attempt_minutes || '0',
+                    attempt_category: row.attempt_category || '',
+                    status: row.status || '',
+                })));
+                setExportModalOpen(true);
             } else {
                 throw new Error(result.error || 'Failed to fetch raw data');
             }
@@ -1367,6 +1320,24 @@ const LeadAttemptReport = ({ forcedGroupBy = null }) => {
                     </div>
                 </>
             )}
+
+            {/* Export field-selection modal */}
+            <ExportFieldSelectModal
+                open={exportModalOpen}
+                onClose={() => setExportModalOpen(false)}
+                onExport={confirmRawExport}
+                title="Select Fields to Export"
+                fieldGroups={[
+                    {
+                        label: 'Available Fields',
+                        color: 'blue',
+                        fields: Object.keys(RAW_EXPORT_FIELD_LABELS).map((key) => ({
+                            key,
+                            label: RAW_EXPORT_FIELD_LABELS[key],
+                        })),
+                    },
+                ]}
+            />
 
             {/* Drill-down modal */}
             <Modal

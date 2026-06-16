@@ -14,6 +14,7 @@ import axios from 'axios';
 import { BASE_URL } from '../config/api';
 import { Filter, Download, RotateCcw, Building2, Users, LayoutGrid, Eye, Calendar, Clock } from 'lucide-react';
 import DashboardHeader from '../components/MainReport/DashboardHeader';
+import ExportFieldSelectModal from '../components/modals/ExportFieldSelectModal';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -211,38 +212,60 @@ const CollegeStatusReports = () => {
     setDateFilterType('firstTime');
   };
 
-  const handleExport = async () => {
-    try {
-      const params = {
-        reportType: filters.reportType,
-      };
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
-      // Only include the active date filter in export
-      if (dateFilterType === 'main') {
-        if (filters.startDate && filters.endDate) {
-          params.startDate = filters.startDate.format('YYYY-MM-DD');
-          params.endDate = filters.endDate.format('YYYY-MM-DD');
-        }
-      } else if (dateFilterType === 'firstTime') {
-        params.firstTimeFrom = filters.firstTimeDateRange[0] ? filters.firstTimeDateRange[0].format('YYYY-MM-DD') : null;
-        params.firstTimeTo = filters.firstTimeDateRange[1] ? filters.firstTimeDateRange[1].format('YYYY-MM-DD') : null;
-      }
+  const buildExportRows = () => {
+    if (!reportData?.data) return [];
+    const { rows, statuses, totals } = reportData.data;
+    const isCollegesView = filters.reportType === 'colleges';
+    const rowKey = isCollegesView ? 'college' : 'counsellor';
+    return [
+      ...rows,
+      {
+        [rowKey]: 'TOTAL',
+        ...statuses.reduce((acc, status) => {
+          acc[status] = totals.statusTotals[status] || 0;
+          return acc;
+        }, {}),
+        total: totals.grandTotal,
+      },
+    ];
+  };
 
-      const response = await axios.get(`${BASE_URL}/StudentCourseStatusLogs/reports/export`, {
-        params,
-        responseType: 'blob'
+  const convertToCSV = (data) => {
+    if (!data || data.length === 0) return '';
+    const headers = Object.keys(data[0]);
+    const csvRows = data.map((row) =>
+      headers
+        .map((header) => `"${String(row[header] ?? '').replace(/"/g, '""')}"`)
+        .join(',')
+    );
+    return [headers.join(','), ...csvRows].join('\n');
+  };
+
+  const handleExport = () => {
+    setExportModalOpen(true);
+  };
+
+  const confirmExport = (selectedFields) => {
+    const exportRows = buildExportRows();
+    const filteredData = exportRows.map((row) => {
+      const filtered = {};
+      selectedFields.forEach((key) => {
+        filtered[key] = row[key];
       });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `status-report-${filters.reportType}-${dayjs().format('DD-MM-YYYY')}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error('Export error:', error);
-    }
+      return filtered;
+    });
+    const csvContent = convertToCSV(filteredData);
+    const url = window.URL.createObjectURL(new Blob([csvContent], { type: 'text/csv' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `status-report-${filters.reportType}-${dayjs().format('DD-MM-YYYY')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    setExportModalOpen(false);
   };
 
   // Stats cards data
@@ -715,6 +738,26 @@ const CollegeStatusReports = () => {
           </Spin>
         </div>
       </div>
+
+      {/* Export field-selection modal */}
+      <ExportFieldSelectModal
+        open={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        onExport={confirmExport}
+        title="Select Fields to Export"
+        fieldGroups={[
+          {
+            label: 'Available Fields',
+            color: 'blue',
+            fields: Object.keys(buildExportRows()[0] || {}).map((key) => ({
+              key,
+              label: key === 'college' || key === 'counsellor' || key === 'total'
+                ? key.charAt(0).toUpperCase() + key.slice(1)
+                : key,
+            })),
+          },
+        ]}
+      />
 
       {/* Drill-down modal */}
       <Modal

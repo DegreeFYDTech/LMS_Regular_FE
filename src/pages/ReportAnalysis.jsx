@@ -17,6 +17,7 @@ import { BASE_URL } from '../config/api';
 import RemarksAnalysisPanel from '../components/ReportAnalysis/RemarksAnalysisPanel';
 import { useSelector } from 'react-redux';
 import Tracker4 from '../components/ReportAnalysis/Tracker4';
+import ExportFieldSelectModal from '../components/modals/ExportFieldSelectModal';
 
 const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTabProp = null }) => {
   const storedRole = useSelector((state) => state.auth.role);
@@ -563,6 +564,34 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
     return [csvHeaders, ...csvRows].join('\n');
   };
 
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportPending, setExportPending] = useState({ fileName: '', data: [] });
+
+  const humanizeFieldKey = (key) =>
+    key.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
+
+  const confirmExport = (selectedFields) => {
+    const { fileName, data } = exportPending;
+    const filteredData = data.map((row) => {
+      const filtered = {};
+      selectedFields.forEach((key) => {
+        filtered[key] = row[key];
+      });
+      return filtered;
+    });
+    const csvContent = convertToCSV(filteredData);
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    setExportModalOpen(false);
+  };
+
   const handleExport = async () => {
     try {
       setLoading(true);
@@ -638,17 +667,9 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
         return;
       }
 
-      // Convert to CSV and download
-      const csvContent = convertToCSV(dataToExport);
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Hand off to the field-selection modal instead of downloading immediately
+      setExportPending({ fileName, data: dataToExport });
+      setExportModalOpen(true);
 
     } catch (err) {
       setError('Error exporting data: ' + (err.message || 'Unknown error'));
@@ -1101,6 +1122,24 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
           leadSubTab={leadSubTab}
         />
       </div>
+
+      {/* Export field-selection modal */}
+      <ExportFieldSelectModal
+        open={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        onExport={confirmExport}
+        title={`Select Fields to Export (${exportPending.fileName || 'export'})`}
+        fieldGroups={[
+          {
+            label: 'Available Fields',
+            color: 'blue',
+            fields: Object.keys(exportPending.data[0] || {}).map((key) => ({
+              key,
+              label: humanizeFieldKey(key),
+            })),
+          },
+        ]}
+      />
 
       {/* Remarks drill-down modal */}
       <Modal
