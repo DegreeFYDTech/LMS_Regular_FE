@@ -378,3 +378,17 @@ export const fetchLoginAttempts = async (params = {}) => {
     throw error;
   }
 };
+
+export const updateCounsellorCallSettings = async (id, { counsellor_phone, did_number, dialer_user_id }) => {
+  try {
+    const res = await axios.put(
+      `${BASE_URL}/counsellor/call-settings/${id}`,
+      { counsellor_phone, did_number, dialer_user_id },
+      { withCredentials: true },
+    );
+    return res.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};

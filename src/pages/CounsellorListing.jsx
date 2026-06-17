@@ -40,6 +40,7 @@ import {
   PlusOutlined,
   ClearOutlined,
   WifiOutlined,
+  PhoneOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
@@ -51,6 +52,7 @@ import {
   changeSupervisor,
   getAllSupervisors,
   toggleBlockCounsellor,
+  updateCounsellorCallSettings,
 } from "../network/counsellor";
 
 import ChangePasswordModal from "../components/modals/ChangePasswordModal";
@@ -111,6 +113,9 @@ const UserListing = () => {
   const [showDisableModal, setShowDisableModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showSupervisorModal, setShowSupervisorModal] = useState(false);
+  const [showCallSettingsModal, setShowCallSettingsModal] = useState(false);
+  const [callSettingsForm, setCallSettingsForm] = useState({ counsellor_phone: "", did_number: "", dialer_user_id: "" });
+  const [callSettingsSaving, setCallSettingsSaving] = useState(false);
 
   // Selected data
   const [selectedUser, setSelectedUser] = useState(null);
@@ -294,6 +299,32 @@ const UserListing = () => {
         }
       },
     });
+  };
+
+  const handleOpenCallSettings = (user) => {
+    setSelectedUser(user);
+    setCallSettingsForm({
+      counsellor_phone: user.counsellor_phone || "",
+      did_number: user.did_number || "",
+      dialer_user_id: user.dialer_user_id || "",
+    });
+    setShowCallSettingsModal(true);
+  };
+
+  const confirmCallSettings = async () => {
+    setCallSettingsSaving(true);
+    try {
+      await updateCounsellorCallSettings(selectedUser.counsellor_id, callSettingsForm);
+      setUsers((prev) =>
+        prev.map((u) => u.counsellor_id === selectedUser.counsellor_id ? { ...u, ...callSettingsForm } : u)
+      );
+      setShowCallSettingsModal(false);
+      message.success("Call settings saved!");
+    } catch {
+      message.error("Failed to save call settings");
+    } finally {
+      setCallSettingsSaving(false);
+    }
   };
 
   const confirmDisableUser = async () => {
@@ -485,6 +516,15 @@ const UserListing = () => {
       width: 200,
       render: (_, record) => (
         <Space size={2}>
+          <Tooltip title={record.did_number ? "Call Settings (DID set)" : "Call Settings (no DID)"}>
+            <Button
+              type="text"
+              size="small"
+              icon={<PhoneOutlined />}
+              onClick={() => handleOpenCallSettings(record)}
+              className={record.did_number ? "text-blue-500 hover:text-blue-700 hover:bg-blue-50" : "text-gray-400 hover:text-blue-600 hover:bg-blue-50"}
+            />
+          </Tooltip>
           <Tooltip title="Change Password">
             <Button
               type="text"
@@ -856,6 +896,45 @@ const UserListing = () => {
         user={accessUser}
         onSaved={() => fetchData(currentPage, pageSize)}
       />
+
+      {showCallSettingsModal && (
+        <Modal
+          open={showCallSettingsModal}
+          title={`Call Settings — ${selectedUser?.counsellor_name}`}
+          onCancel={() => setShowCallSettingsModal(false)}
+          onOk={confirmCallSettings}
+          okText="Save"
+          confirmLoading={callSettingsSaving}
+          width={460}
+        >
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Agent Phone Number</label>
+              <Input
+                placeholder="e.g. 9876543210"
+                value={callSettingsForm.counsellor_phone}
+                onChange={(e) => setCallSettingsForm((f) => ({ ...f, counsellor_phone: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">DID Number</label>
+              <Input
+                placeholder="e.g. 08068103xxx"
+                value={callSettingsForm.did_number}
+                onChange={(e) => setCallSettingsForm((f) => ({ ...f, did_number: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Dialer User ID</label>
+              <Input
+                placeholder="Dialer platform user ID"
+                value={callSettingsForm.dialer_user_id}
+                onChange={(e) => setCallSettingsForm((f) => ({ ...f, dialer_user_id: e.target.value }))}
+              />
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

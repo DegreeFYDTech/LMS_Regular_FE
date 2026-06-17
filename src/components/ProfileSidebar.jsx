@@ -14,6 +14,7 @@ import { showToast } from "../utils/toast";
 import { updateStudent } from "../network/student";
 import statesData from '../data/cityandstatejson.json';
 import { useSelector } from "react-redux";
+import { BASE_URL } from "../config/api";
 
 const ProfileSidebar = ({ initialStudent }) => {
   const [student, setStudent] = useState(initialStudent);
@@ -22,7 +23,32 @@ const ProfileSidebar = ({ initialStudent }) => {
   const [loading, setLoading] = useState(false);
   const [emailRestriction, setEmailRestriction] = useState({ restricted: false, message: '', source: '' });
   const userRole = useSelector((state) => state.auth.role);
+  const authUser = useSelector((state) => state.auth.user);
+  const [callLoading, setCallLoading] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState({ show: false, message: '' });
+
+  const handleClick2Call = async () => {
+    if (!authUser?.did_number) return showToast("Error", "No dialer configured");
+    setCallLoading(true);
+    try {
+      const res = await fetch(`${BASE_URL}/student/click2call`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ studentId: student?.student_id }),
+      });
+      const data = await res.json();
+      if (res.ok && (data?.statusCode === 1 || data?.type === "success")) {
+        showToast("Success", data.message || "Call initiated!");
+      } else {
+        showToast("Error", data.message || "Call failed");
+      }
+    } catch {
+      showToast("Error", "Could not initiate call");
+    } finally {
+      setCallLoading(false);
+    }
+  };
 
   useEffect(() => {
     const checkEmailRestriction = () => {
@@ -377,10 +403,20 @@ const ProfileSidebar = ({ initialStudent }) => {
                 <span className="text-xs">Phone Number</span>
               </label>
               <div className="relative">
-                <div className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span>{student?.student_phone || "Not Provided"}</span>
-                  </div>
+                <div
+                  onClick={student?.student_phone && authUser?.did_number ? handleClick2Call : undefined}
+                  className={`w-full border rounded-lg text-gray-800 text-xs flex items-center overflow-hidden transition-all duration-200
+                    ${student?.student_phone && authUser?.did_number
+                      ? "cursor-pointer border-gray-300 hover:border-green-400 hover:shadow-sm group"
+                      : "border-gray-200 bg-gray-50"}`}
+                  title={student?.student_phone && authUser?.did_number ? "Click to call" : undefined}
+                >
+                  {student?.student_phone && authUser?.did_number ? (
+                    <span className="flex items-center justify-center px-3 py-2.5 bg-green-50 border-r border-gray-300 group-hover:bg-green-100 transition-colors shrink-0">
+                      <Phone className={`w-4 h-4 text-green-500 ${callLoading ? "animate-pulse" : ""}`} />
+                    </span>
+                  ) : null}
+                  <span className="px-3 py-2.5 flex-1">{student?.student_phone || "Not Provided"}</span>
                 </div>
               </div>
             </div>
