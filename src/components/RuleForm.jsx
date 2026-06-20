@@ -32,6 +32,7 @@ const RuleForm = ({
 
   const fieldDisplayNames = {
     utmCampaign: 'UTM Campaign',
+    csl_university: 'CSL University',
     first_source_url: 'Domain URLs',
     source: 'Source',
     mode: 'Mode',
@@ -45,7 +46,7 @@ const RuleForm = ({
   };
 
   const fieldGroups = [
-    { title: 'Source & Campaign', fields: ['first_source_url', 'utmCampaign', 'source', 'mode'] },
+    { title: 'Source & Campaign', fields: ['first_source_url', 'utmCampaign', 'csl_university', 'source', 'mode'] },
     { title: 'Location Preferences', fields: ['preferred_state', 'preferred_city'] },
     { title: 'Education Background', fields: ['preferred_degree', 'preferred_specialization', 'preferred_level'] },
     { title: 'Others', fields: ['preferred_budget', 'current_profession'] }
@@ -76,6 +77,16 @@ const RuleForm = ({
                     onChange={(e) => handleConditionChange(field, e.target.value)}
                     placeholder="example.com&#10;test.com"
                     rows={3}
+                  />
+                ) : field === 'csl_university' ? (
+                  <Select
+                    mode="tags"
+                    style={{ width: '100%' }}
+                    placeholder="Type university name and press Enter"
+                    value={rule.conditions?.[field] || []}
+                    onChange={(val) => handleConditionChange(field, val)}
+                    maxTagCount="responsive"
+                    allowClear
                   />
                 ) : (
                   <Select

@@ -57,6 +57,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
     counsellorNames: [],
     dateRange: null,
     counsellorStatus: '',
+    counsellorBlocked: '',
     formType: '',
     leadType: '',
   });
@@ -399,6 +400,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
         if (filters.utmCampaign.length > 0) params.utm_campaign = filters.utmCampaign;
         if (filters.counsellorId.length > 0) params.counsellor_id = filters.counsellorId;
         if (filters.counsellorStatus) params.counsellor_status = filters.counsellorStatus;
+        if (filters.counsellorBlocked !== '' && filters.counsellorBlocked != null) params.counsellor_blocked = filters.counsellorBlocked;
         if (filters.dateRange?.length === 2) {
           params.created_at_start = filters.dateRange[0].format("YYYY-MM-DD");
           params.created_at_end = filters.dateRange[1].format("YYYY-MM-DD");
@@ -708,6 +710,9 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
     if (filters.counsellorStatus) {
       existingParams.append('counsellor_status', filters.counsellorStatus);
     }
+    if (filters.counsellorBlocked !== '' && filters.counsellorBlocked != null) {
+      existingParams.append('counsellor_blocked', filters.counsellorBlocked);
+    }
     if (filters.dateRange?.length === 2) {
       existingParams.append('created_at_start', filters.dateRange[0].format("YYYY-MM-DD"));
       existingParams.append('created_at_end', filters.dateRange[1].format("YYYY-MM-DD"));
@@ -923,6 +928,7 @@ const ReportAnalysis = ({ forcedTab = null, leadSubTabProp = null, setLeadSubTab
       if (filters.sourceUrl?.length > 0) params.append('source_url', filters.sourceUrl.join(','));
       if (filters.utmCampaign.length > 0) params.append('utm_campaign', filters.utmCampaign.join(','));
       if (filters.counsellorStatus) params.append('counsellor_status', filters.counsellorStatus);
+      if (filters.counsellorBlocked !== '' && filters.counsellorBlocked != null) params.append('counsellor_blocked', filters.counsellorBlocked);
       if (filters.dateRange?.length === 2) {
         params.append('created_at_start', filters.dateRange[0].format('YYYY-MM-DD'));
         params.append('created_at_end', filters.dateRange[1].format('YYYY-MM-DD'));

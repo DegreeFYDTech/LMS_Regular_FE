@@ -119,6 +119,7 @@ const FilterPanel = ({
       if (leadFilters?.utmCampaign?.length > 0) count++;
       if (leadFilters?.counsellorId?.length > 0) count++;
       if (leadFilters?.counsellorStatus) count++;
+      if (leadFilters?.counsellorBlocked !== '' && leadFilters?.counsellorBlocked != null) count++;
       if (leadFilters?.dateRange) count++;
       if (leadFilters?.formType) count++;
       if (leadFilters?.leadType) count++;
@@ -148,7 +149,7 @@ const FilterPanel = ({
   const handleLeadFilterChange = (field, value) => {
     setLeadFilters((prev) => ({
       ...prev,
-      [field]: value || (['counsellorStatus', 'leadType', 'formType'].includes(field) ? '' : []),
+      [field]: value || (['counsellorStatus', 'counsellorBlocked', 'leadType', 'formType'].includes(field) ? '' : []),
     }));
   };
 
@@ -219,6 +220,9 @@ const FilterPanel = ({
     if (leadFilters?.counsellorStatus) {
       newActive.counsellorStatus = leadFilters.counsellorStatus === 'active' ? 'Active' : 'Inactive';
     }
+    if (leadFilters?.counsellorBlocked !== '' && leadFilters?.counsellorBlocked != null) {
+      newActive.counsellorBlocked = leadFilters.counsellorBlocked === 'false' ? 'Exists' : 'Not Exists';
+    }
     if (leadFilters?.dateRange?.length === 2) {
       newActive.dateRange = `${leadFilters.dateRange[0].format("YYYY-MM-DD")} to ${leadFilters.dateRange[1].format("YYYY-MM-DD")}`;
     }
@@ -263,6 +267,9 @@ const FilterPanel = ({
     }
     if (leadFilters?.counsellorStatus) {
       params.counsellor_status = leadFilters.counsellorStatus;
+    }
+    if (leadFilters?.counsellorBlocked !== '' && leadFilters?.counsellorBlocked != null) {
+      params.counsellor_blocked = leadFilters.counsellorBlocked;
     }
     if (leadFilters?.dateRange?.length === 2) {
       params.created_at_start = leadFilters.dateRange[0].format("YYYY-MM-DD");
@@ -309,6 +316,7 @@ const FilterPanel = ({
         counsellorNames: [],
         dateRange: null,
         counsellorStatus: '',
+        counsellorBlocked: '',
         formType: '',
         leadType: '',
       });
@@ -440,6 +448,23 @@ const FilterPanel = ({
                       options={[
                         { value: 'active', label: 'Active' },
                         { value: 'inactive', label: 'Inactive' }
+                      ]}
+                    />
+                  </div>}
+
+                  {activeTab === 'lead' && leadSubTab === "agent" && <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Counsellor Exists
+                    </label>
+                    <Select
+                      placeholder="All Counsellors"
+                      value={leadFilters?.counsellorBlocked !== '' ? leadFilters?.counsellorBlocked : undefined}
+                      onChange={(value) => handleLeadFilterChange("counsellorBlocked", value ?? '')}
+                      allowClear
+                      className="w-full"
+                      options={[
+                        { value: 'false', label: 'Exists' },
+                        { value: 'true', label: 'Not Exists (Suspended)' },
                       ]}
                     />
                   </div>}

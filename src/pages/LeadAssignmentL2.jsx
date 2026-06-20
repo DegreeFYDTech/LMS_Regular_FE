@@ -50,6 +50,7 @@ const LeadAssignmentRules = () => {
   const [newRule, setNewRule] = useState({
     conditions: {
       utmCampaign: [],
+      csl_university: [],
       first_source_url: '',
       source: [],
       mode: [],
@@ -195,7 +196,7 @@ const LeadAssignmentRules = () => {
     };
 
     const allowedFields = [
-      'utmCampaign', 'first_source_url', 'source', 'mode', 'preferred_budget',
+      'utmCampaign', 'csl_university', 'first_source_url', 'source', 'mode', 'preferred_budget',
       'current_profession', 'preferred_level', 'preferred_degree',
       'preferred_specialization', 'preferred_city', 'preferred_state', 'student_question'
     ];
@@ -321,6 +322,7 @@ const LeadAssignmentRules = () => {
     setNewRule({
       conditions: {
         utmCampaign: [],
+        csl_university: [],
         first_source_url: '',
         source: [],
         mode: [],
