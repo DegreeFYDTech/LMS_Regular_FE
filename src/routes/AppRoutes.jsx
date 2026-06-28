@@ -12,6 +12,7 @@ import CounsellorStatsDashboard from "../pages/CounsellorReport";
 import FormToAdmissionsReport from "../pages/FormAdmission";
 import FormDashboard from "../pages/FormDashboard";
 import AdmissionGraphReport from "../pages/AdmissionGraphReport";
+import SwapAnalysis from "../pages/SwapAnalysis";
 
 const Loader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -297,6 +298,14 @@ const AppRoutes = () => {
                 element={
                   <RoleBasedRoute allowedRoles={["Supervisor", "to", "to_l3", "Analyser"]}>
                     <AdmissionGraphReport />
+                  </RoleBasedRoute>
+                }
+              />
+              <Route
+                path="/swap-analysis"
+                element={
+                  <RoleBasedRoute allowedRoles={["Supervisor", "to", "to_l3"]}>
+                    <SwapAnalysis />
                   </RoleBasedRoute>
                 }
               />

@@ -26,6 +26,7 @@ import {
   DollarOutlined,
   DashboardTwoTone,
   LineChartOutlined,
+  RetweetOutlined,
 } from "@ant-design/icons";
 import AgentsDropdown from "./AgentDropdown";
 
@@ -262,6 +263,12 @@ const Sidebar = ({
             onClick: () => navigate("/admission-graph-report"),
           },
           {
+            key: "swap-analysis",
+            icon: <RetweetOutlined />,
+            label: "Swap Analysis",
+            onClick: () => navigate("/swap-analysis"),
+          },
+          {
             key: "manage-courses",
             icon: <AppstoreOutlined />,
             label: "Manage Courses",
@@ -287,6 +294,12 @@ const Sidebar = ({
               icon: <LineChartOutlined />,
               label: "Graph Reports",
               onClick: () => navigate("/admission-graph-report"),
+            },
+            {
+              key: "swap-analysis",
+              icon: <RetweetOutlined />,
+              label: "Swap Analysis",
+              onClick: () => navigate("/swap-analysis"),
             },
             {
               key: "bulk-upload",

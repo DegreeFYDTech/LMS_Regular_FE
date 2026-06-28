@@ -183,7 +183,15 @@ const RuleForm = ({
           placeholder="Select agent(s)"
           value={rule.assigned_counsellor_ids || []}
           onChange={handleCounsellorChange}
-          options={options.counsellors?.map(agent => ({ label: agent.counsellor_name, value: agent.counsellor_id })) || []}
+          options={(() => {
+            const activeOptions = options.counsellors?.map(agent => ({ label: agent.counsellor_name, value: agent.counsellor_id })) || [];
+            const activeIds = new Set(activeOptions.map(o => o.value));
+            const assignedDetails = rule?.counsellors || rule?.assignedCounsellorDetails || [];
+            const inactiveOptions = assignedDetails
+              .filter(c => !activeIds.has(c.counsellor_id))
+              .map(c => ({ label: `${c.counsellor_name} (inactive)`, value: c.counsellor_id }));
+            return [...activeOptions, ...inactiveOptions];
+          })()}
           maxTagCount="responsive"
           allowClear
         />
