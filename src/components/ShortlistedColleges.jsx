@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import { fetchShortlistedColleges1 } from "../network/colleges";
 import { BASE_URL } from "../config/api";
@@ -20,6 +20,7 @@ const ShortlistedColleges = ({ setActiveTab }) => {
   const [activeStatus, setActiveStatus] = useState("All");
   const [expandedUniversities, setExpandedUniversities] = useState({});
   const [sendingToCollege, setSendingToCollege] = useState({});
+  const sendingInProgress = useRef({});
   const [showModal, setShowModal] = useState(false);
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -180,37 +181,33 @@ const ShortlistedColleges = ({ setActiveTab }) => {
 
 
   const handleSendReq = async (e, collegeName) => {
-  // Prevent if already sending
-  if (sendingToCollege[collegeName]) {
-    return;
-  }
-  
-  setSendingToCollege(prev => ({ ...prev, [collegeName]: true }));
+    if (sendingInProgress.current[collegeName]) return;
+    sendingInProgress.current[collegeName] = true;
+    setSendingToCollege(prev => ({ ...prev, [collegeName]: true }));
 
-  try {
-    await axios.post(`${BASE_URL}/StudentCourseStatusLogs/sentStatustoCollege`, {
-      collegeName,
-      studentId: studentId
-    }, { withCredentials: true });
+    try {
+      await axios.post(`${BASE_URL}/StudentCourseStatusLogs/sentStatustoCollege`, {
+        collegeName,
+        studentId: studentId
+      }, { withCredentials: true });
 
-    await refreshStudentData();
-    setActiveTab("Tab3");
-    localStorage.setItem('activeTab', 'Tab3');
-    alert("Request sent to college successfully!");
-    
-    // Keep button disabled for 4 seconds even after success
-    // This prevents multiple clicks before page reload
-    setTimeout(() => {
+      await refreshStudentData();
+      setActiveTab("Tab3");
+      localStorage.setItem('activeTab', 'Tab3');
+      alert("Request sent to college successfully!");
+      window.location.reload();
+    } catch (error) {
+      if (error?.response?.status === 409) {
+        alert("Already sent for this student and university.");
+      } else {
+        console.error('Error sending request:', error);
+        alert('Failed to send request to college. Please try again.');
+      }
+    } finally {
+      delete sendingInProgress.current[collegeName];
       setSendingToCollege(prev => ({ ...prev, [collegeName]: false }));
-    }, 4000);
-    
-    window.location.reload();
-  } catch (error) {
-    console.error('Error sending request:', error);
-    alert('Failed to send request to college. Please try again.');
-    setSendingToCollege(prev => ({ ...prev, [collegeName]: false }));
-  }
-};
+    }
+  };
 
   const openStatusModal = (college) => {
     setSelectedCollege(college);
