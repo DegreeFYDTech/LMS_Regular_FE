@@ -4,15 +4,18 @@ import { Upload, FileSpreadsheet, Users, UserCheck, AlertCircle, CheckCircle, Do
 import { bulkinsertion, bulkReassignment } from '../network/student';
 import ErrorTable from './InsertionErrors'
 
+const BATCH_SIZE = 15;
+
 const BulkUpload = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadType, setUploadType] = useState('lead_creation');
-  const [reassignmentLevel, setReassignmentLevel] = useState('L2'); 
+  const [reassignmentLevel, setReassignmentLevel] = useState('L2');
   const [parsedData, setParsedData] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [errors, setErrors] = useState([]);
-  const [InsertionErrors, SetInsertionErrors] = useState([])
+  const [InsertionErrors, SetInsertionErrors] = useState([]);
+  const [progress, setProgress] = useState(null); // { total, processed, succeeded, failed, currentBatch, totalBatches }
 
   const getTemplateData = () => {
     if (uploadType === 'lead_creation') {
@@ -85,20 +88,20 @@ const BulkUpload = () => {
     } else {
       // L3 Reassignment template with courseId
       return [
-        { 
-          studentId: 'STU001', 
+        {
+          studentId: 'STU001',
           counsellorId: 'AGT001',
-          courseId: 'CRS001' 
+          courseId: 'CRS001'
         },
-        { 
-          studentId: 'STU002', 
+        {
+          studentId: 'STU002',
           counsellorId: 'AGT002',
-          courseId: 'CRS002' 
+          courseId: 'CRS002'
         },
-        { 
-          studentId: 'STU003', 
+        {
+          studentId: 'STU003',
           counsellorId: 'AGT003',
-          courseId: 'CRS003' 
+          courseId: 'CRS003'
         }
       ];
     }
@@ -133,6 +136,7 @@ const BulkUpload = () => {
         setUploadStatus(null);
         setErrors([]);
         setParsedData([]);
+        setProgress(null);
       } else {
         alert('Please select a valid Excel file (.xlsx or .xls)');
       }
@@ -292,63 +296,80 @@ const BulkUpload = () => {
     }
   };
 
-  // API call with reassignment level
+  // Split array into chunks
+  const chunkArray = (arr, size) => {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+    return chunks;
+  };
+
+  // API call with batch processing
   const handleSubmit = async () => {
-    if (parsedData.length === 0) {
-      alert('No valid data to submit');
-      return;
-    }
+    if (parsedData.length === 0) { alert('No valid data to submit'); return; }
+
+    const batches = chunkArray(parsedData, BATCH_SIZE);
+    const totalBatches = batches.length;
 
     setIsProcessing(true);
+    SetInsertionErrors([]);
+    setProgress({ total: parsedData.length, processed: 0, succeeded: 0, failed: 0, currentBatch: 0, totalBatches });
+
+    let allFailed = [];
+    let totalSucceeded = 0;
+    let totalFailed = 0;
 
     try {
-      let response;
+      for (let b = 0; b < batches.length; b++) {
+        const batch = batches[b];
+        setProgress(prev => ({ ...prev, currentBatch: b + 1 }));
 
-      if (uploadType === 'lead_creation') {
-        response = await bulkinsertion(parsedData);
-      } else {
-        // Include reassignment level and data in the API call
-        const reassignmentData = {
-          data: parsedData,
-          level: reassignmentLevel // Send L2 or L3 to backend
-        };
-        response = await bulkReassignment(reassignmentData);
+        try {
+          let response;
+          if (uploadType === 'lead_creation') {
+            response = await bulkinsertion(batch);
+          } else {
+            response = await bulkReassignment({ data: batch, level: reassignmentLevel });
+          }
+
+          const result = response?.data;
+          const batchSucceeded = uploadType === 'lead_creation'
+            ? (result?.summary?.successful_count || 0)
+            : (result?.results?.reassigned || 0);
+          const batchFailed = uploadType === 'lead_creation'
+            ? (result?.summary?.failed_count || 0)
+            : (result?.results?.errors || 0);
+          const batchFailedLeads = result?.results?.failed_leads || [];
+
+          totalSucceeded += batchSucceeded;
+          totalFailed += batchFailed;
+          allFailed = [...allFailed, ...batchFailedLeads];
+
+          setProgress(prev => ({
+            ...prev,
+            processed: prev.processed + batch.length,
+            succeeded: prev.succeeded + batchSucceeded,
+            failed: prev.failed + batchFailed,
+          }));
+        } catch (batchErr) {
+          // Mark whole batch as failed
+          totalFailed += batch.length;
+          allFailed = [...allFailed, ...batch.map((row, i) => ({ index: b * BATCH_SIZE + i + 1, data: row, error: batchErr?.response?.data?.message || batchErr.message || 'Request failed' }))];
+          setProgress(prev => ({ ...prev, processed: prev.processed + batch.length, failed: prev.failed + batch.length }));
+        }
       }
 
-      const result = response?.data;
-
-      if (response) {
-        // Show detailed success message
-        let successMessage;
-        if (uploadType === 'lead_creation') {
-          successMessage = `Successfully processed ${result.summary?.total_processed || parsedData.length} leads:\n• Created: ${result.summary?.successful_count || 0}\n• Failed: ${result.summary?.failed_count || 0}\n• Success Rate: ${result.summary?.success_rate || '0%'}`;
-        } else if (reassignmentLevel === 'L2') {
-          successMessage = `Successfully processed ${parsedData.length} L2 reassignments:\n• Reassigned: ${result.results?.reassigned || 0}\n• Failed: ${result.results?.errors || 0}`;
-        } else {
-          successMessage = `Successfully processed ${parsedData.length} L3 journey reassignments:\n• Reassigned: ${result.results?.reassigned || 0}\n• Failed: ${result.results?.errors || 0}\n• Note: Only journey entries with matching courseId were updated`;
-        }
-
-        alert(successMessage);
-        
-        if (result?.results?.failed_leads?.length > 0) {
-          SetInsertionErrors(result?.results.failed_leads);
-        } else {
-          // Reset form
-          setSelectedFile(null);
-          setParsedData([]);
-          setUploadStatus(null);
-          setErrors([]);
-          SetInsertionErrors([]);
-        }
-      } else {
-        throw new Error(result.message || 'API request failed');
+      SetInsertionErrors(allFailed);
+      if (allFailed.length === 0) {
+        setSelectedFile(null);
+        setParsedData([]);
+        setUploadStatus(null);
+        setErrors([]);
       }
-
     } catch (error) {
-      console.error('API Error:', error);
-      alert(`Error: ${error.message || error}`);
+      console.error('Batch submit error:', error);
     } finally {
       setIsProcessing(false);
+      setProgress(prev => prev ? { ...prev, done: true, succeeded: totalSucceeded, failed: totalFailed } : null);
     }
   };
 
@@ -381,6 +402,7 @@ const BulkUpload = () => {
                       setUploadStatus(null);
                       setErrors([]);
                       SetInsertionErrors([]);
+                      setProgress(null);
                     }}
                     className="w-4 h-4 text-blue-600"
                   />
@@ -400,6 +422,7 @@ const BulkUpload = () => {
                       setUploadStatus(null);
                       setErrors([]);
                       SetInsertionErrors([]);
+                      setProgress(null);
                     }}
                     className="w-4 h-4 text-green-600"
                   />
@@ -421,11 +444,11 @@ const BulkUpload = () => {
                     type="button"
                     onClick={() => {
                       setReassignmentLevel(reassignmentLevel === 'L2' ? 'L3' : 'L2');
-                      // Reset data when level changes
                       setParsedData([]);
                       setUploadStatus(null);
                       setErrors([]);
                       SetInsertionErrors([]);
+                      setProgress(null);
                     }}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       reassignmentLevel === 'L3' ? 'bg-green-600' : 'bg-gray-200'
@@ -504,35 +527,81 @@ const BulkUpload = () => {
                 className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                <span>{isProcessing ? 'Processing...' : 'Process File'}</span>
+                <span>{isProcessing && !progress ? 'Processing...' : 'Process File'}</span>
               </button>
 
-              {parsedData.length > 0 && (
+              {parsedData.length > 0 && !isProcessing && (
                 <button
                   onClick={handleSubmit}
-                  disabled={isProcessing}
-                  className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>
-                    {isProcessing 
-                      ? 'Submitting...' 
-                      : `Submit ${uploadType === 'lead_creation' ? 'Leads' : `${reassignmentLevel} Reassignments`}`
-                    }
-                  </span>
+                  <span>Submit {parsedData.length} {uploadType === 'lead_creation' ? 'Leads' : `${reassignmentLevel} Reassignments`}</span>
                 </button>
               )}
             </div>
 
-            {/* Status Messages */}
-            {uploadStatus === 'success' && parsedData.length > 0 && (
+            {/* Progress Panel */}
+            {progress && (
+              <div className="mb-6 p-4 border rounded-xl bg-slate-50 border-slate-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-slate-700 text-sm">
+                    {progress.done
+                      ? '✅ Done'
+                      : `Processing batch ${progress.currentBatch} of ${progress.totalBatches}…`}
+                  </span>
+                  <span className="text-xs text-slate-500 font-mono">
+                    {progress.processed} / {progress.total} records
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full bg-slate-200 rounded-full h-3 mb-3 overflow-hidden">
+                  <div
+                    className="h-3 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${progress.total > 0 ? (progress.processed / progress.total) * 100 : 0}%`,
+                      background: progress.done
+                        ? (progress.failed === 0 ? '#16a34a' : '#f59e0b')
+                        : '#3b82f6',
+                    }}
+                  />
+                </div>
+
+                {/* Stats row */}
+                <div className="flex gap-4 text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
+                    <span className="text-green-700 font-semibold">{progress.succeeded} succeeded</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+                    <span className="text-red-700 font-semibold">{progress.failed} failed</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <span className="text-slate-500 text-xs">
+                      {progress.total > 0 ? ((progress.processed / progress.total) * 100).toFixed(0) : 0}% complete
+                    </span>
+                  </div>
+                </div>
+
+                {progress.done && progress.failed === 0 && (
+                  <p className="mt-2 text-green-700 text-sm font-medium">All records processed successfully!</p>
+                )}
+                {progress.done && progress.failed > 0 && (
+                  <p className="mt-2 text-amber-700 text-sm font-medium">{progress.failed} records failed — see errors below.</p>
+                )}
+              </div>
+            )}
+
+            {/* File parsed success message */}
+            {uploadStatus === 'success' && parsedData.length > 0 && !progress && (
               <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <span className="text-green-800 font-medium">
-                    Successfully processed {parsedData.length} records
+                    {parsedData.length} records ready to submit
                     {uploadType === 'lead_reassignment' && ` for ${reassignmentLevel} reassignment`}
-                    {reassignmentLevel === 'L3' && ' with courseId'}
                   </span>
                 </div>
               </div>
@@ -665,8 +734,8 @@ const BulkUpload = () => {
 
               <div className="mb-4">
                 <p className="text-sm text-gray-600 mb-2">
-                  {uploadType === 'lead_creation' 
-                    ? 'Lead Creation Template' 
+                  {uploadType === 'lead_creation'
+                    ? 'Lead Creation Template'
                     : reassignmentLevel === 'L2'
                       ? 'L2 Lead Reassignment Template'
                       : 'L3 Journey Reassignment Template (with Course ID)'
